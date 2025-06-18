@@ -2,8 +2,7 @@
 ####################################################################################################################################
 
 #iris:
-executor: slurm
-default_queue: componc_cpu
+
 reference_genomes:
         mm10:
                 fasta: /data1/greenbab/database/mm10/mm10.fa

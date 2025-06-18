@@ -1,0 +1,33 @@
+executor: slurm
+    default:
+        partition: componc_cpu,componc_gpu
+        nodes: 1
+        cpus-per-task: 4
+        time: 90:00:00
+        mem: 64GB
+        mail-user: ahunos@mskcc.org
+        mail-type: END,FAIL
+    short_cpu_jobs:
+        partition: cpushort
+        nodes: 1
+        cpus-per-task: 4
+        time: 02:00:00
+        mem: 32GB
+        mail-user: ahunos@mskcc.org
+        mail-type: END,FAIL
+    short_gpu_jobs:
+        partition: gpushort
+        nodes: 1
+        cpus-per-task: 4
+        time: 02:00:00
+        mem: 32GB
+        mail-user: ahunos@mskcc.org
+        mail-type: END,FAIL    
+    high_mem_cpu_jobs:
+        partition: componc_cpu
+        nodes: 1
+        cpus-per-task: 4
+        time: 60:00:00
+        mem: 64GB
+        mail-user: ahunos@mskcc.org
+        mail-type: END,FAIL

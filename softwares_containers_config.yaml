@@ -1,0 +1,4 @@
+DOCKERHUB_USERNAME: "sahuno"
+DOCKERHUB_personal_repo: https://hub.docker.com/repositories/sahuno
+GITHUB_USERNAME: "sahuno"
+ONT_software_container_container_name: "sahuno/onttools"
