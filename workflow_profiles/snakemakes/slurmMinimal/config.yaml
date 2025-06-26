@@ -112,6 +112,8 @@ use-conda: True
 printshellcmds: True
 latency-wait: 360
 max-status-checks-per-second: 1
+use-singularity: True
+#--singularity-args "--nv -B /data1/greenbab,/scratch/greenbab/ahunos,/data1/shahs3"
 
 # forceall: True
 #cmd options
