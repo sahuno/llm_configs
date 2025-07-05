@@ -36,6 +36,7 @@ reference_genomes:
                     CpGIslands: /data1/greenbab/database/human_GRCh37/cpgIslands_hg19.sorted.nochrNames.bed6
                     tandem_rep: /data1/greenbab/database/human_GRCh37/human_hs37d5.trf.bed
                     repeats: /data1/greenbab/database/human_GRCh37/repeats.regions
+                    gaps: /data1/greenbab/database/human_GRCh37/hg19_gap_nochr.txt
         remote:
             mm10:
                     fasta: s3://ngi-igenomes/igenomes/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/genome.fa
