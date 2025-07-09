@@ -32,7 +32,10 @@ use singularity to run comatainers. list of doocker images can be found here `so
 
 ### Visualization & Figures 
 Create 3 types of figues; png,pdf,svg for analysis
-Font type should be Arial. axis should be legible
+* Font type should always be Arial. Headers should be Arial Bold.
+The rest of the text in the figure should be Arial regular
+
+* Axis should be legible, at least size 10
 
 
 ###### EXAMPLE USE CASE ONLY [BEGIN] ########
