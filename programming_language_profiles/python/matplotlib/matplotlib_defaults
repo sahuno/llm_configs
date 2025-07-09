@@ -1,0 +1,17 @@
+#keep all
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import seaborn as sns
+
+# Set Arial as default font
+mpl.rcParams['font.family'] = 'Arial'
+mpl.rcParams['font.size'] = 12  # Optional: set default font size
+
+# Example plot
+sns.set_theme()  # seaborn style
+plt.plot([1, 2, 3], [4, 5, 6])
+plt.title("Plot Title in Arial")
+plt.show()
+
+
