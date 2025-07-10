@@ -20,7 +20,9 @@ DO_NOT.md
 Also make sure not to hard things like contig/chromosome names and sizes to ensure things don't break when we change a something in the configs or sample. get the from the user supplied genome sizes file in the workflow. 
 
 ## Initialization
-if work if analysis; safely create the folowing dirctories (ie `mkdir -p dir` ) and place files generated under appropriate directories
+ASK USER: What type of work is this session; Ananlysis (Fresh/conituation), software developments
+
+if work if analysis; safely create the folowing dirctories (ie `mkdir -p directoryNames` ) and place all files generated in the sesseion under appropriate directories
 ```
 pipelines, analysis, notebooks, data/processed, data/raw, data/metadata, scripts, figures, logs
 project_configs, softwares/singularity softwares/singularity/def
@@ -31,14 +33,13 @@ You might not have acess to all softwares
 use singularity to run comatainers. list of doocker images can be found here `softwares_containers_config.yaml`
 
 ### Visualization & Figures 
-Create 3 types of figues; png,pdf,svg for analysis
+Create 3 types of figues; png,pdf,svg for analysis. To avoid overwhelming the users create directories for `png,pdf,svg` and save  plots with approapriate extensions there.
 * Font type should always be Arial. Headers should be Arial Bold.
 The rest of the text in the figure should be Arial regular
-
 * Axis should be legible, at least size 10
 
 
-###### EXAMPLE USE CASE ONLY [BEGIN] ########
+## EXAMPLE USE CASE ONLY [BEGIN] ########
 USER: You will create a new dir. safely mount only directories  as needed
 ```
 
@@ -47,6 +48,7 @@ singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/
 ```
 
 singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/projects/methyl_benchmark_spectrum/ONT_BSseq/ONT_DLP_1stPre/full_spectrum_cohort/pipelines/dmr_unphased /data1/greenbab/users/ahunos/apps/claude_image/claude.sif
+
 
 CLAUDE PROMPT 0: 
     please load `/data1/greenbab/users/ahunos/apps/llm_configs` which has detailed info for the working
@@ -84,7 +86,46 @@ C. add a rule to the pipeline to pick a threshold. the python function is inteli
 D. it would be nice to have window/segment lengths that were merged as part of the columns (last column maybe) in `{STATS_DIR}/merged_hypo_mod{params.mod}/${{sample}}_merged.bed` under rule merge_all_hypomethylated_windows. for example if 2 segments of lenghts 100kb and 150kb were merged capture it as comma-separated value in the column ie `100000,150000`. 
 I will need it to compute lengths corrected statistics later on. how would you do this?
 
-###### FOR USERS ONLY [END] ########
+
+
+Test 2:
+#RNA-Seq pipeline
+singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr,/home/ahunos/miniforge3/ /data1/greenbab/users/ahunos/apps/claude_image/claude.sif
+
+
+Goal: create an R script to perform Differntial gene expression in R with DESEQ2 including volcano plots, gene set enrichment analysis with msigdbr. here are examples from the vignettes you can use.
+https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
+
+Rscript is here to use; /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+instructions: create script for all functions needed 
+create run script with optparse to run the fucntions execute all the steps in Deseq
+
+Inputs: counts matrix (column 1 is gene names and rest of columns is sample names), metadata (with samples, condition columns), Reference_group_for_deseq_conditions, sepciesName, vol_pval, gsea_qval 
+Outputs: 
+structure the directories (main: condition_[tested], subdir: figures, data)
+results table, dseq object, meta data, gsea results
+
+here's code i used for gsea in the past. gsea can be tricky
+# Get database to use - UPDATED SYNTAX
+ specie_type = "Mus musculus",
+ msigdbr_db_species = "MM",  
+ category_tag = "M2"
+ subcategory_tag = "GCP"
+
+    if(!is.null(subcategory_tag)) {
+      m_t2g <- msigdbr(db_species=msigdbr_db_species,
+                      species = specie_type, 
+                       collection = category_tag, 
+                       subcollection = subcategory_tag) %>% 
+        dplyr::select(gs_name, ncbi_gene)
+    } else {
+      m_t2g <- msigdbr(db_species=msigdbr_db_species, species = specie_type, 
+                       collection = category_tag) %>% 
+        dplyr::select(gs_name, ncbi_gene)
+    }
+
+start by creating a plan let review
+## FOR USE CASE ONLY [END] ########
 
 
 FEATURE REQUEST
@@ -93,7 +134,7 @@ FEATURE REQUEST
  b. detail logging and workflow metadata
  c. intgration with seqera AI
 2. Logging of tasks completed and pending; logging of daily taks done 
-3. use `UV` for package management
+3. use `UV` for python package management
 
 
 
