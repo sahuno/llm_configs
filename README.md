@@ -1,3 +1,5 @@
+# This is collection of principles to work with AI coding agents
+ 
 At the start of each project load all config and read all files. dir looks something like this `llm_configs`
 here's breakdown of files
 
@@ -38,17 +40,51 @@ Create 3 types of figues; png,pdf,svg for analysis. To avoid overwhelming the us
 The rest of the text in the figure should be Arial regular
 * Axis should be legible, at least size 10
 
+#### Figures for Nature magazine only
+Use this for final figures when making manuscripts
+- https://www.nature.com/nature/for-authors/formatting-guide
+- Nature’s standard figure sizes are 90 mm (single column) and 180 mm (double column) and the full depth of the page is 170 mm.
+- Use Arial or Helvetica font for all figures, with a size of 5-7pt when the figure is at final size (90mm or 180mm wide). 
 
-## EXAMPLE USE CASE ONLY [BEGIN] ########
-USER: You will create a new dir. safely mount only directories  as needed
+## EXAMPLE USE CASE OF CLUADE CODE FOR COMPUTATIONAL BIO PROJECTS [BEGIN] ########
+USER: You will create a new dir. then safely mount only directories  as needed
+here's bash function to help mount additional dir 
+```
+sclaude() {
+    local base_mounts="/data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/users/ahunos/blog"
+    local container="/data1/greenbab/users/ahunos/apps/containers/claude.sif"
+    
+    # Join all arguments with commas
+    local additional_mounts=""
+    if [ $# -gt 0 ]; then
+        additional_mounts=$(IFS=,; echo "$*")
+        singularity shell -B "${base_mounts},${additional_mounts}" "$container"
+    else
+        singularity shell -B "$base_mounts" "$container"
+    fi
+}
+```
+
 ```
 
 singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/projects/methyl_benchmark_spectrum/ONT_BSseq/ONT_DLP_1stPre/full_spectrum_cohort/pipelines/partialMethylDomains /data1/greenbab/users/ahunos/apps/claude_image/claude.sif
 
 ```
 
-singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/projects/methyl_benchmark_spectrum/ONT_BSseq/ONT_DLP_1stPre/full_spectrum_cohort/pipelines/dmr_unphased /data1/greenbab/users/ahunos/apps/claude_image/claude.sif
+singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/data1/greenbab/users/ahunos/blog,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/projects/methyl_benchmark_spectrum/ONT_BSseq/ONT_DLP_1stPre/full_spectrum_cohort/pipelines/dmr_unphased /data1/greenbab/users/ahunos/apps/containers/claude.sif
 
+singularity pull docker://sahuno/claude_gemini_container:latest
+
+singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/data1/greenbab/users/ahunos/blog,/data1/greenbab/users/ahunos/apps/cctrace /data1/greenbab/users/ahunos/apps/containers/claude.sif
+
+
+##### methylation visualization project
+singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/users/ahunos/blog,/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/methylVis_wf /data1/greenbab/users/ahunos/apps/containers/claude.sif
+
+##### function to run claude singulrity 
+sclaude (){
+singularity shell -B /data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs/snakemake/bin,/data1/greenbab/users/ahunos/blog,$1 /data1/greenbab/users/ahunos/apps/containers/claude.sif
+}
 
 CLAUDE PROMPT 0: 
     please load `/data1/greenbab/users/ahunos/apps/llm_configs` which has detailed info for the working
@@ -125,7 +161,7 @@ here's code i used for gsea in the past. gsea can be tricky
     }
 
 start by creating a plan let review
-## FOR USE CASE ONLY [END] ########
+## EXAMPLE USE CASE OF CLUADE CODE FOR COMPUTATIONAL BIO PROJECTS [END] ########
 
 
 FEATURE REQUEST
