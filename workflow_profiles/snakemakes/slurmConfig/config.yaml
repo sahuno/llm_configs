@@ -14,12 +14,13 @@ executor: slurm
 
 set-resources:
     mod_bases:
-        slurm_partition: "componc_gpu"
+        slurm_partition: "gpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 2400
-        slurm_extra: "'--gres=gpu:2'"
-        mem_mb_per_cpu: 24000
+        runtime: 30
+        slurm_extra: "'--gres=gpu:4'"
+        mem_mb_per_cpu: 34000
+        # mem_mb_per_cpu: 34000
         cpus_per_task: 8
     sort_mod_bases:
         slurm_partition: "componc_cpu"

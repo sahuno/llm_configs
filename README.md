@@ -1,5 +1,5 @@
 # This is collection of principles to work with AI coding agents
- 
+
 At the start of each project load all config and read all files. dir looks something like this `llm_configs`
 here's breakdown of files
 
@@ -19,7 +19,7 @@ executor_config.yaml
 
 5. Pay attention to DO NOT intructions; avoid doing the following activities at all cost
 DO_NOT.md
-Also make sure not to hard things like contig/chromosome names and sizes to ensure things don't break when we change a something in the configs or sample. get the from the user supplied genome sizes file in the workflow. 
+- Also make sure not to hard things like contig/chromosome names and sizes to ensure things don't break when we change a something in the configs or sample. get the from the user supplied genome sizes file in the workflow. 
 
 ## Initialization
 ASK USER: What type of work is this session; Ananlysis (Fresh/conituation), software developments
@@ -31,8 +31,8 @@ project_configs, softwares/singularity softwares/singularity/def
 ```
 
 ## Softwares:
-You might not have acess to all softwares
-use singularity to run comatainers. list of doocker images can be found here `softwares_containers_config.yaml`
+- You might not have acess to all softwares
+- use singularity to run containers. list of doocker images can be found here `softwares_containers_config.yaml`
 
 ### Visualization & Figures 
 Create 3 types of figues; png,pdf,svg for analysis. To avoid overwhelming the users create directories for `png,pdf,svg` and save  plots with approapriate extensions there.
@@ -45,6 +45,23 @@ Use this for final figures when making manuscripts
 - https://www.nature.com/nature/for-authors/formatting-guide
 - Nature’s standard figure sizes are 90 mm (single column) and 180 mm (double column) and the full depth of the page is 170 mm.
 - Use Arial or Helvetica font for all figures, with a size of 5-7pt when the figure is at final size (90mm or 180mm wide). 
+
+
+### IGV for genomic track validation
+```
+singularity exec --bind /data1/greenbab /data1/greenbab/users/ahunos/apps/containers/igv_latest.sif igver.py \
+--bam <DMSO_sample_1.bam> <DMSO_sample_2.bam> <DMSO_sample_3.bam> <CKI_sample_1.bam> <CKI_sample_2.bam> <CKI_sample_3.bam> \
+-r condition_CKi_vs_DMSO/DESeq2_results*_regions.txt \
+-o condition_CKi_vs_DMSO/DeSeq2_sig_L1EM_IGV_unpadded" \
+-mph 500 -od expand \
+--genome 'mm10' && touch condition_CKi_vs_DMSO/DeSeq2_sig_L1EM_IGV_unpadded/DeSeq2_sig_L1EM_IGV_unpadded.txt
+
+# example regions file
+bash:iscb012:llm_configs 1014 $ head /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/regions_UID100.txt
+chr1:148376063-148378679  chr1:148378685-148386192 UID-100_chr1:148375795-148386192
+chr1:148375795-148386192    UID-100
+chr11:101488764-101551955   mm10_brca1bash
+```
 
 ## EXAMPLE USE CASE OF CLUADE CODE FOR COMPUTATIONAL BIO PROJECTS [BEGIN] ########
 USER: You will create a new dir. then safely mount only directories  as needed

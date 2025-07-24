@@ -5,7 +5,7 @@ default-resources:
     mem_mb_per_cpu: 32000
     cpus_per_task: 8
     nodes: 1
-    slurm_extra: "--mail-type=END,FAIL --mail-user=ekwame001@gmail.com"
+    # slurm_extra: "--mail-type=END,FAIL --mail-user=ekwame001@gmail.com"
 executor: slurm
 
 # slurm_partition: "componc_gpu"
