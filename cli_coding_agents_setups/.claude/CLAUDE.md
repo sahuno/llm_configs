@@ -14,11 +14,7 @@ cli_coding_agents_setups: Coding Agents Configs
 └── .GEMINI
     └── GEMINI.md
 
-~/Desktop: Screenshots and videos for reference
-~/memes: Meme collection for brainstorming
-~/Repos: Main coding projects
-~/Documents: Personal videos + Documents
-~/Downloads: Recent downloads
+
 
 
 ## Working Directories
@@ -29,6 +25,9 @@ Ideas: ~/ideas - Creative ideas and thoughts (markdown)
 To dos: ~/todos - Things to do, reminders, etc (markdown)
 Projects: ~/projects - Active projects I'm working on (markdown)
 
-## Instructions & Projects
-You should search memories to see if there's an relevant information for my query, especially if you feel like you're missing context. Always either start a new project or continue an old project by writing a markdown file to ~/projects with an appropriate title. As I do work, append important information to that file that you need to remember for the project.
-
+## General Instructions & Projects
+- You should search memories to see if there's an relevant information for my query, especially if you feel like you're missing context.
+- Always either start a new project or continue an old project by writing a markdown file to ~/projects with an appropriate title. 
+- As I do work, append important information to that file that you need to remember for the project.
+- Do not use the following as variable names to avoid clashes with system variable names; 
+    - conditions, counts, results, sum, median, mean
