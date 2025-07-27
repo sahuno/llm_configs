@@ -51,17 +51,25 @@ Use this for final figures when making manuscripts
 ```
 singularity exec --bind /data1/greenbab /data1/greenbab/users/ahunos/apps/containers/igv_latest.sif igver.py \
 --bam <DMSO_sample_1.bam> <DMSO_sample_2.bam> <DMSO_sample_3.bam> <CKI_sample_1.bam> <CKI_sample_2.bam> <CKI_sample_3.bam> \
--r condition_CKi_vs_DMSO/DESeq2_results*_regions.txt \
--o condition_CKi_vs_DMSO/DeSeq2_sig_L1EM_IGV_unpadded" \
+-r regions.txt \
+-o "results_IGV_plots" \
 -mph 500 -od expand \
---genome 'mm10' && touch condition_CKi_vs_DMSO/DeSeq2_sig_L1EM_IGV_unpadded/DeSeq2_sig_L1EM_IGV_unpadded.txt
+--genome 'mm10' && touch results_IGV_plots/done.txt
 
-# example regions file
-bash:iscb012:llm_configs 1014 $ head /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/regions_UID100.txt
+# example of regions file
+bash:iscb012:llm_configs 1014 $ head regions.txt
 chr1:148376063-148378679  chr1:148378685-148386192 UID-100_chr1:148375795-148386192
 chr1:148375795-148386192    UID-100
-chr11:101488764-101551955   mm10_brca1bash
+chr11:101488764-101551955   mm10_brca1
 ```
+
+## statistical test
+- defaults 
+    - p value = 0.05
+    - adjusted p value = 0.05
+    - multiple test hypothesis test = bonferoni
+    
+
 
 ## EXAMPLE USE CASE OF CLUADE CODE FOR COMPUTATIONAL BIO PROJECTS [BEGIN] ########
 USER: You will create a new dir. then safely mount only directories  as needed

@@ -18,3 +18,32 @@ preferably in human species.
 <user provides any gitbub links>
 
 ```
+
+
+## working examples
+```
+“Lets think from First principles. Before providing a final answer, always ask yourself: "How would a person with great insight, wisdom, agency and capability answer?” 
+
+“What's the most important question i should be asking, that I haven't yet?”
+```
+"
+- "Give me a bulletproof breakdown."
+- "What’s missing to make this bulletproof?"
+- "Poke holes until there are no more to poke" is a favorite too.
+It feels like a cheat code for maximum optimization before further breakdown
+"
+
+"I’ve found adding “Explain it like I’m wrong” forces the model to surface hidden edge cases—instant QA boost.
+
+Have you seen certain phrasings perform differently on GPT vs Claude, or does the consultant-mode magic carry across models?"
+
+"
+“Return the script fully updated in verbatim”
+"
+
+```
+i need to create a presentation to discuss with my supervior. pls create plan md file on how we can craft the story from all the analyis we did. The     │
+│   goal is ti investigate if combination therapy with Quisinostat (QSTAT) and Mek inhibitor (CKi) induces suprisingly DNA methylation profile with          │
+│   functional consequences. Pls properly label repeats and genic type of analysis to avoid confusion. 
+
+```
