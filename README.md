@@ -39,12 +39,18 @@ project_configs, softwares/singularity softwares/singularity/def
 
 ### IGV for genomic track validation
 ```
-singularity exec --bind /data1/greenbab /data1/greenbab/users/ahunos/apps/containers/igv_latest.sif igver.py \
---bam <DMSO_sample_1.bam> <DMSO_sample_2.bam> <DMSO_sample_3.bam> <CKI_sample_1.bam> <CKI_sample_2.bam> <CKI_sample_3.bam> \
+singularity exec --bind /data1/greenbab /data1/greenbab/software/images/igver_latest.sif igver \
+--input <DMSO_sample_1.bam> <DMSO_sample_2.bam> <DMSO_sample_3.bam> <CKI_sample_1.bam> <CKI_sample_2.bam> <CKI_sample_3.bam> \
 -r regions.txt \
 -o "results_IGV_plots" \
--mph 500 -od expand \
---genome 'mm10' && touch results_IGV_plots/done.txt
+--dpi 600 -d expand -p 1000 \
+--genome 'mm10' --no-singularity && touch results_IGV_plots/done.txt
+
+
+
+
+
+
 
 # example of regions file
 bash:iscb012:llm_configs 1014 $ head regions.txt
@@ -53,12 +59,7 @@ chr1:148375795-148386192    UID-100
 chr11:101488764-101551955   mm10_brca1
 ```
 
-## statistical test
-- defaults 
-    - p value = 0.05
-    - adjusted p value = 0.05
-    - multiple test hypothesis test = bonferoni
-    
+
 
 
 ## EXAMPLE USE CASE OF CLUADE CODE FOR COMPUTATIONAL BIO PROJECTS [BEGIN] ########
