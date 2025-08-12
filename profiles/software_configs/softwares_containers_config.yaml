@@ -1,3 +1,5 @@
+LOCAL_SOFTWARE_PATH_PERSONAL: "/data1/greenbab/users/ahunos/apps/containers/"
+LOCAL_SOFTWARE_PATH_GROUP: "/data1/greenbab/software/images"
 DOCKERHUB_USERNAME: "sahuno"
 DOCKERHUB_personal_repo: https://hub.docker.com/repositories/sahuno
 GITHUB_USERNAME: "sahuno"

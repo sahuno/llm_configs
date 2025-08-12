@@ -3,6 +3,9 @@
 At the start of each project load all config and read all files. dir looks something like this `llm_configs`
 here's breakdown of files
 
+# Directory Structure of llm_configs
+
+
 1. reference genomes hosted in public aws buckets when hpc files are non available. file include .fasta; .gtf, cpg_islands etc.. 
 databases_config.yaml
 
