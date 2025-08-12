@@ -30,6 +30,7 @@ Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths 
 - **Modular functions** - Each function should do one thing well
 - **Pipeline automation** - Use Snakemake, Nextflow, or Make for complex workflows
 - **Clear naming** - Use descriptive names: `01_download_data.py`, `02_clean_sequences.py`
+- **Memorize**: There's no `--reason` argument for snakemake
 
 ### 3. Documentation Standards
 - **README for every directory** - Explain what each folder contains
@@ -125,7 +126,8 @@ Use this for final figures when making manuscripts
     
 
 ### genomic track visualization with IGV software
-github here: https://github.com/sahuno/igver
+
+- My Implementation of non-interactive igv screenshot https://github.com/sahuno/igver
 ```
 singularity exec --bind /data1/greenbab /data1/greenbab/software/images/igver_latest.sif igver \
 --input <DMSO_sample_1.bam DMSO_sample_2.bam | txt_file_with_paths_of_bams.txt> \
