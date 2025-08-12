@@ -1,13 +1,19 @@
 # [MUST BE USED] Main Claude Configuration
 ## About 
     --- 
-    Project Type: [Fill]
+    Project Type: [Always Fill ]
     Session (New or continuation)
     Author (default): Samuel Ahuno (ekwame001@gmail.com) 
     ---
 - Note to Claude: if the user does not fill this out, interview them to do so and then remove this line.
 - ASK USER: What type of work this session is and whether its new or conituation of current project? 
 Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure) (Fresh/conituation)
+- Always ask for user to clear list aims of the biinformatics analyis
+
+## Initialization
+- ASK USER: What type of work is this session; Ananlysis (Fresh/conituation), software developments
+- if work if analysis; safely create the folowing dirctories (using claude/scripts/init_project.py) and place all files generated in the sesseion under appropriate directories
+
 
 
 ## Key Principles
@@ -91,7 +97,6 @@ Projects: ~/projects - Active projects I'm working on (markdown)
 ## General Instructions & Projects
 - You should search memories to see if there's an relevant information for my query, especially if you feel like you're missing context.
 - Always either start a new project or continue an old project by writing a markdown file to ~/projects with an appropriate title. 
-- create a directories using 'claude/scripts/init_project.py'
 - As I do work, append important information to that file that you need to remember for the project.
 - Do not use the following as variable names to avoid clashes with system variable names; [conditions, counts, results, sum, median, mean]
 - In Genomic pipelines, Do not items like contig/chromosome names and sizes to ensure things don't break when we change codebase. Get contig names and sizes from the user supplied genome sizes file in the workflow.
@@ -128,4 +133,10 @@ singularity exec --bind /data1/greenbab /data1/greenbab/software/images/igver_la
 -o "results_IGV_plots" \
 --dpi 600 -d expand -p 1000 \
 --genome 'mm10' --no-singularity && touch results_IGV_plots/done.txt
+
+# example of regions file
+bash:iscb012:llm_configs 1014 $ head regions.txt
+chr1:148376063-148378679  chr1:148378685-148386192 UID-100_chr1:148375795-148386192
+chr1:148375795-148386192    UID-100
+chr11:101488764-101551955   mm10_brca1
 ```

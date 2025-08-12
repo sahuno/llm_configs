@@ -17,6 +17,7 @@ def create_project_structure(project_name):
         "data/raw",
         "data/processed",
         "data/external",
+        "data/metadata",
         "notebooks/exploratory",
         "notebooks/reports",
         "src/data",
@@ -29,6 +30,9 @@ def create_project_structure(project_name):
         "tests",
         "config",
         "docs",
+        "logs",
+        "pipelines",
+        "softwares/apptainer/def",
     ]
     
     # Create directories
