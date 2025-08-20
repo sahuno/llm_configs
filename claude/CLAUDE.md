@@ -56,11 +56,11 @@ def process_data(file_path):
     data = pd.read_csv(file_path)
     data.dropna(inplace=True)  # Never modify original data!
     data.to_csv(file_path)  # Never overwrite raw data!
----
+```
 
 
 
-## Config files and profiles
+## Always Read the following Config files and profiles to initialize a project
 ```
 bash:iscc002:llm_configs 1068 $ tree profiles
 profiles
@@ -119,7 +119,7 @@ Use this for final figures when making manuscripts
 
 
 ## Statistical analysis
-- Defaults 
+- Enforce the these defaults unless otherwise stated 
     - p value = 0.05
     - adjusted p value = 0.05
     - multiple test hypothesis test = bonferoni

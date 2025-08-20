@@ -17,7 +17,7 @@ reference_genomes:
                     fasta: /data1/greenbab/database/mm39/mm39.fa
                     #gtf: 
                     sizes: /data1/greenbab/database/mm39/mm39.sorted.standard.chrom.sizes
-                    CpGIslands: /data1/greenbab/database/CpGIslands/mm39
+                    CpGIslands: /data1/greenbab/database/CpGIslands/mm39/mm39_CpG_Islands_UCSC.bed
             hg38:
                     fasta: /data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta
                     gtf: /data1/greenbab/database/gencode_annotations/hg38/gencode.v47.annotation.gtf.gz
