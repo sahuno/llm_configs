@@ -1,0 +1,61 @@
+# Claude Code Hooks for Bioinformatics Workflows
+# Prevents common errors in Snakemake pipelines and data processing
+
+hooks:
+  # Hook 1: Pre-commit validation for Snakemake files
+  pre_edit:
+    - name: "Validate Snakemake Syntax"
+      command: |
+        if command -v snakemake &> /dev/null; then
+          snakemake --lint -s {file_path} 2>&1 || echo "Warning: Snakemake syntax issues detected"
+        fi
+      description: "Validate Snakemake workflow syntax before saving"
+      file_pattern: "*.smk"
+      
+    - name: "Check Snakemake Rule Names"
+      command: |
+        grep -n "^rule" {file_path} | grep -E "[^a-zA-Z0-9_]" && echo "Warning: Rule names should only contain letters, numbers, and underscores"
+      description: "Ensure Snakemake rule names follow conventions"
+      file_pattern: "*.smk"
+
+  # Hook 2: Post-edit validation for config files
+  post_edit:
+    - name: "Validate Config Parameters"
+      command: |
+        python /data1/greenbab/users/ahunos/apps/llm_configs/cli_coding_agents_setups/.claude/scripts/validate_config_params.py {file_path}
+      description: "Ensure config parameters are valid and within expected ranges"
+      file_pattern: "*config*.yaml"
+      
+    - name: "Check YAML Syntax"
+      command: |
+        python -c "import yaml; yaml.safe_load(open('{file_path}'))" 2>&1 || echo "Error: Invalid YAML syntax"
+      description: "Validate YAML syntax"
+      file_pattern: "*.yaml"
+    
+    - name: "Check Genome Build Consistency"
+      command: |
+        python /data1/greenbab/users/ahunos/apps/llm_configs/cli_coding_agents_setups/.claude/scripts/check_genome_consistency.py {file_path}
+      description: "Ensure all genome references use the same build (prevents coordinate mismatches)"
+      file_pattern: "*config*.{yaml,yml,json}"
+
+  # Hook 3: Pre-read validation for sample sheets
+  pre_read:
+    - name: "Validate Sample Sheet"
+      command: |
+        python /data1/greenbab/users/ahunos/apps/llm_configs/cli_coding_agents_setups/.claude/scripts/check_sample_sheet.py {file_path}
+      description: "Validate sample sheet format and check for missing values"
+      file_pattern: "*sample*sheet*.tsv"
+      
+    - name: "Check TSV Format"
+      command: |
+        awk -F'\t' 'NF && NF != n {print "Line " NR ": Column count mismatch (" NF " columns)"; exit 1} {n=NF}' {file_path}
+      description: "Ensure consistent column count in TSV files"
+      file_pattern: "*.tsv"
+
+  # Additional helpful hooks
+  pre_bash:
+    - name: "Warn About Intensive Commands"
+      command: |
+        echo "{command}" | grep -E "(find|grep -r)" && echo "Note: Consider using targeted search tools instead of recursive find/grep"
+      description: "Suggest more efficient alternatives to intensive commands"
+      pattern: "find|grep -r"
