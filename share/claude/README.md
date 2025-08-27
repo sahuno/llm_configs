@@ -7,7 +7,8 @@
 4. database of all genomics & multi-omics files reference files
 5. paths & description of softwares including containers, images, dockerhub username, github usernames for conveneince
 6. claude code sub - agents 
-7.  
+7. Workflow profiles ie. snakemake, nextflow
+8. preconfig slurm job submission commands
 
 ## Usage
 - set names and email address in CLAUDE.md to yours.
