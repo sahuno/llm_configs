@@ -2,6 +2,7 @@
 
 This directory contains Claude Code hooks specifically designed to prevent common errors in bioinformatics pipelines, particularly Snakemake workflows.
 
+
 ## Overview
 
 These hooks provide proactive error detection and validation for:
@@ -83,3 +84,7 @@ Based on today's work, these hooks would have:
 ## Installation
 
 These hooks are already configured in this directory. Claude Code will automatically use them when working with matching files.
+
+## References to creation of claude md file
+- https://github.com/kn1026/cc/blob/main/claudecode.md
+- And many more on twitter
