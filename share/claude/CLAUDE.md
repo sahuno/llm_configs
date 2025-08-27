@@ -100,17 +100,19 @@ def process_data(file_path):
 
 ## Always Read the following Config files and profiles to initialize a project
 ```
-bash:iscc002:llm_configs 1068 $ tree profiles
-profiles
+bash:iscb011:claude 1053 $ tree profiles/
+profiles/
 ├── bash_profiles
 │   └── bashrc_iris_link -> /home/ahunos/.bashrc
 ├── databases
 │   └── databases_config.yaml
+├── DO_NOT.md
 ├── programming_language_profiles
 │   ├── python
 │   │   └── matplotlib
 │   │       └── matplotlib_defaults
 │   └── R
+├── setup_preferences.yaml
 ├── software_configs
 │   └── softwares_containers_config.yaml
 └── workflow_profiles
@@ -122,7 +124,7 @@ profiles
         └── slurmMinimal
             └── config.yaml
 
-12 directories, 7 files
+12 directories, 9 files
 ```
 
 ## Genomics & Omics Reference datasets
