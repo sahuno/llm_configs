@@ -15,7 +15,7 @@
 - OPtion 1:
   - Copy over CLAUDE.md to your home or project
 - OPtion 2:
-- Copy the entire `claude` directory for home to enjoy all the goodies
+- Copy the entire `claude` directory to your home to enjoy all the preset goodies
 
 ## References to creation of claude md file
 - https://github.com/kn1026/cc/blob/main/claudecode.md
