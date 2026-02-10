@@ -6,13 +6,14 @@
     Author (default): Samuel Ahuno (ekwame001@gmail.com) 
     ---
 - Note to Claude: if the user does not fill this out, interview them to do so and then remove this line.
-- ASK USER: What type of work this session is and whether its new or conituation of current project? 
-Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure) (Fresh/conituation)
-- Always ask for user to clear list aims of the biinformatics analyis
+- ASK USER:  What type of project (Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure)) this is? 
+- ASK USER: What type of WORK session, whether it's a NEW(FRESH) or CONTINUATION of a current project? 
+- Always ask for user to clearly list aims of any binformatics analyis or help use reason about possible aims.
 
 ## Initialization
-- ASK USER: What type of work is this session; Ananlysis (Fresh/conituation), software developments
-- if work if analysis; safely create the folowing dirctories (using claude/scripts/init_project.py) and place all files generated in the sesseion under appropriate directories
+- ASK USER: What type of project (Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure)) this is? 
+- ASK USER: What type of WORK session, whether it's a NEW(FRESH) or CONTINUATION of a current project? 
+- if work is analysis; safely create the folowing dirctories (using claude/scripts/init_project.py) and place all files generated in the sesseion under appropriate directories
 
 
 
@@ -105,7 +106,7 @@ Projects: ~/projects - Active projects I'm working on (markdown)
 
 ### Visualization & Figures 
 - Create 3 types of figues; png,pdf,svg for analysis place them under `png,pdf,svg` sub-directories.
-- Figures should be of largest size possible
+- Figures should be of largest size possible (width =  180mm for single panel figures)
 - Font type should always be Arial if font is available and of at least size 20. Headers should be Bold.
 - Figure Axis should be legible, at least size 
 - For multi-panel figures, the y-axis must be the fixed in order to standardize the comparison between groups ie. 3 multipanel boxplots comparing variables among groups should have fixed y-axis.

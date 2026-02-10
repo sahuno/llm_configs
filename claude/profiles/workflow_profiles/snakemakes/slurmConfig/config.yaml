@@ -7,7 +7,7 @@ default-resources:
     nodes: 1
 executor: slurm
 
-# slurm_partition: "componc_gpu"
+# slurm_partition: "componc_gpu_batch"
 #runtime: 2400
 # mem_mb_per_cpu: 24000
 # cpus_per_task: 8

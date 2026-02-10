@@ -8,14 +8,14 @@ default-resources:
     # slurm_extra: "--mail-type=END,FAIL --mail-user=ekwame001@gmail.com"
 executor: slurm
 
-# slurm_partition: "componc_gpu"
+# slurm_partition: "componc_gpu_batch"
 #runtime: 2400
 # mem_mb_per_cpu: 24000
 # cpus_per_task: 8
 
 set-resources:
     mod_bases:
-        slurm_partition: "componc_gpu"
+        slurm_partition: "componc_gpu_batch"
         slurm_account: "greenbab"
         nodes: 1
         runtime: 2400

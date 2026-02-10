@@ -6,8 +6,8 @@ GITHUB_USERNAME: "sahuno"
 ONT_software_container_container_name: "sahuno/onttools"
 DOCKER_HUB_CONTAINERS: {
   {
-    "name": "Onttools v3.0; samtools, dorado, bedtools",
-    "value": "sahuno/onttools:v3.0"
+    "name": "Onttools v3.9; samtools, dorado, bedtools",
+    "value": "sahuno/onttools:v3.9"
   },
   {
     "name": "Onttools Latest; samtools, dorado, bedtools",

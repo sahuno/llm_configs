@@ -1,6 +1,6 @@
 executor: slurm
     default-resources:
-        partition: componc_cpu,componc_gpu
+        partition: componc_cpu,componc_gpu_batch
         nodes: 1
         cpus-per-task: 4
         time: 90:00:00
@@ -10,7 +10,7 @@ executor: slurm
 
 set-resources:
     mod_bases:
-        slurm_partition: "componc_gpu"
+        slurm_partition: "componc_gpu_batch"
         slurm_account: "greenbab"
         nodes: 1
         runtime: 3400
