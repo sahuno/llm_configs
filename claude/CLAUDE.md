@@ -1,145 +1,283 @@
-# [MUST BE USED] Main Claude Configuration
-## About 
-    --- 
-    Project Type: [Always Fill ]
-    Session (New or continuation)
-    Author (default): Samuel Ahuno (ekwame001@gmail.com) 
-    ---
-- Note to Claude: if the user does not fill this out, interview them to do so and then remove this line.
-- ASK USER:  What type of project (Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure)) this is? 
-- ASK USER: What type of WORK session, whether it's a NEW(FRESH) or CONTINUATION of a current project? 
-- Always ask for user to clearly list aims of any binformatics analyis or help use reason about possible aims.
+# CLAUDE.md — Samuel Ahuno (ekwame001@gmail.com)
+# Computational Biologist, Greenberg Lab (greenbab), MSKCC
+# Languages: Python, R, Bash | HPC: SLURM | Organisms: Mouse & Human
 
-## Initialization
-- ASK USER: What type of project (Bioinformatics Ananlysis, software developments, Writing (Blogs/Journal), Maths (Applied or pure)) this is? 
-- ASK USER: What type of WORK session, whether it's a NEW(FRESH) or CONTINUATION of a current project? 
-- if work is analysis; safely create the folowing dirctories (using claude/scripts/init_project.py) and place all files generated in the sesseion under appropriate directories
-
-
-
-## Key Principles
 ---
-### 1. Reproducibility First
-- **Never modify raw data** - All data transformations should create new files
-- **Version control everything** - Use git for code, DVC or git-lfs for large data files
-- **Document dependencies explicitly** - Use requirements.txt, environment.yml, or apptainer/singularity
-- **Set random seeds** - Always set seeds for any stochastic processes
-- **Use relative paths** - Never hardcode absolute paths
 
-### 2. Workflow Organization
-- **One-way data flow** - Data moves from raw → processed → results
-- **Modular functions** - Each function should do one thing well
-- **Pipeline automation** - Use Snakemake, Nextflow, or Make for complex workflows
-- **Clear naming** - Use descriptive names: `01_download_data.py`, `02_clean_sequences.py`
-- **Memorize**: There's no `--reason` argument for snakemake
+## 1. Session Initialization
 
-### 3. Documentation Standards
-- **README for every directory** - Explain what each folder contains
-- **Docstrings for all functions** - Include parameters, returns, and examples
-- **Author and date** - Add author and date to all scripts and documents
-- **Computational notebooks** - Balance between documentation and code
-- **Method documentation** - Record exact versions, parameters, and commands used
+On every new conversation, do the following in order:
 
-## Development Guidelines
+1. **Ask the user** to classify the session:
+   - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering
+   - **Status**: Fresh project or continuation of existing project
+   - **Aim**: Ask for a clear, numbered list of objectives
+2. **If continuing**, read the relevant project file from `~/projects/` before proceeding.
+3. **If fresh**, create a project markdown file at `~/projects/<slug>.md` with date, domain, and aims.
+4. **Search `~/memories/`** for any notes relevant to the current query before answering.
+5. **For analysis projects**, scaffold the directory structure automatically:
+   ```
+   <project_root>/
+   ├── data/inbox/         # Staging area for receiving data — review before promoting to raw/
+   ├── data/raw/           # IMMUTABLE — never write here after initial deposit
+   ├── data/processed/
+   ├── src/
+   ├── results/
+   ├── figures/{png,pdf,svg}/
+   ├── workflows/{wf_snakemake,wf_nextflow}/
+   └── docs/
+   ```
+   Create these directories safely (mkdir -p). Place every generated file in the appropriate subdirectory.
+   **Each directory must have a `README.md`** describing its purpose, contents, and any scripts within it. Keep READMEs up to date as files are added or changed — especially in `src/` and `workflows/`, where each script should be listed with a one-line description.
+6. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
 
-### Data Management
-```python
-# Good: Clear data versioning and immutability
-def load_raw_data(data_version="v1.0"):
-    """Load raw sequencing data from specified version."""
-    raw_path = Path(f"data/raw/{data_version}/sequences.fasta")
-    if not raw_path.exists():
-        raise FileNotFoundError(f"Data version {data_version} not found")
-    return read_fasta(raw_path)
+---
 
-# Bad: Modifying data in place
-def process_data(file_path):
-    data = pd.read_csv(file_path)
-    data.dropna(inplace=True)  # Never modify original data!
-    data.to_csv(file_path)  # Never overwrite raw data!
+## 2. Universal Rules (Apply to ALL Work)
+
+### Data Integrity
+- **Never modify raw data.** All transformations produce new files in `data/processed/`.
+- **Never overwrite input files.** Read from source, write to a new path.
+- **Set random seeds** for every stochastic operation (default seed: 42 unless user specifies otherwise).
+- **Use relative paths** in all scripts and configs. Never hardcode absolute paths.
+
+### Naming and Variables
+- **Forbidden variable names** (clash with builtins): `conditions`, `counts`, `results`, `sum`, `median`, `mean`.
+- **Script naming**: Use numbered prefixes for sequential steps: `01_download.py`, `02_align.sh`, `03_call_variants.py`.
+- **File naming**: lowercase, underscores, no spaces. Include organism/genome build when relevant.
+
+### Genomics-Specific
+- **Never hardcode contig names or sizes.** Always parse them from the user-supplied genome sizes file or the reference FASTA index.
+- **Reference data**: Load paths from `profiles/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each entry has fasta, gtf, chrom.sizes, and CpG island paths (local + S3).
+
+### Genome Build Tagging (Mandatory for all genomic output files)
+- **Every genomic output file must include the genome build in both the filename and parent directory.**
+  - Directory: `data/processed/{genome_build}/`
+  - Filename: `{sample}.{genome_build}.{description}.{ext}` — tag goes immediately after the sample name.
+  - Example: `data/processed/hg38/patient01.hg38.sorted.bam`, `data/processed/mm10/sample3.mm10.methylation.bed`
+- **Valid genome tags**: `mm10`, `mm39`, `GRCm39`, `hg38`, `GRCh38`, `hg19`, `GRCh37`, `t2t`, `chm13`.
+- **File types that require tagging**: `.bam`, `.cram`, `.bai`, `.bed`, `.bedgraph`, `.bedMethyl`, `.narrowPeak`, `.broadPeak`, `.vcf`, `.vcf.gz`, `.bcf`, `.bigwig`, `.bw`, `.bigbed`, `.gtf`, `.gff` (processed copies), count matrices.
+- **File types exempt from tagging**: raw data (`.fastq`, `.fq`, `.pod5`), figures, scripts, configs, logs, summary reports.
+
+### Documentation
+- **Every script**: Add author (`Samuel Ahuno`), date, and a one-line purpose comment at the top.
+- **Every function**: Docstring with parameters, returns, and a minimal example.
+- **Every directory**: If the user requests documentation, provide a README. Do not create READMEs proactively.
+
+### Persistent Directories
+| Purpose  | Path                    |
+|----------|-------------------------|
+| Scripts  | `~/code/claude-scripts` |
+| Memory   | `~/memories`            |
+| Journal  | `~/journal`             |
+| Ideas    | `~/ideas`               |
+| Todos    | `~/todos`               |
+| Projects | `~/projects`            |
+
+---
+
+## 3. Domain Playbook: Bioinformatics Analysis
+
+### 3A. ONT Methylation Pipeline (pod5 to DMRs)
+
+**Standard chain**: pod5 -> dorado basecall -> dorado align (or minimap2) -> samtools sort/index -> modkit pileup -> modkit dmr
+
+**Tool references**: Load containers from `profiles/software_configs/softwares_containers_config.yaml`.
+
+**QC checkpoints** (stop and report if any fail):
+1. After basecalling: Check read N50, total bases, pass/fail ratio from dorado summary.
+2. After alignment: Confirm mapping rate >80%, check flagstat for unexpected supplementary/secondary rates.
+3. After modkit pileup: Verify bedMethyl has expected chromosomes, spot-check coverage distribution.
+4. After DMR calling: Sanity-check DMR count; fewer than 10 or more than 100k warrants review.
+
+**Common pitfalls**:
+- Dorado models must match the chemistry/flowcell. Always confirm with the user.
+- modkit pileup `--ref` must match the alignment reference exactly.
+- For mouse samples, CpG islands from `profiles/databases/databases_config.yaml` are essential context for DMR interpretation.
+
+**"Done" looks like**: bedMethyl files per sample, DMR bed file with statistics, summary plots of methylation distributions, and a manifest CSV linking sample metadata to output paths.
+
+### 3B. Variant Calling
+
+| Type | Tool | Notes |
+|------|------|-------|
+| SNV/Indel (ONT) | Clair3 | Requires model matched to chemistry; use `--platform=ont` |
+| SV (ONT) | Sniffles2 | Use `--tandem-repeats` BED when available |
+| SNV/Indel (short-read) | GATK HaplotypeCaller | Follow GATK best practices; BQSR then HC then GenotypeGVCFs |
+
+**QC checkpoints**: Check Ti/Tv ratio for SNVs (~2.0-2.1 for WGS, ~2.8 for exome). Check SV size distribution. Filter by QUAL and read support.
+
+**Common pitfalls**: Clair3 model mismatch causes silent garbage. Always verify model version. GATK requires read groups; fail early if missing.
+
+### 3C. RNA-seq / DGE
+
+**Standard chain**: fastp QC -> STAR align (or salmon quant) -> featureCounts -> DESeq2 (R) or pyDESeq2 (Python)
+
+**QC checkpoints**: Verify >70% uniquely mapped (STAR), check PCA for batch effects before DGE, confirm replicate correlation >0.9.
+
+**Defaults**: padj < 0.05, log2FC threshold = 1.0. Always generate MA plot, volcano plot, and PCA. Prompt user about which contrasts to test.
+
+**Common pitfalls**: GTF and genome version mismatch. Salmon index must match the transcriptome version. Always declare the design formula explicitly.
+
+### 3D. scRNA-seq
+
+**Seurat (R)** or **Scanpy (Python)** — ask user which framework unless context is clear.
+
+**Standard chain**: CellRanger (or STARsolo) -> Load counts -> QC filtering (mito%, nFeature, nCount) -> Normalize -> HVG -> PCA -> Harmony/integration if multi-sample -> UMAP -> Clustering -> Marker genes -> Annotation
+
+**QC checkpoints**: Report cells before/after filtering. Show violin plots of QC metrics. Check doublet rate with scrublet or DoubletFinder.
+
+**Common pitfalls**: Over-filtering kills rare populations. Under-filtering adds noise. Always show QC distributions before applying thresholds and get user confirmation. Resolution parameter for clustering should be explored at multiple values.
+
+### 3E. IGV Visualization
+
+Use the igver tool for non-interactive screenshots:
+```bash
+singularity exec --bind /data1/greenbab \
+  /data1/greenbab/software/images/igver_latest.sif igver \
+  --input <bams_or_txt_file> \
+  -r regions.txt \
+  -o "results_IGV_plots" \
+  --dpi 600 -d expand -p 1000 \
+  --genome '<mm10|hg38|etc>' --no-singularity \
+  && touch results_IGV_plots/done.txt
 ```
+Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per line).
 
+---
 
+## 4. Domain Playbook: Software Development
 
-## Always Read the following Config files and profiles to initialize a project
-```
-bash:iscc002:llm_configs 1068 $ tree profiles
-profiles
-├── bash_profiles
-│   └── bashrc_iris_link -> /home/ahunos/.bashrc
-├── databases
-│   └── databases_config.yaml
-├── programming_language_profiles
-│   ├── python
-│   │   └── matplotlib
-│   │       └── matplotlib_defaults
-│   └── R
-├── software_configs
-│   └── softwares_containers_config.yaml
-└── workflow_profiles
-    ├── executor_config.yaml
-    ├── nextflow
-    └── snakemakes
-        ├── slurmConfig
-        │   └── config.yaml
-        └── slurmMinimal
-            └── config.yaml
+### Pipeline Development (Snakemake / Nextflow)
 
-12 directories, 7 files
-```
+**Snakemake rules**:
+- There is no `--reason` argument for snakemake. Do not use it.
+- If a rule sets the `singularity:` directive, do NOT add `singularity exec -B ...` inside the shell block. The directive handles container binding.
+- Load SLURM profiles from `profiles/workflow_profiles/snakemakes/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
+- Load executor settings from `profiles/workflow_profiles/executor_config.yaml`.
+- Sample sheet format: TSV with columns `patient, sample, condition, path, genome` (defined in `profiles/setup_preferences.yaml`).
 
-## Persistent Working Directories 
-Scripts: ~/code/claude-scripts - Custom scripts and automation
-Memory: ~/memories - Important information to remember (markdown)
-Journal: ~/journal - Personal journal entries (markdown)
-Ideas: ~/ideas - Creative ideas and thoughts (markdown)
-To dos: ~/todos - Things to do, reminders, etc (markdown)
-Projects: ~/projects - Active projects I'm working on (markdown)
+**Nextflow**: Profiles are in `profiles/workflow_profiles/nextflow/`.
 
-## General Instructions & Projects
-- You should search memories to see if there's an relevant information for my query, especially if you feel like you're missing context.
-- Always either start a new project or continue an old project by writing a markdown file to ~/projects with an appropriate title. 
-- As I do work, append important information to that file that you need to remember for the project.
-- Do not use the following as variable names to avoid clashes with system variable names; [conditions, counts, results, sum, median, mean]
-- In Genomic pipelines, Do not items like contig/chromosome names and sizes to ensure things don't break when we change codebase. Get contig names and sizes from the user supplied genome sizes file in the workflow.
+### CLI Tools and Packages
+- Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
+- Include a `--version` flag. Use semantic versioning.
+- Write unit tests with `pytest` (Python) or `testthat` (R). Minimum: test each public function with at least one normal case and one edge case.
+- Package structure: `pyproject.toml` for Python, `DESCRIPTION` for R packages.
 
+### Testing and CI
+- Run tests before declaring any task complete.
+- For pipelines: dry-run (`snakemake -n`) counts as a minimum test. A small-data end-to-end test is preferred.
+- For Python packages: `pytest --tb=short` with coverage report.
 
-### Visualization & Figures 
-- Create 3 types of figues; png,pdf,svg for analysis place them under `png,pdf,svg` sub-directories.
-- Figures should be of largest size possible (width =  180mm for single panel figures)
-- Font type should always be Arial if font is available and of at least size 20. Headers should be Bold.
-- Figure Axis should be legible, at least size 
-- For multi-panel figures, the y-axis must be the fixed in order to standardize the comparison between groups ie. 3 multipanel boxplots comparing variables among groups should have fixed y-axis.
-- prompt user to included appropriate statistical tests in figures. for example t-test with p-values when comparing groups
+---
 
-#### Figures for Nature magazine only
-Use this for final figures when making manuscripts
-- https://www.nature.com/nature/for-authors/formatting-guide
-- Nature’s standard figure sizes are 90 mm (single column) and 180 mm (double column) and the full depth of the page is 170 mm.
-- Use Arial or Helvetica font for all figures, with a size of 20pt when the figure is at final size (90mm or 180mm wide). 
+## 5. Domain Playbook: AI Engineering
 
+### LLM Applications
+- **Frameworks**: Claude API, OpenAI API, LangChain, LlamaIndex — ask user which unless context is clear.
+- **Prompt versioning**: Store prompts as separate text/yaml files, never inline long prompts as string literals.
+- **Evaluation**: Define at least one quantitative metric before building. Log all LLM calls with input/output/latency/cost.
+- **Experiment tracking**: Use MLflow, Weights & Biases, or a structured JSON log. Never rely on terminal output alone.
 
-## Statistical analysis
-- Enforce the these defaults unless otherwise stated 
-    - p value = 0.05
-    - adjusted p value = 0.05
-    - multiple test hypothesis test = bonferoni
-    
+### ML for Genomics / Classical ML
+- **Train/val/test split**: Always hold out a test set that is never touched until final evaluation. For genomic data, split by chromosome or patient to avoid data leakage.
+- **Hyperparameter search**: Use Optuna or sklearn GridSearchCV. Log all trials.
+- **Deployment**: Containerize models. Provide a predict script with clear input/output schema.
+- **Reproducibility**: Pin all library versions. Export conda environment or requirements.txt at experiment completion.
 
-### genomic track visualization with IGV software
+---
 
-- My Implementation of non-interactive igv screenshot https://github.com/sahuno/igver
-```
-singularity exec --bind /data1/greenbab /data1/greenbab/software/images/igver_latest.sif igver \
---input <DMSO_sample_1.bam DMSO_sample_2.bam | txt_file_with_paths_of_bams.txt> \
--r regions.txt \
--o "results_IGV_plots" \
---dpi 600 -d expand -p 1000 \
---genome 'mm10' --no-singularity && touch results_IGV_plots/done.txt
+## 6. Environment Reference
 
-# example of regions file
-bash:iscb012:llm_configs 1014 $ head regions.txt
-chr1:148376063-148378679  chr1:148378685-148386192 UID-100_chr1:148375795-148386192
-chr1:148375795-148386192    UID-100
-chr11:101488764-101551955   mm10_brca1
-```
+### Compute Awareness (SLURM)
+
+| Task | CPUs | Memory | GPU | Time Estimate |
+|------|------|--------|-----|---------------|
+| Dorado basecalling | 4 | 16G | 1x A100/V100 required | ~1h per 10Gb pod5 |
+| Minimap2 alignment | 8-16 | 32G | No | ~30min per 10M reads |
+| Clair3 variant calling | 8 | 32G | Optional (faster with) | ~2h per 30x WGS |
+| STAR alignment | 8 | 40G | No | ~30min per sample |
+| CellRanger | 16 | 64G | No | ~2-4h per sample |
+| DESeq2 / DGE | 4 | 16G | No | Minutes |
+| Scanpy/Seurat | 4-8 | 32-64G | No | 10-60min depending on cell count |
+| LLM fine-tuning | 4 | 32G | 1-4x GPU | Hours to days |
+
+When writing SLURM job headers or snakemake resource directives, use these as starting estimates. Scale memory with data size — 2x safety margin for unknown inputs.
+
+### Containers
+All container paths are in `profiles/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
+
+### Reference Genomes
+All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `profiles/databases/databases_config.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
+
+---
+
+## 7. Figures and Visualization
+
+### Standard Requirements (All Figures)
+- **Output 3 formats**: Save every figure as PNG, PDF, and SVG in their respective subdirectories (`figures/png/`, `figures/pdf/`, `figures/svg/`).
+- **Font**: Arial (fall back to Helvetica if Arial unavailable). Minimum size 20pt. Headers bold.
+- **Axes**: Must be legible at final print size. Minimum tick label size 16pt.
+- **Multi-panel figures**: Fix the y-axis range across panels to enable direct visual comparison.
+- **Statistical tests**: Always prompt the user about including statistical annotations (e.g., t-test with p-values for group comparisons).
+- **Figure size**: Default to the largest reasonable size for the context.
+
+### Matplotlib Defaults
+Load from `profiles/programming_language_profiles/python/matplotlib/matplotlib_defaults`.
+
+### R / ggplot2
+Load theme and font settings from `profiles/programming_language_profiles/R/`.
+
+### Nature Magazine Specifications (Final Manuscript Figures Only)
+- Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.
+- Font: Arial or Helvetica, 20pt at final size.
+- Apply these only when the user explicitly requests publication-quality or Nature-format figures.
+
+---
+
+## 8. Statistics Defaults
+
+| Parameter | Default |
+|-----------|---------|
+| Significance threshold (p-value) | 0.05 |
+| Adjusted p-value threshold | 0.05 |
+| Multiple testing correction | Bonferroni |
+| Effect size reporting | Always report alongside p-values |
+
+Override any default when the user specifies different thresholds.
+
+---
+
+## 9. Error Recovery
+
+### Pipeline Failures
+1. **Read the error message completely** before suggesting fixes. Do not guess.
+2. **Check logs first**: Snakemake logs are in `.snakemake/log/`, Nextflow logs in `.nextflow.log` and `work/` subdirectories.
+3. **Common failure modes**:
+   - Out of memory: Increase `mem_mb` in resources, resubmit only the failed job.
+   - Missing input: Trace the DAG backward to find which upstream rule failed or which file path is wrong.
+   - Container errors: Verify bind paths cover all input/output directories.
+   - SLURM timeout: Check actual runtime of the failed job with `sacct`, increase time limit with margin.
+4. **Never re-run an entire pipeline** to fix a single failed step. Use `--rerun-incomplete` (Snakemake) or `-resume` (Nextflow).
+
+### Analysis Errors
+- If a statistical test fails (convergence, singular matrix): Report the error, suggest an alternative test, and ask the user before proceeding.
+- If QC fails a checkpoint: Stop, report metrics, and ask the user for guidance. Do not silently continue.
+
+---
+
+## 10. Quality Gates (Pre-Completion Checklist)
+
+Before declaring any task complete, verify:
+
+- [ ] All output files exist and are non-empty
+- [ ] No hardcoded absolute paths in delivered scripts
+- [ ] Random seeds are set where applicable
+- [ ] Raw data is untouched
+- [ ] Figures are saved in all 3 formats (png, pdf, svg)
+- [ ] Project file at `~/projects/` is updated with what was done
+- [ ] For pipelines: dry-run succeeds (`snakemake -n`)
+- [ ] For analysis: QC checkpoints passed and were reported to user
+- [ ] Variable names do not use forbidden names
+- [ ] Contig names/sizes are parsed from reference files, not hardcoded

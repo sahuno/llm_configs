@@ -1,0 +1,75 @@
+{
+  "alwaysThinkingEnabled": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-dangerous-commands.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/validate-reference-genome.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/enforce-genome-tag.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/validate-reference-genome.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/enforce-genome-tag.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-raw-data-writes.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/snakemake-dryrun.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-hardcoded-contigs.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/validate-yaml.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/warn-absolute-paths.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\\a'"
+          }
+        ]
+      }
+    ]
+  }
+}
