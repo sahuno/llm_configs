@@ -1,0 +1,121 @@
+#!/bin/bash
+# .bashrc_container — lightweight rc for running inside Apptainer/Singularity containers
+# Sources aliases and exports from the host, skips module/conda/mamba that don't exist in containers
+# Author: Samuel Ahuno
+# Date: 2026-02-18
+
+# ── Fix RHEL host function leaks ────────────────────────────────────
+# Exported bash functions survive exec boundaries via BASH_FUNC_name%%
+# env vars. These RHEL functions break inside the Debian container.
+unset -f which 2>/dev/null       # which2.sh: passes GNU flags Debian which doesn't support
+unset -f module 2>/dev/null      # lmod: calls /usr/share/lmod/lmod/libexec/lmod (doesn't exist)
+unset -f ml 2>/dev/null          # lmod shortcut
+unset -f _module_raw 2>/dev/null # lmod internal
+alias which='command -v'
+
+# ── Clean host environment pollution ────────────────────────────────
+# Host LD_LIBRARY_PATH from `module load` can cause Debian binaries to
+# link against RHEL .so files → segfaults or wrong behavior
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+
+# Lmod variables — useless in container, trigger errors
+unset MODULEPATH MODULESHOME LMOD_DIR LMOD_CMD LMOD_PKG
+unset LMOD_ROOT LMOD_SETTARG_FULL_SUPPORT LMOD_VERSION
+unset LOADEDMODULES _LMFILES_
+
+# Conda/mamba — prevent interference with container's /opt/venv Python
+unset CONDA_DEFAULT_ENV CONDA_EXE CONDA_PREFIX CONDA_PROMPT_MODIFIER
+unset CONDA_PYTHON_EXE CONDA_SHLVL MAMBA_EXE MAMBA_ROOT_PREFIX
+unset PYTHONPATH PYTHONHOME
+
+# MANPATH — reset to container paths only
+unset MANPATH
+
+# ── Aliases ──────────────────────────────────────────────────────────
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# ── Prompt ───────────────────────────────────────────────────────────
+PS1='[container] \s:\h:\W \! \$ '
+
+# ── PATH (container tools first, then host bind-mounted software) ───
+# Start with container's own tools (venv, npm global, system)
+export PATH="/opt/venv/bin:/opt/npm-global/bin:/usr/local/bin:/usr/bin:/bin"
+# Then add host software visible via bind mounts
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="$HOME/miniforge3/envs/snakemake/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/dorado-0.9.1-linux-x64/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/gatk-4.5.0.0:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/samtools-1.20:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/htslib-1.20:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/bedtools2/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/sratoolkit.3.1.1-centos_linux64/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/STAR-2.7.11b/bin/Linux_x86_64_static:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/stringtie:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/minimap2:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/wtdbg2:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/xTea/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/nanopolish:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/ucsc_tools:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/bedops/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/snpEff/bin:$PATH"
+export PATH="/data1/greenbab/users/ahunos/apps/gffread:$PATH"
+
+# ── Exports ──────────────────────────────────────────────────────────
+export ISABL_API_URL=https://isabl.shahlab.mskcc.org/api/v1
+export ISABL_CLIENT_ID=16
+export OLLAMA_MODELS=/data1/greenbab/users/ahunos/apps/models_llms
+export NXF_SINGULARITY_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+export APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+export SINGULARITY_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+export CLD=/data1/collab001
+export refmm10="/data1/greenbab/database/mm10/mm10.fa"
+export DB="/data1/greenbab/database/"
+export sk_profile="/data1/greenbab/projects/Sarcoma_DNAme/scripts/configs/slurmMinimal"
+export TZ="America/New_York"
+
+# ── API keys (from host) ────────────────────────────────────────────
+# Inherit from host environment if set; don't hardcode here
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
+export OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+
+# ── Functions that work inside containers ────────────────────────────
+function lme() {
+    find "$1" -user ahunos -ls
+}
+
+function lazygit() {
+    git add .
+    git commit -a -m "$1"
+    git push
+}
+
+chp() {
+    local vcf="$1"
+    if [[ -z "$vcf" ]]; then
+        echo "Usage: chp <vcf[.gz]>" >&2
+        return 1
+    fi
+    local dc
+    if [[ "$vcf" == *.gz ]]; then dc="zcat"; else dc="cat"; fi
+    if $dc "$vcf" \
+       | awk '/^#/ { next } { print; exit }' \
+       | cut -f10- \
+       | grep -q '|' ; then
+        echo "VCF is phased"
+        return 0
+    else
+        echo "VCF is not phased"
+        return 1
+    fi
+}
+
+# ── Cargo (Rust tools) ──────────────────────────────────────────────
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# ── SDKMAN ───────────────────────────────────────────────────────────
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
