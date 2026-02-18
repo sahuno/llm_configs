@@ -31,6 +31,14 @@ On every new conversation, do the following in order:
    **Each directory must have a `README.md`** describing its purpose, contents, and any scripts within it. Keep READMEs up to date as files are added or changed — especially in `src/` and `workflows/`, where each script should be listed with a one-line description.
 6. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
 
+### Project File Content Requirements (minimum for resumption)
+Every project file update must include:
+1. **What was done** — completed steps with specifics, not just "worked on X"
+2. **Key file paths** — absolute paths to files created or modified
+3. **Commands that worked** — copy-paste ready for the next session
+4. **Known issues / blockers** — what failed and why
+5. **Exact next steps** — numbered, actionable items for the next session
+
 ---
 
 ## 2. Universal Rules (Apply to ALL Work)
@@ -49,6 +57,13 @@ On every new conversation, do the following in order:
 ### Genomics-Specific
 - **Never hardcode contig names or sizes.** Always parse them from the user-supplied genome sizes file or the reference FASTA index.
 - **Reference data**: Load paths from `profiles/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each entry has fasta, gtf, chrom.sizes, and CpG island paths (local + S3).
+
+### Multi-Genome-Build Projects
+- Some integrative analyses require data from different genome builds (e.g., RNA in mm39, methylation in mm10).
+- Always use **liftOver** for coordinate conversion. Store both original and lifted coordinates.
+- Name intermediate files with BOTH builds when applicable: `{sample}.mm39_to_mm10.lifted.bed`
+- Keep a **coordinate mapping manifest** to track which genome build each file uses.
+- When merging data across builds, always verify that the liftOver was successful (check for unmapped regions) before proceeding.
 
 ### Genome Build Tagging (Mandatory for all genomic output files)
 - **Every genomic output file must include the genome build in both the filename and parent directory.**
@@ -96,6 +111,13 @@ On every new conversation, do the following in order:
 - For mouse samples, CpG islands from `profiles/databases/databases_config.yaml` are essential context for DMR interpretation.
 
 **"Done" looks like**: bedMethyl files per sample, DMR bed file with statistics, summary plots of methylation distributions, and a manifest CSV linking sample metadata to output paths.
+
+**ONT Processing Infrastructure**:
+- **Chemistry detection**: ONT runs may have mixed chemistries (4kHz and 5kHz). Always check and process separately. Dorado model must match chemistry exactly — mismatches produce silent garbage.
+- **Apptainer cache**: Set `APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache` to avoid home directory quota issues on compute nodes.
+- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `profiles/software_configs/softwares_containers_config.yaml`.
+- **Methylation context**: Standard ONT methylation call string is `5mCG_5hmCG@latest,6mA@latest`.
+- **Multi-run samples**: Some patients have multiple sequencing runs. These must be basecalled independently, then merged after alignment — never concatenate raw pod5 files across runs.
 
 ### 3B. Variant Calling
 
@@ -170,6 +192,12 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - For pipelines: dry-run (`snakemake -n`) counts as a minimum test. A small-data end-to-end test is preferred.
 - For Python packages: `pytest --tb=short` with coverage report.
 
+### Snakemake Troubleshooting (Lessons Learned)
+- **"No rule to produce" for valid targets**: Check for whitespace in sample names or paths in the sample sheet. As a workaround, extract the failing step into a standalone shell script.
+- **Double-container invocation**: If a rule sets the `singularity:` directive, do NOT also add `singularity exec -B` inside the `shell:` block. The directive handles container execution automatically.
+- **Config access**: When using `--configfile`, values are accessed as `config["key"]`, not `config.key`.
+- **Cluster profile conflicts**: When using `--workflow-profile` with SLURM, ensure resource keys (`mem_mb`, `threads`, `runtime`) do not conflict with the cluster profile's own defaults. Check `.snakemake/log/` for the actual submitted job command if jobs fail silently.
+
 ---
 
 ## 5. Domain Playbook: AI Engineering
@@ -205,6 +233,16 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 
 When writing SLURM job headers or snakemake resource directives, use these as starting estimates. Scale memory with data size — 2x safety margin for unknown inputs.
 
+### SLURM GPU Jobs
+- GPU jobs (`--gres=gpu:N`) can conflict with explicit `--mem` requests on some partitions. If GPU jobs fail silently, try removing the `mem_mb` resource or use `--mem=0` (all available memory on the node).
+- Use `software-deployment-method: apptainer` in Snakemake SLURM profiles.
+- Bind mounts must cover ALL input/output directories when using containers on compute nodes — compute nodes may not have the same mounts as login nodes.
+
+### Large Data Directories
+- ONT data directories can be massive (hundreds of pod5s, multi-GB BAMs). Text search tools (ripgrep, grep) will timeout on these.
+- **Strategy**: Use `find` for filename searches. Restrict `grep` with `--include='*.py' --include='*.sh'` etc. to text file types only. For comprehensive searches, write a standalone script.
+- **Never** attempt recursive grep on directories containing BAM, pod5, fast5, or CRAM files without file-type filtering.
+
 ### Containers
 All container paths are in `profiles/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
 
@@ -228,6 +266,19 @@ Load from `profiles/programming_language_profiles/python/matplotlib/matplotlib_d
 
 ### R / ggplot2
 Load theme and font settings from `profiles/programming_language_profiles/R/`.
+
+### ggplot2 Font Size Scaling Reference
+The `theme()` element sizes are multiplied from `base_size`:
+
+| Element | Multiplier | For 20pt final text |
+|---------|-----------|---------------------|
+| `axis.text` | base_size × 0.8 | base_size = 25 |
+| `axis.title` | base_size × 1.0 | base_size = 20 |
+| `plot.title` | base_size × 1.2 | base_size = 17 |
+| `legend.text` | base_size × 0.8 | base_size = 25 |
+
+- **Key insight**: For 20pt axis labels at Nature final size, use `base_size = 25` (since 25 × 0.8 = 20pt).
+- **Default colorblind-safe palette**: Okabe-Ito — `#0072B2` (blue), `#E69F00` (orange), `#D55E00` (vermillion), `#999999` (grey).
 
 ### Nature Magazine Specifications (Final Manuscript Figures Only)
 - Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.

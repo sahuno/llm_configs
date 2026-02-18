@@ -1,3 +1,0 @@
-# preferences for sample sheet and sample YAML files
-sample_sheet_preference: "tsv file with the columns (patient,sample,condition,path,genome)"
-sample_yaml_preference: "sampleName: path/to/file"

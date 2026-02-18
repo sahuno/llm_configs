@@ -40,7 +40,7 @@ DO_NOT.md
 
 
 
-
+#########CLAUDE: DONOT DELETE##########################
 FEATURE REQUEST
 1. Transition to nextflow
  a. ease resume of failed workflow 
@@ -48,8 +48,7 @@ FEATURE REQUEST
  c. intgration with seqera AI
 2. Logging of tasks completed and pending; logging of daily taks done 
 3. use `UV` for python package management
-
-
+#######################################################
 
 
 
