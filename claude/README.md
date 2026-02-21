@@ -29,20 +29,50 @@ sclaude() {
         return 1
     fi
 
+    # ── SLURM bind mounts ──────────────────────────────────────────────
+    # Auto-detect SLURM location (works on any HPC regardless of install method)
+    # Binaries → /usr/local/bin/ (already in container PATH, no conflict)
+    # Libraries → /usr/lib64/ (default linker search path, no conflict)
+    local slurm_mounts=""
+    local slurm_bin_dir
+    slurm_bin_dir="$(dirname "$(command -v sbatch 2>/dev/null)" 2>/dev/null)"
+    if [ -n "$slurm_bin_dir" ]; then
+        for cmd in sbatch squeue scancel sacct sinfo scontrol srun salloc sstat sreport sprio; do
+            [ -f "${slurm_bin_dir}/${cmd}" ] && slurm_mounts="${slurm_mounts},${slurm_bin_dir}/${cmd}:/usr/local/bin/${cmd}"
+        done
+    fi
+    # SLURM shared libraries — auto-detect lib dir from libslurm location
+    local slurm_lib_dir
+    slurm_lib_dir="$(dirname "$(readlink -f "$(ldconfig -p 2>/dev/null | awk '/libslurm\.so /{print $NF; exit}')" 2>/dev/null)" 2>/dev/null)"
+    [ -z "$slurm_lib_dir" ] && slurm_lib_dir="/usr/lib64"  # fallback to standard RHEL path
+    for lib in "${slurm_lib_dir}"/libslurm.so*; do
+        [ -e "$lib" ] && slurm_mounts="${slurm_mounts},${lib}"
+    done
+    for lib in "${slurm_lib_dir}"/libmunge.so*; do
+        [ -e "$lib" ] && slurm_mounts="${slurm_mounts},${lib}"
+    done
+    [ -d "${slurm_lib_dir}/slurm" ] && slurm_mounts="${slurm_mounts},${slurm_lib_dir}/slurm:${slurm_lib_dir}/slurm"
+    # Config, munge socket, and user database for SlurmUser resolution
+    [ -d "/etc/slurm" ]  && slurm_mounts="${slurm_mounts},/etc/slurm:/etc/slurm"
+    [ -d "/run/munge" ]  && slurm_mounts="${slurm_mounts},/run/munge:/run/munge"
+    [ -f "/etc/passwd" ] && slurm_mounts="${slurm_mounts},/etc/passwd:/etc/passwd"
+    [ -f "/etc/group" ]  && slurm_mounts="${slurm_mounts},/etc/group:/etc/group"
+    slurm_mounts="${slurm_mounts#,}"  # strip leading comma
+
     # Pass API keys from host into container
     local env_flags=""
     [ -n "$ANTHROPIC_API_KEY" ] && env_flags="$env_flags --env ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
     [ -n "$OPENAI_API_KEY" ] && env_flags="$env_flags --env OPENAI_API_KEY=$OPENAI_API_KEY"
 
+    local all_mounts="${base_mounts},${slurm_mounts}"
     local additional_mounts=""
     if [ $# -gt 0 ]; then
         additional_mounts=$(IFS=,; echo "$*")
-        "$appt" exec -B "${base_mounts},${additional_mounts}" $env_flags "$container" \
-            /bin/bash --rcfile ~/.bashrc_container -i
-    else
-        "$appt" exec -B "$base_mounts" $env_flags "$container" \
-            /bin/bash --rcfile ~/.bashrc_container -i
+        all_mounts="${all_mounts},${additional_mounts}"
     fi
+
+    "$appt" exec -B "$all_mounts" $env_flags "$container" \
+        /bin/bash --rcfile ~/.bashrc_container -i
 }
 ```
 
