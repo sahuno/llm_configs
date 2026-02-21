@@ -68,6 +68,11 @@ Hooks are shell scripts that Claude Code runs automatically before or after tool
 | `block-hardcoded-contigs.sh` | PostToolUse (Write/Edit) | WARN | Hardcoded chromosome lists (e.g., `chr1, chr2, ...`) in scripts |
 | `validate-yaml.sh` | PostToolUse (Write/Edit) | WARN | Invalid YAML syntax in config files |
 | `warn-absolute-paths.sh` | PostToolUse (Write/Edit) | WARN | Hardcoded `/data1/` or `/home/` paths in .py, .R, .sh, .smk, .nf files |
+| `log-slurm-submission.sh` | PostToolUse (SLURM MCP) | LOG | Logs every `slurm_submit_job` / `slurm_submit_batch` to `slurm_logs/claude_submissions.md` |
+
+### Where are SLURM job submissions logged?
+
+Every job submitted through the SLURM MCP server is automatically logged to `/data1/greenbab/users/ahunos/slurm_logs/claude_submissions.md`. The hook captures job ID, name, command, working directory, and timestamp. Dry runs are logged separately. The log path can be overridden via `SLURM_JOB_LOG` env var.
 
 ### A hook blocked something I actually want to do. How do I override it?
 

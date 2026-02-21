@@ -101,7 +101,8 @@ claude/
 │   ├── validate-reference-genome.sh
 │   ├── validate-yaml.sh
 │   ├── snakemake-dryrun.sh
-│   └── warn-absolute-paths.sh
+│   ├── warn-absolute-paths.sh
+│   └── log-slurm-submission.sh
 ├── profiles/              # Reference data, containers, SLURM, plot defaults
 │   ├── databases/databases_config.yaml
 │   ├── software_configs/softwares_containers_config.yaml
@@ -110,6 +111,7 @@ claude/
 ├── scripts/               # Helper scripts (project init, validation)
 ├── prompts/               # Reusable prompt templates
 ├── skills/                # Claude Code skills (IGV screenshots, heatmaps, barplots)
+├── docs/                  # FAQ and reference documentation
 ├── examples/              # Worked examples (methylation pipeline, RNA-seq)
 └── agents/                # Custom agent definitions
 ```
@@ -128,6 +130,7 @@ All hooks are wired in `settings.json` and fire on `PreToolUse` or `PostToolUse`
 | `block-hardcoded-contigs.sh` | PostToolUse (Write/Edit) | WARN | Hardcoded chromosome lists in scripts |
 | `validate-yaml.sh` | PostToolUse (Write/Edit) | WARN | Invalid YAML syntax in config files |
 | `warn-absolute-paths.sh` | PostToolUse (Write/Edit) | WARN | Hardcoded `/data1/` or `/home/` in scripts |
+| `log-slurm-submission.sh` | PostToolUse (SLURM MCP) | LOG | Logs every job submitted via SLURM MCP to `slurm_logs/claude_submissions.md` |
 
 ## Supported Reference Genomes
 
