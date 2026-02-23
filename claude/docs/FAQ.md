@@ -245,7 +245,7 @@ Apptainer inherits the host **environment** (all `SLURM_*` env vars are present)
 | Plugins | `/usr/lib64/slurm/` | `/usr/lib64/slurm/` | SLURM plugin modules |
 | Config | `/etc/slurm/` | `/etc/slurm/` | Cluster configuration |
 | Munge socket | `/run/munge/` | `/run/munge/` | Authentication socket |
-| passwd/group | `/etc/passwd`, `/etc/group` | same path | SLURM needs to resolve `SlurmUser=slurm` and `munge` UIDs |
+| passwd/group | `~/.cache/claude/passwd_runtime`, `~/.cache/claude/group_runtime` | `/etc/passwd`, `/etc/group` | Synthetic files: host accounts + injected LDAP user entry (see below) |
 
 **Why bind-mount instead of installing SLURM in the Dockerfile?** The cluster runs SLURM 25.05.3 (May 2025). Debian 12's apt repos have much older versions (~22.05). A protocol version mismatch between client and server causes silent failures. Bind-mounting the host's actual binaries guarantees version compatibility.
 
@@ -375,6 +375,56 @@ Conda/mamba version mismatch. Fix:
 conda install -n base "mamba>=2.0"
 export MAMBA_ROOT_PREFIX="$HOME/miniforge3"  # add to ~/.bashrc
 ```
+
+### `FATAL: Couldn't determine user account information: user: unknown userid XXXXXXXXX`
+
+**When it happens**: When any tool that calls `getpwuid()` — including `apptainer` itself — runs **from inside the Claude Code container** (i.e. after `sclaude()` has started). Claude Code's Bash tool triggers this when it runs `apptainer` or other system tools.
+
+**Root cause**: Your UID (`164079095`) is an LDAP user. LDAP users are resolved via SSSD on the host but are NOT stored in the local `/etc/passwd`. Inside the Apptainer container, `nsswitch.conf` is `passwd: files` only (no SSSD). When any Go/C binary calls `getpwuid(164079095)`, NSS finds nothing and returns NULL → fatal error.
+
+**Why intermittent**: SSSD caches lookups; cold-start or long-idle sessions may have cache misses even on the host, making the error seem random.
+
+**Fix** (applied to `sclaude()` in `~/.bashrc`):
+- Before launching the container, create `~/.cache/claude/passwd_runtime` and `~/.cache/claude/group_runtime`
+- These are copies of the host `/etc/passwd`/`/etc/group` with one line appended for the current LDAP user
+- Injected line format: `${USER}:x:$(id -u):$(id -g):${USER}:${HOME}:/bin/bash`
+- These files are bind-mounted into the container at `/etc/passwd` and `/etc/group`
+- Files live in `$HOME/.cache/claude/` (mode 700 dir, mode 600 files) — not `/tmp` — to prevent world-readable exposure and predictable-path attacks
+
+**To verify the fix worked**:
+```bash
+# Inside the container
+getent passwd $(id -u)   # should return your entry
+apptainer --version      # should no longer fail
+```
+
+---
+
+### `gh auth login` fails with `x509: certificate signed by unknown authority`
+
+**When it happens**: When running `gh auth login` or any `gh` command inside the `sclaude()` container.
+
+**Root cause**: `gh` is a Go binary. Go's TLS stack checks `SSL_CERT_FILE` then falls back to OS paths. The container's Debian/Ubuntu cert store only has public CAs — it's missing your institution's custom internal CA, which MSKCC uses for network TLS inspection.
+
+**Fix** (applied to `sclaude()` in `~/.bashrc`):
+- Detects the host CA bundle path (tries `/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` → `/etc/ssl/certs/ca-bundle.crt` → `/etc/ssl/certs/ca-certificates.crt`, resolving symlinks via `readlink -f`)
+- Bind-mounts the resolved bundle to `/etc/ssl/certs/ca-certificates.crt` inside the container
+- Sets three env vars for complete tool coverage:
+
+| Env var | Tool it covers |
+|---|---|
+| `SSL_CERT_FILE` | Go programs (`gh`, any Go HTTPS client) |
+| `CURL_CA_BUNDLE` | curl-based tools |
+| `GIT_SSL_CAINFO` | git HTTPS operations |
+
+**To verify the fix worked**:
+```bash
+# Inside the container
+gh auth login --with-token < ~/.tokens/githubToken.txt
+gh auth status   # should show "Logged in to github.com"
+```
+
+---
 
 ### `grep` or `ripgrep` times out on a data directory
 

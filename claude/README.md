@@ -1,6 +1,6 @@
 # Claude Code Configuration for Computational Biology
 
-Personal Claude Code configuration for bioinformatics analysis, software development, and AI engineering on MSKCC HPC (Greenberg Lab).
+Personal Claude Code configuration for bioinformatics analysis, software development, and AI engineering on MSKCC HPC (Greenbaum Lab).
 
 ## Quick Start
 

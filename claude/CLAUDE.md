@@ -1,5 +1,5 @@
 # CLAUDE.md — Samuel Ahuno (ekwame001@gmail.com)
-# Computational Biologist, Greenberg Lab (greenbab), MSKCC
+# Computational Biologist, Greenbaum Lab (greenbab), MSKCC
 # Languages: Python, R, Bash | HPC: SLURM | Organisms: Mouse & Human
 
 ---
@@ -385,6 +385,17 @@ Override any default when the user specifies different thresholds.
 ### Analysis Errors
 - If a statistical test fails (convergence, singular matrix): Report the error, suggest an alternative test, and ask the user before proceeding.
 - If QC fails a checkpoint: Stop, report metrics, and ask the user for guidance. Do not silently continue.
+
+---
+
+---
+### Philosphy of research publication with figures (stream of thought)
+- Generate 3 figure formats (.png, .pdf, .svg) per figure. rasterize the .pdf  with `RASTERISE_DPI` of 50dpi and  png_dpi=70 (local machine)
+- keep a figure index per script. Helps track down where ech figure came from per scipt (Host and local machine)
+- downlaod figures onto OneDrive research/institutioinal folder (local machine)
+- place figures (.pdf) on illustrator artboard and save accordingly as Figure 1, 2, .... # or Supplementary Figure 1, 2,...,n (local machine)
+- write script to autodownload figures with higher dpi when ready (local machine)
+- adobe illustartor should can be resaved with high dpi figures and exported as .pdf (local machine)
 
 ---
 
