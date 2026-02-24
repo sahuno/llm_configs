@@ -74,6 +74,29 @@ Every project file update must include:
 - **File types that require tagging**: `.bam`, `.cram`, `.bai`, `.bed`, `.bedgraph`, `.bedMethyl`, `.narrowPeak`, `.broadPeak`, `.vcf`, `.vcf.gz`, `.bcf`, `.bigwig`, `.bw`, `.bigbed`, `.gtf`, `.gff` (processed copies), count matrices.
 - **File types exempt from tagging**: raw data (`.fastq`, `.fq`, `.pod5`), figures, scripts, configs, logs, summary reports.
 
+### Genomic Output Conventions
+
+- **BED-like output files must have a `#`-prefixed header line.**
+  - First line of every `.bed`, `.bedgraph`, `.bedMethyl`, or equivalent tabular output must start with `#` followed by tab-separated column names.
+  - Example: `#chr\tstart\tend\tname\tscore\tstrand`
+  - Reason: Python (`pd.read_csv(comment='#')`), R (`read.table(comment.char='#')`), and bedtools all skip `#` lines automatically, so tools never need special handling.
+  - Exempt: files in strict BED format consumed directly by UCSC Genome Browser or IGV where a `track` header is expected instead.
+
+- **Genomic locus IDs follow the format `{chr}:{start}-{end}.{name}.{score|index}.{strand}`.**
+  - `{chr}:{start}-{end}` — UCSC-style coordinates (0-based start, half-open); unambiguous and greppable.
+  - `{name}` — biological label (e.g. repeat subfamily, gene name, feature type).
+  - `{score|index}` — use the relevant numeric score when one exists (e.g. SW score, MAPQ); use a per-name running integer index when no score applies. If both are needed, join with `|` (e.g. `36206|2`).
+  - `{strand}` — `+` or `-`.
+  - Separators: `.` between all fields; `:` only between chr and coordinates; `-` between start and end; `|` only inside the score|index field.
+  - Examples:
+    ```
+    chr1:3014747-3021072.L1MdF_I.36206|1.-    # repeat locus — SW score + per-subfamily index
+    chr1:3014747-3021072.L1MdF_I.1.-           # same locus — index only (score in separate column)
+    chr7:117548628-117548729.CpG_island.42.+   # CpG island — feature index
+    chrX:42920694-42927131.L1Base2.UID-5.+     # L1Base-only entry — UID as name, no index needed
+    ```
+  - This format is self-describing: the locus can be identified, sorted, and cross-referenced from the ID alone without consulting additional columns.
+
 ### Documentation
 - **Every script**: Add author (`Samuel Ahuno`), date, and a one-line purpose comment at the top.
 - **Every function**: Docstring with parameters, returns, and a minimal example.
