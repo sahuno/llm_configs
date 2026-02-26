@@ -272,6 +272,13 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - Load executor settings from `profiles/workflow_profiles/executor_config.yaml`.
 - Sample sheet format: TSV with columns `patient, sample, condition, path, genome` (defined in `profiles/setup_preferences.yaml`).
 
+**Snakemake run organization**:
+- Pipeline code (Snakefile, rules, profiles) is versioned and reusable. Never write outputs into the pipeline directory.
+- **One run = one directory.** All outputs from a run — rule outputs, figures, and logs — live under one named `results/<run>/` directory. This makes runs independently archivable (`tar -czf`) and deletable (`rm -rf`) with zero ambiguity about which run produced which file.
+- `output_dir` is the only path key in config. Derive `FIGDIR` and `LOGDIR` from it in the Snakefile: `FIGDIR = f"{OUTDIR}/figures"`. Never add separate `figures_dir` or `log_dir` config keys — separate keys allow paths to diverge and recreate the ambiguity problem.
+- One config file per run, named to match the results directory: `config_{version}_{genome}_{subset}.yaml`. The config filename is the run manifest.
+- Run naming convention: `{version}_{genome}_{data_subset}` (e.g. `v1_hg38_10pct`, `v2_mm10_full`).
+
 **Nextflow**: Profiles are in `profiles/workflow_profiles/nextflow/`.
 
 ### CLI Tools and Packages
@@ -290,6 +297,11 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - **Double-container invocation**: If a rule sets the `singularity:` directive, do NOT also add `singularity exec -B` inside the `shell:` block. The directive handles container execution automatically.
 - **Config access**: When using `--configfile`, values are accessed as `config["key"]`, not `config.key`.
 - **Cluster profile conflicts**: When using `--workflow-profile` with SLURM, ensure resource keys (`mem_mb`, `threads`, `runtime`) do not conflict with the cluster profile's own defaults. Check `.snakemake/log/` for the actual submitted job command if jobs fail silently.
+- **`--profile` absolute path required when `--directory` is set**: Snakemake resolves `--profile` relative to `--directory`, not relative to `--snakefile`. When the pipeline lives in one directory and the experiment in another, always pass `--profile` as an absolute path.
+- **Snakemake 9 `srun` memory conflict** (`SLURM_MEM_PER_NODE` vs `SLURM_MEM_PER_CPU` fatal): `snakemake-executor-plugin-slurm` wraps each rule's shell in `srun` inside the `sbatch` job. Snakemake 9 also injects a built-in `mem_mb = 1000` default. Fix: use `mem_mb_per_cpu` (not `mem_mb`) in all rule `resources:` blocks, and add `mem_mb: 0` to profile `default-resources` to zero out the built-in default. **ADDITIONAL**: If the Snakemake coordinator itself is submitted as an sbatch job (e.g. via submit_snakemake.sh), use `#SBATCH --mem-per-cpu=XXXX` (never `--mem=XG`) for the coordinator — `--mem` sets `SLURM_MEM_PER_NODE` in the coordinator env which propagates via `--export=ALL` to rule jobs, creating the same conflict. Also add `unset SLURM_MEM_PER_NODE` at the top of the coordinator script. Confirmed fix: 2026-02-26.
+- **Missing SLURM account causes silent rejection**: Add `slurm_account: <account>` to profile `default-resources`. The executor plugin does not read `SLURM_DEFAULT_ACCOUNT` from the environment.
+- **`software-deployment-method: apptainer` breaks conda-based pipelines**: Setting this wraps every rule's shell command in `apptainer exec`, breaking all rules that do not have a container directive. Omit it entirely for conda-based pipelines (see GPU note in §6 for when to use it).
+- **Stale lock file after killed coordinator**: Run `snakemake --unlock` before resubmitting. Add `--rerun-incomplete` on resubmission to pick up partial outputs.
 
 ---
 
@@ -328,7 +340,7 @@ When writing SLURM job headers or snakemake resource directives, use these as st
 
 ### SLURM GPU Jobs
 - GPU jobs (`--gres=gpu:N`) can conflict with explicit `--mem` requests on some partitions. If GPU jobs fail silently, try removing the `mem_mb` resource or use `--mem=0` (all available memory on the node).
-- Use `software-deployment-method: apptainer` in Snakemake SLURM profiles.
+- Use `software-deployment-method: apptainer` in Snakemake SLURM profiles **only when all rules use `container:` or `singularity:` directives**. Omit it entirely for conda-based pipelines — it wraps every rule in `apptainer exec` and breaks any rule without an explicit container directive.
 - Bind mounts must cover ALL input/output directories when using containers on compute nodes — compute nodes may not have the same mounts as login nodes.
 
 ### Large Data Directories
@@ -338,6 +350,30 @@ When writing SLURM job headers or snakemake resource directives, use these as st
 
 ### Containers
 All container paths are in `profiles/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
+
+#### Container Build Rules (Apptainer / Singularity `%post`)
+
+- **Never `rm -rf /tmp/*` or `rm -rf /var/tmp/*` in `%post`.**
+  Under `--fakeroot` / root-mapped namespace, the container's `/tmp` is a bind mount of
+  the **host's `/tmp`**. This deletes other users' sockets/files and aborts the build.
+  Only remove files you explicitly created by name (`rm -f /tmp/myinstaller.sh`).
+  Use tool-specific cache cleaners instead: `mamba clean --all --yes`, `apt-get clean`,
+  `pip cache purge`.
+
+- **`condaforge/miniforge3` base requires `--ignore-fakeroot-command` on MSKCC HPC (RHEL 8).**
+  The miniforge3 image ships a `fakeroot` binary compiled against GLIBC ≥ 2.33. The RHEL 8
+  login node has GLIBC 2.28 — the `faked` daemon crashes immediately at `%post` start.
+  Always add `--ignore-fakeroot-command` when building from a miniforge3/conda base image:
+  `apptainer build --fakeroot --ignore-fakeroot-command output.sif input.def`
+
+- **Never `apt-get` in `--fakeroot` builds on MSKCC HPC.**
+  apt drops to the `_apt` user internally via `setgroups()` — this syscall is blocked in
+  root-mapped namespace. Use a conda-ready base image (`condaforge/miniforge3`) and install
+  everything via `mamba` to avoid this entirely.
+
+- **Always `unset APPTAINER_BIND SINGULARITY_BIND` before building.**
+  These env vars are applied during `%post`. If a bind source path doesn't exist inside the
+  base image yet, the build fails with a fatal mount error.
 
 ### Reference Genomes
 All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `profiles/databases/databases_config.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
@@ -399,7 +435,7 @@ Override any default when the user specifies different thresholds.
 1. **Read the error message completely** before suggesting fixes. Do not guess.
 2. **Check logs first**: Snakemake logs are in `.snakemake/log/`, Nextflow logs in `.nextflow.log` and `work/` subdirectories.
 3. **Common failure modes**:
-   - Out of memory: Increase `mem_mb` in resources, resubmit only the failed job.
+   - Out of memory: Increase `mem_mb_per_cpu` in resources (not `mem_mb` for Snakemake 9 + SLURM executor — see Snakemake SLURM pitfalls in §4). Resubmit only the failed job.
    - Missing input: Trace the DAG backward to find which upstream rule failed or which file path is wrong.
    - Container errors: Verify bind paths cover all input/output directories.
    - SLURM timeout: Check actual runtime of the failed job with `sacct`, increase time limit with margin.
