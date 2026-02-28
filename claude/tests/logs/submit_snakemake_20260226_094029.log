@@ -1,0 +1,12 @@
+[2026-02-26 09:40:29] === Snakemake SLURM submission wrapper ===
+[2026-02-26 09:40:29] Snakefile:      /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/Snakefile
+[2026-02-26 09:40:29] Profile dir:    /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/profiles/slurm
+[2026-02-26 09:40:29] Experiment dir: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests
+[2026-02-26 09:40:29] Cores:          1
+[2026-02-26 09:40:29] Dry-run mode:   true
+[2026-02-26 09:40:29] Submit log:     /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/logs/submit_snakemake_20260226_094029.log
+[2026-02-26 09:40:29] Snakemake binary: /home/ahunos/miniforge3/envs/snakemake/bin/snakemake
+[2026-02-26 09:40:29] Conda env dir:    /home/ahunos/miniforge3/envs/snakemake
+[2026-02-26 09:40:29] Snakemake command:
+[2026-02-26 09:40:29]   snakemake   -s /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/Snakefile   --workflow-profile /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/profiles/slurm   --directory /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests   --cores 1   --rerun-incomplete    --dry-run
+/data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/submit_snakemake.sh: line 101: END_TIME: unbound variable

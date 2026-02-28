@@ -1,0 +1,54 @@
+[2026-02-26 09:52:38] === Snakemake coordinator started ===
+[2026-02-26 09:52:38] Host: isca013.mskcc.org
+[2026-02-26 09:52:38] SLURM job: 11635669
+[2026-02-26 09:52:38] Working dir: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests
+[2026-02-26 09:52:40] Snakemake:   /home/ahunos/miniforge3/envs/snakemake/bin/snakemake -- version: 9.10.1
+Using workflow specific profile /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/profiles/slurm_fixed for setting default command line arguments.
+host: isca013.mskcc.org
+Building DAG of jobs...
+SLURM run ID: 7aaaab3c-9acf-4c59-b2a6-e73ff040abe6
+Using shell: /usr/bin/bash
+Provided remote nodes: 9223372036854775807
+Job stats:
+job         count
+--------  -------
+all             1
+sort_bed        1
+total           2
+
+Select jobs to execute...
+Execute 1 jobs...
+
+[Thu Feb 26 09:52:43 2026]
+rule sort_bed:
+    input: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/data/mm10.mm10.L1_recent_profile.bed
+    output: mm10.mm10.L1_recent_profile.sorted.bed
+    jobid: 1
+    reason: Forced execution
+    resources: mem_mb=0, mem_mib=0, disk_mb=1000, disk_mib=954, tmpdir=<TBD>, slurm_partition=cpushort, slurm_account=greenbab, mem_mb_per_cpu=2000, cpus_per_task=1, nodes=1, runtime=5
+Shell command: 
+        # Extract header line(s) starting with '#'
+        grep '^#' /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/data/mm10.mm10.L1_recent_profile.bed > mm10.mm10.L1_recent_profile.sorted.bed
+        # Sort the rest by chr, start, end
+        grep -v '^#' /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/data/mm10.mm10.L1_recent_profile.bed | sort -k1,1 -k2,2n -k3,3n >> mm10.mm10.L1_recent_profile.sorted.bed
+        
+Job 1 has been submitted with SLURM jobid 11635671 (log: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/.snakemake/slurm_logs/rule_sort_bed/11635671.log).
+[Thu Feb 26 09:53:23 2026]
+Finished jobid: 1 (Rule: sort_bed)
+1 of 2 steps (50%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Thu Feb 26 09:53:23 2026]
+localrule all:
+    input: mm10.mm10.L1_recent_profile.sorted.bed
+    jobid: 0
+    reason: Forced execution
+    resources: mem_mb=0, mem_mib=0, disk_mb=1000, disk_mib=954, tmpdir=/tmp, slurm_partition=componc_cpu, slurm_account=greenbab, mem_mb_per_cpu=4000, cpus_per_task=1, nodes=1, runtime=60
+Shell command: None
+[Thu Feb 26 09:53:23 2026]
+Finished jobid: 0 (Rule: all)
+2 of 2 steps (100%) done
+Complete log(s): /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/.snakemake/log/2026-02-26T095243.183086.snakemake.log
+[2026-02-26 09:53:33] Exit code: 0 | Wall time: 53s
+[2026-02-26 09:53:33] === DONE: coordinator completed successfully ===

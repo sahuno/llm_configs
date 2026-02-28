@@ -39,7 +39,8 @@ Gather from user before generating:
    - Haplotype coloring (needs `colorBy TAG HP` + `group TAG HP`)
    - Custom IGV preferences
 
-5. **Output directory**
+5. **Output directory** — follow naming convention: `IGV_{genome}_{description}`
+   - Examples: `IGV_hg38_L1HS_methylation`, `IGV_mm10_structural_variants`, `IGV_hg38_tumor_normal_comparison`
 
 ## Pre-flight Checks
 
@@ -86,7 +87,7 @@ set -euo pipefail
 
 BAM="<BAM_PATH>"
 REGIONS="<REGIONS_PATH>"
-OUTDIR="<OUTPUT_DIR>"
+OUTDIR="<OUTPUT_DIR>"  # Convention: IGV_{genome}_{description}
 GENOME="<GENOME>"  # hg38, hg19, mm10, etc.
 IGVER_IMAGE="docker://sahuno/igver:latest"
 
@@ -114,7 +115,7 @@ set -euo pipefail
 
 BAM="<BAM_PATH>"  # Must contain MM/ML tags from dorado/guppy
 REGIONS="<REGIONS_PATH>"
-OUTDIR="<OUTPUT_DIR>"
+OUTDIR="<OUTPUT_DIR>"  # Convention: IGV_{genome}_{description}
 GENOME="hg38"
 IGVER_IMAGE="docker://sahuno/igver:latest"
 

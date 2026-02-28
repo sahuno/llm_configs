@@ -6,7 +6,7 @@
 set -euo pipefail
 
 BAM="/path/to/sample.bam"
-OUTDIR="/path/to/output"
+OUTDIR="/path/to/IGV_hg38_my_analysis"  # Convention: IGV_{genome}_{description}
 GENOME="hg38"
 IGVER_IMAGE="docker://sahuno/igver:latest"
 

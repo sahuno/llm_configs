@@ -8,7 +8,7 @@ set -euo pipefail
 TUMOR_BAM="/path/to/tumor.bam"
 NORMAL_BAM="/path/to/normal.bam"
 REGIONS="/path/to/regions.bed"
-OUTDIR="/path/to/comparison_screenshots"
+OUTDIR="/path/to/IGV_hg38_tumor_normal_comparison"  # Convention: IGV_{genome}_{description}
 GENOME="hg38"
 IGVER_IMAGE="docker://sahuno/igver:latest"
 

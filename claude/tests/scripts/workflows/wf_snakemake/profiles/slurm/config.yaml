@@ -1,0 +1,36 @@
+# SLURM workflow profile — test configuration for Snakemake 9 + snakemake-executor-plugin-slurm
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-02-25
+#
+# Follows Snakemake 9 + snakemake-executor-plugin-slurm conventions:
+#   - mem_mb: 0  zeros out Snakemake 9 built-in default (prevents SLURM_MEM conflict)
+#   - mem_mb_per_cpu (not mem_mb) in all resource blocks
+#   - slurm_account: greenbab  (required; executor plugin ignores SLURM env var)
+
+executor: slurm
+
+default-resources:
+    slurm_partition: "componc_cpu"
+    slurm_account: "greenbab"
+    mem_mb: 0
+    mem_mb_per_cpu: 4000
+    cpus_per_task: 1
+    nodes: 1
+    runtime: 60
+
+set-resources:
+    sort_bed:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 5
+        mem_mb_per_cpu: 2000
+        cpus_per_task: 1
+
+jobs: unlimited
+keep-incomplete: true
+printshellcmds: true
+latency-wait: 360
+max-status-checks-per-second: 1
+
+use-singularity: true
+singularity-args: "--bind /data1/greenbab/,/data1/collab001/"

@@ -8,7 +8,7 @@ set -euo pipefail
 
 BAM="/path/to/modBaseCalls_dedup_sorted.bam"
 REGIONS="/path/to/regions.bed"
-OUTDIR="/path/to/methylation_screenshots"
+OUTDIR="/path/to/IGV_hg38_methylation"  # Convention: IGV_{genome}_{description}
 GENOME="hg38"
 IGVER_IMAGE="docker://sahuno/igver:latest"
 

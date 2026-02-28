@@ -1,0 +1,21 @@
+INPUT_BED = "/data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/data/mm10.mm10.L1_recent_profile.bed"
+OUTPUT_BED = "mm10.mm10.L1_recent_profile.sorted.bed"
+
+
+rule all:
+    input:
+        OUTPUT_BED,
+
+
+rule sort_bed:
+    input:
+        bed=INPUT_BED,
+    output:
+        sorted_bed=OUTPUT_BED,
+    shell:
+        """
+        # Extract header line(s) starting with '#'
+        grep '^#' {input.bed} > {output.sorted_bed}
+        # Sort the rest by chr, start, end
+        grep -v '^#' {input.bed} | sort -k1,1 -k2,2n -k3,3n >> {output.sorted_bed}
+        """

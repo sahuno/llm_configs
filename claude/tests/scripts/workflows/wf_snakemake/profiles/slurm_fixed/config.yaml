@@ -1,0 +1,39 @@
+# SLURM workflow profile — fixed configuration for Claude Code + Snakemake 9 + snakemake-executor-plugin-slurm
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-02-26
+#
+# Changes from the original slurm/ profile:
+#   - latency-wait: 360 → 60  (6 min was causing coordinator to stay alive too long)
+#   - removed use-singularity: true  (no rules in this Snakefile use a container directive;
+#     enabling it without per-rule directives is a no-op that adds confusion)
+#   - removed singularity-args  (unused without use-singularity)
+#
+# Snakemake 9 + snakemake-executor-plugin-slurm conventions enforced:
+#   - mem_mb: 0  zeros out Snakemake 9 built-in default (prevents SLURM_MEM conflict)
+#   - mem_mb_per_cpu (not mem_mb) in all resource blocks
+#   - slurm_account: greenbab  (executor plugin does not read SLURM_DEFAULT_ACCOUNT)
+
+executor: slurm
+
+default-resources:
+    slurm_partition: "componc_cpu"
+    slurm_account: "greenbab"
+    mem_mb: 0
+    mem_mb_per_cpu: 4000
+    cpus_per_task: 1
+    nodes: 1
+    runtime: 60
+
+set-resources:
+    sort_bed:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 5
+        mem_mb_per_cpu: 2000
+        cpus_per_task: 1
+
+jobs: unlimited
+keep-incomplete: true
+printshellcmds: true
+latency-wait: 60          # was 360; /data1 NFS files typically land within 5-30s
+max-status-checks-per-second: 1

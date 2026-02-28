@@ -1,0 +1,18 @@
+[2026-02-26 09:49:35] === Snakemake SLURM submission wrapper ===
+[2026-02-26 09:49:35] Snakefile:      /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/Snakefile
+[2026-02-26 09:49:35] Profile dir:    /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/profiles/slurm_fixed
+[2026-02-26 09:49:35] Experiment dir: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests
+[2026-02-26 09:49:35] Cores:          1
+[2026-02-26 09:49:35] Dry-run mode:   false
+[2026-02-26 09:49:35] Submit log:     /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/logs/submit_snakemake_20260226_094935.log
+[2026-02-26 09:49:35] Snakemake binary: /home/ahunos/miniforge3/envs/snakemake/bin/snakemake
+[2026-02-26 09:49:35] Conda env bin:    /home/ahunos/miniforge3/envs/snakemake/bin
+[2026-02-26 09:49:35] Snakemake command: /home/ahunos/miniforge3/envs/snakemake/bin/snakemake -s /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/Snakefile --workflow-profile /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/scripts/workflows/wf_snakemake/profiles/slurm_fixed --directory /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests --cores 1 --rerun-incomplete --forceall
+[2026-02-26 09:49:35] Coordinator script written: /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/logs/coordinator_20260226_094935.sh
+[2026-02-26 09:49:36] Submitted coordinator as SLURM job: 11635434
+[2026-02-26 09:49:36] 
+[2026-02-26 09:49:36] Monitor:
+[2026-02-26 09:49:36]   squeue -j 11635434
+[2026-02-26 09:49:36]   tail -f /data1/greenbab/users/ahunos/apps/llm_configs/claude/tests/logs/coordinator_20260226_094935.log
+[2026-02-26 09:49:36]   sacct -j 11635434 --format=State,ExitCode
+[2026-02-26 09:49:36] === DONE: submit_snakemake.sh completed successfully ===
