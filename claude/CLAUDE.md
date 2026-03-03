@@ -270,7 +270,7 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - If a rule sets the `singularity:` directive, do NOT add `singularity exec -B ...` inside the shell block. The directive handles container binding.
 - Load SLURM profiles from `profiles/workflow_profiles/snakemakes/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
 - Load executor settings from `profiles/workflow_profiles/executor_config.yaml`.
-- Sample sheet format: TSV with columns `patient, sample, condition, path, genome` (defined in `profiles/setup_preferences.yaml`).
+- Sample sheet format: TSV with columns `patient, sample, condition, assay, path, genome` (defined in `profiles/setup_preferences.yaml`).
 
 **Snakemake run organization**:
 - Pipeline code (Snakefile, rules, profiles) is versioned and reusable. Never write outputs into the pipeline directory.
