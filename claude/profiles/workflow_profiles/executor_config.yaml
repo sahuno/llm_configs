@@ -1,12 +1,22 @@
+# executor_config.yaml — Default SLURM profile for ONT methylation pipelines
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-02-28 (fixed)
+#
+# Follows Snakemake 9 + snakemake-executor-plugin-slurm conventions:
+#   - mem_mb: 0  zeros out Snakemake 9 built-in default (prevents SLURM_MEM conflict)
+#   - mem_mb_per_cpu (not mem) in all resource blocks
+#   - slurm_account in default-resources (required; executor plugin ignores env var)
+
 executor: slurm
-    default-resources:
-        partition: componc_cpu,componc_gpu_batch
-        nodes: 1
-        cpus-per-task: 4
-        time: 90:00:00
-        mem: 64GB
-        mail-user: ahunos@mskcc.org
-        mail-type: END,FAIL
+
+default-resources:
+    slurm_partition: "componc_cpu"
+    slurm_account: "greenbab"
+    mem_mb: 0
+    mem_mb_per_cpu: 16000
+    cpus_per_task: 4
+    nodes: 1
+    runtime: 5400
 
 set-resources:
     mod_bases:
@@ -39,27 +49,11 @@ set-resources:
         mem_mb_per_cpu: 24000
         cpus_per_task: 8
 
-    # short_cpu_jobs:
-    #     partition: cpushort
-    #     nodes: 1
-    #     cpus-per-task: 4
-    #     time: 02:00:00
-    #     mem: 32GB
-    #     mail-user: ahunos@mskcc.org
-    #     mail-type: END,FAIL
-    # short_gpu_jobs:
-    #     partition: gpushort
-    #     nodes: 1
-    #     cpus-per-task: 4
-    #     time: 02:00:00
-    #     mem: 32GB
-    #     mail-user: ahunos@mskcc.org
-    #     mail-type: END,FAIL    
-    # high_mem_cpu_jobs:
-    #     partition: componc_cpu
-    #     nodes: 1
-    #     cpus-per-task: 4
-    #     time: 60:00:00
-    #     mem: 64GB
-    #     mail-user: ahunos@mskcc.org
-    #     mail-type: END,FAIL
+jobs: unlimited
+keep-incomplete: true
+printshellcmds: true
+latency-wait: 360
+max-status-checks-per-second: 1
+
+use-singularity: true
+singularity-args: "--bind /data1/greenbab/,/data1/collab001/"

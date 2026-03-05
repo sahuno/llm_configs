@@ -1,122 +1,126 @@
+# slurmMinimal/config.yaml — Dev/testing SLURM profile
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-02-28
+#
+# Purpose: Quick iteration on small test data or short-running workflows.
+#   - cpushort default (2hr max) — fast queue turnaround
+#   - gpushort for GPU rules (2hr max) — test basecalling on subsets
+#   - Lower resource requests to avoid queue wait
+#   - keep-going + rerun-incomplete for iterative debugging
+#
+# Usage:
+#   snakemake --workflow-profile /abs/path/to/slurmMinimal ...
+#
+# Snakemake 9 conventions:
+#   - mem_mb: 0  (zeros out built-in default; prevents SLURM_MEM_PER_NODE conflict)
+#   - mem_mb_per_cpu everywhere (never mem:)
+#   - slurm_account in default-resources
+
+executor: slurm
+
 default-resources:
     slurm_partition: "cpushort"
     slurm_account: "greenbab"
-    runtime: 120 # 2hrs
-    mem_mb_per_cpu: 32000
-    cpus_per_task: 8
+    mem_mb: 0
+    mem_mb_per_cpu: 8000
+    cpus_per_task: 4
     nodes: 1
-    # slurm_extra: "--mail-type=END,FAIL --mail-user=ekwame001@gmail.com"
-executor: slurm
-
-# slurm_partition: "componc_gpu_batch"
-#runtime: 2400
-# mem_mb_per_cpu: 24000
-# cpus_per_task: 8
+    runtime: 60
 
 set-resources:
+    # --- GPU rules (gpushort: 2hr max, fewer GPUs for test data) ---
     mod_bases:
-        slurm_partition: "componc_gpu_batch"
+        slurm_partition: "gpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 2400
+        runtime: 120
         slurm_extra: "'--gres=gpu:2'"
-        mem_mb_per_cpu: 24000
-        cpus_per_task: 8
+        mem_mb_per_cpu: 16000
+        cpus_per_task: 4
+
+    # --- CPU-heavy rules (cpushort: 2hr max, modest resources) ---
     sort_mod_bases:
-        slurm_partition: "componc_cpu"
+        slurm_partition: "cpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 2400
-        mem_mb_per_cpu: 24000
-        cpus_per_task: 8
+        runtime: 120
+        mem_mb_per_cpu: 8000
+        cpus_per_task: 4
     merge_bams:
-        slurm_partition: "componc_cpu"
+        slurm_partition: "cpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 400
-        mem_mb_per_cpu: 24000
-        cpus_per_task: 8
+        runtime: 60
+        mem_mb_per_cpu: 8000
+        cpus_per_task: 4
     mark_duplicates:
-        slurm_partition: "componc_cpu"
+        slurm_partition: "cpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 2400
-        mem_mb_per_cpu: 24000
-        cpus_per_task: 8
+        runtime: 120
+        mem_mb_per_cpu: 16000
+        cpus_per_task: 4
     modkit_summary:
-        slurm_partition: "componc_cpu"
+        slurm_partition: "cpushort"
         slurm_account: "greenbab"
         nodes: 1
-        runtime: 2400
-        mem_mb_per_cpu: 256000
+        runtime: 120
+        mem_mb_per_cpu: 64000
         cpus_per_task: 2
     run_clair:
-        slurm_partition: "componc_cpu"
-        slurm_account: "greenbab"
-        runtime: 2400
-        nodes: 1
-        # slurm_extra: "'--gres=gpu:1'"
-        mem_mb_per_cpu: 64000
-        cpus_per_task: 12
-    call_snps_indels:
-        slurm_partition: "componc_cpu"
-        slurm_account: "greenbab"
-        runtime: 2400
-        nodes: 1
-        # slurm_extra: "'--gres=gpu:1'"
-        mem_mb_per_cpu: 64000
-        cpus_per_task: 12
-    pileup_and_tracks_minCov:
-        slurm_partition: "componc_cpu"
-        slurm_account: "greenbab"
-        runtime: 2400
-        nodes: 1
-        # slurm_extra: "'--gres=gpu:1'"
-        mem_mb_per_cpu: 64000
-        cpus_per_task: 8
-    methylartist_locus:
         slurm_partition: "cpushort"
         slurm_account: "greenbab"
         runtime: 120
         nodes: 1
-        mem_mb_per_cpu: 16
+        mem_mb_per_cpu: 16000
         cpus_per_task: 4
-    bamCoverage_toBigWig:
-        slurm_partition: "componc_cpu"
+    call_snps_indels:
+        slurm_partition: "cpushort"
         slurm_account: "greenbab"
-        runtime: 420
+        runtime: 120
         nodes: 1
-        mem_mb_per_cpu: 16
+        mem_mb_per_cpu: 16000
+        cpus_per_task: 4
+    pileup_and_tracks_minCov:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 120
+        nodes: 1
+        mem_mb_per_cpu: 16000
         cpus_per_task: 4
 
-# methylartist_locus
-        #pileup_and_tracks_minCov
-    # merge_bams:
-    #     slurm_partition: "componc_cpu"
-    #     slurm_account: "greenbab"
-    #     nodes: 1
-    #     runtime: 400
-    #     mem_mb_per_cpu: 24000
-    #     cpus_per_task: 8
+    # --- Lightweight rules ---
+    index_bam:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        nodes: 1
+        runtime: 30
+        mem_mb_per_cpu: 8000
+        cpus_per_task: 4
+    methylartist_locus:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 60
+        nodes: 1
+        mem_mb_per_cpu: 8000
+        cpus_per_task: 2
+    bamCoverage_toBigWig:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 120
+        nodes: 1
+        mem_mb_per_cpu: 8000
+        cpus_per_task: 4
 
-
-#128
-
-# run_clair
+# --- Execution flags (tolerant for dev/testing) ---
 cores: all
 jobs: unlimited
-keep-incomplete: True
-# --singularity-args: "\"--bind /data1/greenbab\""
-use-conda: True
-# keep-going: True
-# rerun-incomplete: True
-printshellcmds: True
-latency-wait: 360
+keep-incomplete: true
+keep-going: true
+rerun-incomplete: true
+printshellcmds: true
+latency-wait: 120
 max-status-checks-per-second: 1
-use-singularity: True
-#--singularity-args "--nv -B /data1/greenbab,/scratch/greenbab/ahunos,/data1/shahs3"
 
-# forceall: True
-#cmd options
-#https://snakemake.readthedocs.io/en/stable/executing/cli.html
-#https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html
+use-singularity: true
+singularity-args: "--bind /data1/greenbab/,/data1/collab001/"
