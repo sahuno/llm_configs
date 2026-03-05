@@ -1,0 +1,228 @@
+"""
+ONT modkit pileup workflow — CpG island methylation quantification
+
+Author: Samuel Ahuno (ekwame001@gmail.com)
+Date: 2026-03-05
+Purpose: Run modkit pileup on ONT WGS BAMs restricted to a CpG island BED file.
+         Handles chr-prefix mismatch between BED (bare names) and BAMs (chr-prefixed).
+         All outputs are self-contained inside output_dir.
+
+Usage
+-----
+  # Dry run
+  snakemake --snakefile Snakefile \
+      --configfile config.yaml \
+      --workflow-profile /abs/path/to/profiles/slurm \
+      -n
+
+  # Execute on SLURM
+  snakemake --snakefile Snakefile \
+      --configfile config.yaml \
+      --workflow-profile /abs/path/to/profiles/slurm
+"""
+
+import os
+import pandas as pd
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+OUTDIR          = config["output_dir"]
+LOGDIR          = os.path.join(OUTDIR, "logs")
+BENCHDIR        = os.path.join(OUTDIR, "benchmarks")
+REF             = config["ref_fasta"]
+IMG             = config["img_modkit"]
+
+MOTIF           = config.get("motif", "CG 0")
+COMBINE_MODS    = config.get("combine_mods", True)
+MODKIT_THREADS  = int(config.get("modkit_threads", 8))
+
+REGIONS_BED     = config.get("regions_bed", None)
+BED_CHR_MODE    = config.get("bed_chr_mode", "auto")
+
+USE_REGIONS     = REGIONS_BED is not None
+
+
+# ---------------------------------------------------------------------------
+# Parse sample manifest (TSV with columns: sample, bam_path)
+# ---------------------------------------------------------------------------
+
+manifest    = pd.read_csv(config["sample_manifest"], sep="\t")
+SAMPLE_IDS  = list(manifest["sample"].astype(str))
+BAM_PATHS   = dict(zip(manifest["sample"].astype(str), manifest["bam_path"].astype(str)))
+
+# Index resolution: check .bai, .bam.bai, .csi variants
+def _resolve_index(bam, explicit=None):
+    if explicit and str(explicit) not in ("", "nan", "None"):
+        return str(explicit)
+    for idx in [bam.replace(".bam", ".bai"), bam + ".bai", bam + ".csi", bam.replace(".bam", ".csi")]:
+        if os.path.exists(idx):
+            return idx
+    return bam.replace(".bam", ".bai")   # fallback; Snakemake will report missing file
+
+BAI_PATHS = {
+    str(row["sample"]): _resolve_index(
+        str(row["bam_path"]),
+        row.get("bam_index") if "bam_index" in manifest.columns else None,
+    )
+    for _, row in manifest.iterrows()
+}
+
+
+def get_bam(wildcards):
+    return BAM_PATHS[wildcards.sample]
+
+def get_bai(wildcards):
+    return BAI_PATHS[wildcards.sample]
+
+
+# ---------------------------------------------------------------------------
+# Chr-prefix detection
+# ---------------------------------------------------------------------------
+
+CONVERT_BED     = False
+BED_STEM        = ""
+CHRPREFIXED_BED = ""
+
+if USE_REGIONS:
+    BED_STEM = Path(REGIONS_BED).stem
+
+    if BED_CHR_MODE == "add_chr":
+        CONVERT_BED = True
+    elif BED_CHR_MODE == "none":
+        CONVERT_BED = False
+    else:  # auto -- inspect first data line of BED
+        with open(REGIONS_BED) as _fh:
+            for _line in _fh:
+                _line = _line.strip()
+                if _line and not _line.startswith("#"):
+                    _first_chrom = _line.split("\t")[0]
+                    CONVERT_BED = not _first_chrom.startswith("chr")
+                    break
+
+    if CONVERT_BED:
+        CHRPREFIXED_BED = os.path.join(OUTDIR, f"{BED_STEM}_chrPrefixed.bed")
+    else:
+        CHRPREFIXED_BED = REGIONS_BED
+
+
+# ---------------------------------------------------------------------------
+# Input helpers
+# ---------------------------------------------------------------------------
+
+def get_bed_input(wildcards):
+    """Return the BED path for modkit --include-bed, or [] for genome-wide."""
+    if not USE_REGIONS:
+        return []
+    return CHRPREFIXED_BED
+
+
+def get_include_bed_flag(wildcards, input):
+    """Return --include-bed flag string, or empty string for genome-wide."""
+    if not USE_REGIONS:
+        return ""
+    return f"--include-bed {CHRPREFIXED_BED}"
+
+
+# ---------------------------------------------------------------------------
+# Target rule
+# ---------------------------------------------------------------------------
+
+_targets = expand(
+    os.path.join(OUTDIR, "modkit_pileup", "{sample}", "{sample}.modkit_pileup.bedmethyl.gz"),
+    sample=SAMPLE_IDS,
+)
+
+rule all:
+    input:
+        _targets,
+
+
+# ---------------------------------------------------------------------------
+# Rule: convert_bed_chr (only when regions BED needs chr prefix conversion)
+# ---------------------------------------------------------------------------
+
+if USE_REGIONS and CONVERT_BED:
+    rule convert_bed_chr:
+        """Add chr prefix to BED chromosome names to match BAM/reference convention."""
+        input:
+            bed=REGIONS_BED,
+        output:
+            bed=CHRPREFIXED_BED,
+        log:
+            os.path.join(LOGDIR, "convert_bed_chr.log"),
+        retries: 1
+        shell:
+            r"""
+            (
+            echo "$(date '+%Y-%m-%d %H:%M:%S') === convert_bed_chr ==="
+            echo "Input BED: {input.bed}"
+            awk 'BEGIN{{OFS="\t"}} /^#/ || /^$/ {{print; next}} {{
+                if ($1 !~ /^chr/) $1 = "chr" $1
+                print
+            }}' {input.bed} > {output.bed}
+
+            n=$(grep -vc '^#' {output.bed} || echo 0)
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Converted $n regions to chr-prefixed names"
+            echo "Output BED: {output.bed}"
+            ) &> {log}
+            """
+
+
+# ---------------------------------------------------------------------------
+# Rule: modkit_pileup
+# ---------------------------------------------------------------------------
+
+rule modkit_pileup:
+    """Run modkit pileup for a single sample; restricted to CpG island BED."""
+    input:
+        bam=get_bam,
+        bai=get_bai,
+        ref=REF,
+        bed=get_bed_input,
+    output:
+        bedmethyl=os.path.join(OUTDIR, "modkit_pileup", "{sample}", "{sample}.modkit_pileup.bedmethyl.gz"),
+        tbi=os.path.join(OUTDIR, "modkit_pileup", "{sample}", "{sample}.modkit_pileup.bedmethyl.gz.tbi"),
+    log:
+        os.path.join(LOGDIR, "modkit_pileup_{sample}.log"),
+    benchmark:
+        os.path.join(BENCHDIR, "modkit_pileup_{sample}.tsv")
+    threads: MODKIT_THREADS
+    retries: 2
+    singularity:
+        IMG
+    params:
+        include_bed=get_include_bed_flag,
+        combine_flag="--combine-mods" if COMBINE_MODS else "",
+        motif=MOTIF,
+    shell:
+        """
+        (
+        echo "$(date '+%Y-%m-%d %H:%M:%S') === modkit pileup: {wildcards.sample} ==="
+        echo "BAM: {input.bam}"
+        echo "REF: {input.ref}"
+        echo "Threads: {threads}"
+
+        modkit pileup \
+            --header \
+            --bgzf \
+            {params.include_bed} \
+            --ref {input.ref} \
+            --motif {params.motif} \
+            {params.combine_flag} \
+            --threads {threads} \
+            {input.bam} \
+            {output.bedmethyl}
+
+        n=$(zcat {output.bedmethyl} | grep -vc '^#' || echo 0)
+        echo "$(date '+%Y-%m-%d %H:%M:%S') CpG sites written: $n"
+
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Indexing with tabix..."
+        tabix -p bed {output.bedmethyl}
+
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Done: {output.bedmethyl}"
+        ) &> {log}
+        """

@@ -1,0 +1,28 @@
+{
+  "eval_id": 3,
+  "eval_name": "qc-gate-addition",
+  "expectations": [
+    {
+      "text": "QC gate produces .pass sentinel file",
+      "passed": true,
+      "evidence": "Rule output: qc_pass=os.path.join(QCDIR, 'alignment_{sample}.pass')"
+    },
+    {
+      "text": "QC gate has retries: 0",
+      "passed": true,
+      "evidence": "Line 140: retries: 0  # QC failures are data issues, not transient"
+    },
+    {
+      "text": "Downstream rule depends on QC sentinel",
+      "passed": true,
+      "evidence": "call_variants input includes qc_pass=os.path.join(QCDIR, 'alignment_{sample}.pass')"
+    },
+    {
+      "text": "QC outputs go to qc/ directory",
+      "passed": true,
+      "evidence": "QCDIR = os.path.join(OUTDIR, 'qc') and sentinel under QCDIR"
+    }
+  ],
+  "pass_rate": 1.0,
+  "notes": "All 4 assertions passed. QC gate correctly implements sentinel pattern with configurable threshold. Also includes helpful DAG diagram and audit trail."
+}

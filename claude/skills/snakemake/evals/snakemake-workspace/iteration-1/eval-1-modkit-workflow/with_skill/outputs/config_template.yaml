@@ -1,0 +1,64 @@
+# config_template.yaml -- ONT modkit pileup at CpG islands
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-03-05
+#
+# Usage:
+#   1. Copy this file to your run directory and fill in REQUIRED fields.
+#   2. Dry-run:
+#        snakemake --snakefile /path/to/Snakefile \
+#            --configfile config.yaml \
+#            --workflow-profile /abs/path/to/profiles/slurm \
+#            -n
+
+
+# =============================================================================
+# REQUIRED
+# =============================================================================
+
+# Self-contained output directory. ALL outputs go here (bedmethyl, logs,
+# benchmarks, chrPrefixed BED). LOGDIR and BENCHDIR are derived internally.
+# Convention: results/<date>_<genome>_<description>/
+output_dir: "FILL_ME"
+
+# TSV with columns: sample, bam_path
+# Optional column: bam_index (explicit index path; auto-detected if absent)
+sample_manifest: "/data1/greenbab/projects/my_project/samples.tsv"
+
+# Reference FASTA used to align the BAMs. Must match exactly.
+# hg38: /data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta
+ref_fasta: "/data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta"
+
+# Singularity/Apptainer image containing modkit + tabix.
+img_modkit: "/data1/greenbab/software/images/onttools_v3.9.sif"
+
+
+# =============================================================================
+# OPTIONAL -- Regions BED
+# =============================================================================
+
+# BED file of CpG islands (or any regions) to restrict pileup to.
+# If null, modkit runs genome-wide (much slower, much larger output).
+regions_bed: "FILL_ME"
+
+# How to handle chromosome name differences between BED and BAM/reference.
+#   auto     -- inspect first data line of BED; add chr prefix if missing (default)
+#   add_chr  -- always add chr prefix regardless of current names
+#   none     -- leave chromosome names as-is (BED already matches BAM)
+# The user's BED uses bare names (1, 2, ...) and BAMs use chr-prefixed.
+# "auto" will detect this and convert automatically.
+bed_chr_mode: "auto"
+
+
+# =============================================================================
+# OPTIONAL -- modkit pileup settings
+# =============================================================================
+
+# modkit --motif argument: pattern and offset (space-separated string).
+# CG 0  = standard CpG dinucleotides
+motif: "CG 0"
+
+# Whether to pass --combine-mods (merges 5mC + 5hmC into single modified count).
+combine_mods: true
+
+# Number of threads for modkit pileup per sample.
+modkit_threads: 8

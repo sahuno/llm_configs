@@ -1,0 +1,23 @@
+{
+  "eval_id": 2,
+  "eval_name": "slurm-memory-debug",
+  "expectations": [
+    {
+      "text": "Identifies mem_mb: 0 fix",
+      "passed": true,
+      "evidence": "Response clearly states 'Add mem_mb: 0 to default-resources' as the primary fix"
+    },
+    {
+      "text": "Explains root cause (Snakemake built-in default conflicts with mem_mb_per_cpu)",
+      "passed": true,
+      "evidence": "Response explains Snakemake 9 has built-in mem_mb: 1000, maps to --mem, conflicts with --mem-per-cpu"
+    },
+    {
+      "text": "Flags missing slurm_account",
+      "passed": true,
+      "evidence": "Response includes slurm_account: greenbab in corrected profile and warns about silent rejection"
+    }
+  ],
+  "pass_rate": 1.0,
+  "notes": "All 3 assertions passed. Diagnosis is accurate and comprehensive. Also correctly warns about coordinator --mem propagation."
+}

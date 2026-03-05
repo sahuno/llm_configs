@@ -1,0 +1,16 @@
+executor: slurm
+
+default-resources:
+  slurm_partition: componc_cpu
+  slurm_account: greenbab
+  mem_mb: 0
+  mem_mb_per_cpu: 16000
+  cpus_per_task: 4
+  nodes: 1
+  runtime: 240
+
+jobs: unlimited
+keep-incomplete: true
+printshellcmds: true
+latency-wait: 360
+max-status-checks-per-second: 1

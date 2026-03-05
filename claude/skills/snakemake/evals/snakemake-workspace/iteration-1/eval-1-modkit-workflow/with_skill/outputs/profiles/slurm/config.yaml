@@ -1,0 +1,43 @@
+# SLURM workflow profile -- modkit pileup at CpG islands
+# Author: Samuel Ahuno (ekwame001@gmail.com)
+# Date: 2026-03-05
+#
+# Follows Snakemake 9 + snakemake-executor-plugin-slurm conventions:
+#   - mem_mb: 0  zeros out Snakemake 9 built-in default (prevents SLURM_MEM conflict)
+#   - mem_mb_per_cpu (not mem_mb) in all resource blocks
+#   - slurm_account set explicitly (executor plugin ignores SLURM env var)
+
+executor: slurm
+
+default-resources:
+    slurm_partition: "componc_cpu"
+    slurm_account: "greenbab"
+    mem_mb: 0
+    mem_mb_per_cpu: 4000
+    cpus_per_task: 1
+    nodes: 1
+    runtime: 60
+
+set-resources:
+    convert_bed_chr:
+        slurm_partition: "cpushort"
+        slurm_account: "greenbab"
+        runtime: 5
+        mem_mb_per_cpu: 2000
+        cpus_per_task: 1
+
+    modkit_pileup:
+        slurm_partition: "componc_cpu"
+        slurm_account: "greenbab"
+        runtime: 240
+        mem_mb_per_cpu: 4000
+        cpus_per_task: 8
+
+jobs: unlimited
+keep-incomplete: true
+printshellcmds: true
+latency-wait: 360
+max-status-checks-per-second: 1
+
+use-singularity: true
+singularity-args: "--bind /data1/greenbab/"

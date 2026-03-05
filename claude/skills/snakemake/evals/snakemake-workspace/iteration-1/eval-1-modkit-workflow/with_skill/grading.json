@@ -1,0 +1,43 @@
+{
+  "eval_id": 1,
+  "eval_name": "modkit-workflow-creation",
+  "expectations": [
+    {
+      "text": "Profile has mem_mb: 0 in default-resources",
+      "passed": true,
+      "evidence": "Line 15 of profile: mem_mb: 0"
+    },
+    {
+      "text": "Profile has slurm_account in default-resources",
+      "passed": true,
+      "evidence": "Line 14 of profile: slurm_account: \"greenbab\""
+    },
+    {
+      "text": "Rules needing container packages have singularity: directive",
+      "passed": true,
+      "evidence": "modkit_pileup rule has 'singularity: IMG' at line 195-196 of Snakefile"
+    },
+    {
+      "text": "Compute-heavy rules have benchmark: directive",
+      "passed": true,
+      "evidence": "modkit_pileup rule has benchmark: at line 191-192 of Snakefile"
+    },
+    {
+      "text": "Run script has unset SLURM_MEM_PER_NODE",
+      "passed": true,
+      "evidence": "Line 25 of run_snakemake.sh: unset SLURM_MEM_PER_NODE"
+    },
+    {
+      "text": "Uses single output_dir config key",
+      "passed": true,
+      "evidence": "Line 33: OUTDIR = config[\"output_dir\"], all paths derived from it"
+    },
+    {
+      "text": "Handles chr prefix conversion between BED and BAM",
+      "passed": true,
+      "evidence": "Lines 86-109: auto-detection of chr prefix with convert_bed_chr rule"
+    }
+  ],
+  "pass_rate": 1.0,
+  "notes": "All 7 assertions passed. Workflow correctly implements all skill conventions."
+}
