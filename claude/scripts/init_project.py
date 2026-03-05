@@ -117,14 +117,14 @@ def _ml_dirs():
     ]
 
 
-def _results_dirs():
+def _results_dirs(genome):
     """Starter results directory with figures subdirs.
 
-    Real runs use results/{date}_{description}/figures/{png,pdf,svg}.
+    Real runs use results/{date}_{genome}_{description}/figures/{png,pdf,svg}.
     We create a placeholder v1 to show the pattern.
     """
     today = datetime.now().strftime("%Y%m%d")
-    base = f"results/{today}_v1"
+    base = f"results/{today}_{genome}_v1"
     return [
         base,
         f"{base}/figures/png",
@@ -270,7 +270,7 @@ def _readme_content(project_name, genome, project_type):
 │   └── processed/{genome}/     # all transformed outputs, tagged by build
 ├── src/                        # analysis scripts (numbered: 01_, 02_, ...)
 ├── results/
-│   └── {results_date}_v1/      # one dir per run
+│   └── {results_date}_{genome}_v1/  # one dir per run
 │       └── figures/{{png,pdf,svg}}/
 ├── workflows/wf_snakemake/     # Snakefile, configs, profiles, rules
 ├── softwares/containers/       # .def files and third-party images
@@ -282,7 +282,7 @@ def _readme_content(project_name, genome, project_type):
 
 ```bash
 # Create a new results directory for each run:
-mkdir -p results/$(date +%Y%m%d)_<description>/figures/{{png,pdf,svg}}
+mkdir -p results/$(date +%Y%m%d)_{genome}_<description>/figures/{{png,pdf,svg}}
 ```
 """
 
@@ -321,7 +321,7 @@ def create_project(project_name, project_type, genome, engine=None, in_place=Fal
     # Collect directories
     # Pipeline projects get engine-specific workflow dirs instead of the default
     skip_default_wf = (project_type == "pipeline")
-    dirs = _core_dirs(genome, include_default_workflow=not skip_default_wf) + _results_dirs()
+    dirs = _core_dirs(genome, include_default_workflow=not skip_default_wf) + _results_dirs(genome)
 
     if project_type == "pipeline":
         pipeline_extras = {
