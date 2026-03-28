@@ -34,13 +34,13 @@ On every new conversation, do the following in order:
    ├── logs/                       # timestamped script logs
    └── docs/
    ```
-   Use `claude/scripts/init_project.py` to scaffold projects:
+   Use `~/.claude/scripts/init_project.py` to scaffold projects:
    ```bash
    # Scaffold in current directory (default — uses cwd name as project name):
-   python init_project.py --type analysis --genome hg38
+   python ~/.claude/scripts/init_project.py --type analysis --genome hg38
 
    # Create a new subdirectory:
-   python init_project.py --name my_project --type pipeline --engine snakemake --genome mm10
+   python ~/.claude/scripts/init_project.py --name my_project --type pipeline --engine snakemake --genome mm10
    ```
    Project types: `analysis` (default workflow dirs), `pipeline` (engine-specific layout, requires `--engine snakemake|nextflow`), `ml` (adds notebooks, model dirs).
    A top-level `README.md` is generated with project metadata, directory tree, and aims. Additional READMEs only when the user requests them.

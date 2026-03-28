@@ -10,7 +10,7 @@ reference_genomes:
                     gtf: /data1/greenbab/database/mm10/annotations/gencode.vM36.annotation.gtf.gz
                     sizes: /data1/greenbab/database/mm10/mm10.sorted.standard.chrom.sizes
                     CpGIslands: /data1/greenbab/database/mm10/mm10_CpGIslands.bed
-                    repMaskerBed: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/rm_mm10_rm_sorted.bed
+                    repMaskerBed: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/rmsk_all_repeats_mm10.bed.gz
                     repMaskerOut: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/mm10.fa.out.gz
                     repMaskerAlign: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/mm10.fa.align.gz
             mm39:
@@ -22,6 +22,9 @@ reference_genomes:
                     fasta: /data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta
                     gtf: /data1/greenbab/database/gencode_annotations/hg38/gencode.v47.annotation.gtf.gz
                     sizes: /data1/greenbab/database/sizes.Homo_sapiens_assembly38
+                    repMaskerBed: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/hg38/RepLibrary20140131/rmsk_all_repeats_hg38.bed.gz
+                    repMaskerOut: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/hg38/RepLibrary20140131/hg38.fa.out.gz
+                    repMaskerAlign: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/hg38/RepLibrary20140131/hg38.fa.align.gz
                     CpGIslands: /data1/greenbab/database/CpGIslands/hg38/hg38_CpGIslands.bed
             t2t_CHM13v2_plusY:
                     fasta: /data1/greenbab/database/T2T_CHM13v2_plusY/chm13v2.0.fa
