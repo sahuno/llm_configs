@@ -104,3 +104,9 @@ Report findings as a table:
 | File | Line | Category | Severity | Issue | Fix |
 |------|------|----------|----------|-------|-----|
 ```
+
+
+## literature review
+"Retrieve De Cecco et al. Nature 2019 (PMID 30728521) on LINE-1 and senescence. I want to understand: (1) what causal claim they make, (2) what experiments they used to establish that causality — specifically necessity and sufficiency — and (3) what they could not prove. Present it as a structured breakdown."
+
+General rule: lead with the intellectual question, not the tool. Tools are means; the question is the goal. The more precisely you define what you want to understand, the less I have to guess — and the less I pad the response with things you didn't need.
