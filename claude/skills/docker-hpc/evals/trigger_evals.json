@@ -1,0 +1,22 @@
+[
+  {"query": "I need a Docker image for samtools v1.21 to use in my Snakemake pipeline on HPC. It should work with Apptainer.", "should_trigger": true},
+  {"query": "Can you dockerize dorado v1.4.0 for me and push it to Docker Hub automatically?", "should_trigger": true},
+  {"query": "I want to containerize BWA-MEM2 for use on our SLURM cluster — no Docker daemon available.", "should_trigger": true},
+  {"query": "Set up GitHub Actions to rebuild my Docker image whenever I push a new git tag.", "should_trigger": true},
+  {"query": "I need a container for DESeq2 and edgeR that works with Apptainer on HPC.", "should_trigger": true},
+  {"query": "Build a Docker image for STAR aligner version 2.7.11a.", "should_trigger": true},
+  {"query": "Add modkit v0.4.0 to my existing containers repo in a monorepo style.", "should_trigger": true},
+  {"query": "I want to push my bioinformatics tool to Docker Hub with CI/CD — can you help me set that up?", "should_trigger": true},
+  {"query": "Create a GPU-enabled Docker image for PyTorch 2.3 with CUDA 12.4.", "should_trigger": true},
+  {"query": "How do I containerize CellRanger for single-cell RNA-seq on HPC without Docker installed?", "should_trigger": true},
+  {"query": "Can you pull a Singularity/Apptainer container for samtools from Docker Hub?", "should_trigger": false},
+  {"query": "Write me a Singularity .def file for dorado basecalling.", "should_trigger": false},
+  {"query": "How do I run a Snakemake pipeline on SLURM with Apptainer containers?", "should_trigger": false},
+  {"query": "How do I install samtools on Ubuntu?", "should_trigger": false},
+  {"query": "Debug why my STAR alignment job is running out of memory on SLURM.", "should_trigger": false},
+  {"query": "Help me write a Snakemake rule for dorado basecalling.", "should_trigger": false},
+  {"query": "Pull the latest dorado image from nanoporetech on Docker Hub.", "should_trigger": false},
+  {"query": "How do I set up GitHub Actions for a Python package CI test?", "should_trigger": false},
+  {"query": "I need to run an apptainer container interactively on an HPC node.", "should_trigger": false},
+  {"query": "Write a Nextflow pipeline for RNA-seq alignment.", "should_trigger": false}
+]

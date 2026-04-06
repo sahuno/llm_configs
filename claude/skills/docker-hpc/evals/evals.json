@@ -1,0 +1,103 @@
+{
+  "skill_name": "docker-hpc",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need a Docker image for samtools v1.21 to use in my Snakemake pipeline on HPC. It should work with Apptainer.",
+      "expected_output": "Generates a biocli Dockerfile using conda_base template: condaforge/miniforge3 base, mamba install samtools=1.21, cache cleaned in same layer, OCI labels with version 1.21, validation RUN, non-root user, explicit ENV PATH, ENTRYPOINT samtools. Includes GitHub Actions workflow.",
+      "files": [],
+      "assertions": [
+        {"name": "uses-conda-base-image", "description": "Dockerfile uses condaforge/miniforge3 as base image"},
+        {"name": "mamba-install-samtools-pinned", "description": "Installs samtools=1.21 via mamba with version pinned"},
+        {"name": "cache-cleaned-same-layer", "description": "mamba clean --all in same RUN as mamba install"},
+        {"name": "oci-label-version", "description": "OCI label version = 1.21"},
+        {"name": "validation-layer-present", "description": "RUN samtools --version present"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "explicit-env-path", "description": "ENV PATH set explicitly"},
+        {"name": "entrypoint-set", "description": "ENTRYPOINT [\"samtools\"]"},
+        {"name": "github-actions-workflow-produced", "description": "GitHub Actions workflow YAML with Docker Hub push"},
+        {"name": "workflow-tag-triggered", "description": "Workflow triggers on git tag pushes"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a Docker image for my R analysis environment. I use DESeq2, edgeR, and ggplot2 from Bioconductor. Version it as 1.0.0.",
+      "expected_output": "R Dockerfile: bioconductor_docker base, BiocManager for DESeq2/edgeR, install.packages for ggplot2, OCI labels, validation, non-root user, ENTRYPOINT Rscript.",
+      "files": [],
+      "assertions": [
+        {"name": "uses-bioconductor-base-image", "description": "FROM bioconductor/bioconductor_docker"},
+        {"name": "deseq2-installed", "description": "DESeq2 installed via BiocManager"},
+        {"name": "edger-installed", "description": "edgeR installed"},
+        {"name": "ggplot2-installed", "description": "ggplot2 installed (CRAN)"},
+        {"name": "oci-label-version-1.0.0", "description": "OCI label version = 1.0.0"},
+        {"name": "r-validation-layer", "description": "RUN Rscript --version or similar"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "r-entrypoint", "description": "ENTRYPOINT [\"Rscript\"]"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want to dockerize dorado v1.4.0 from Oxford Nanopore. Add samtools on top. Push to Docker Hub and set up GitHub Actions to rebuild when I tag a new version.",
+      "expected_output": "ONT Dockerfile: nanoporetech/dorado base, samtools via mamba, OCI labels, dorado --version validation, non-root user, tag-triggered workflow, linux/amd64.",
+      "files": [],
+      "assertions": [
+        {"name": "uses-ont-base-image", "description": "FROM nanoporetech/dorado"},
+        {"name": "samtools-added", "description": "samtools installed on top"},
+        {"name": "oci-label-version-1.4.0", "description": "OCI label version = 1.4.0"},
+        {"name": "oci-source-label", "description": "OCI label source = nanoporetech/dorado"},
+        {"name": "dorado-validation-layer", "description": "RUN dorado --version"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "workflow-tag-triggered", "description": "Workflow triggers on git tags"},
+        {"name": "platform-linux-amd64", "description": "Workflow specifies platforms: linux/amd64"}
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I need a GPU-enabled Docker image for PyTorch 2.3 with CUDA 12.4 for training deep learning models on our HPC cluster. Include numpy and pandas too.",
+      "expected_output": "cuda/python-ml Dockerfile: nvidia/cuda base, mamba install pytorch=2.3 numpy pandas, LD_LIBRARY_PATH set, OCI labels, validation (python -c import torch), non-root user, linux/amd64 workflow.",
+      "files": [],
+      "assertions": [
+        {"name": "uses-cuda-base-image", "description": "FROM nvidia/cuda base image (not condaforge or ubuntu)"},
+        {"name": "pytorch-installed", "description": "PyTorch installed via mamba or pip"},
+        {"name": "numpy-pandas-installed", "description": "numpy and pandas installed"},
+        {"name": "cache-cleaned-same-layer", "description": "mamba/pip cache cleaned in same RUN layer as install"},
+        {"name": "ld-library-path-set", "description": "ENV LD_LIBRARY_PATH set for GPU library resolution"},
+        {"name": "oci-label-version", "description": "OCI label version present"},
+        {"name": "validation-layer-present", "description": "RUN validation command (python -c or similar)"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "platform-linux-amd64", "description": "Workflow specifies platforms: linux/amd64"}
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Add a Docker image for modkit v0.4.0 to my existing containers repo. It's an ONT methylation calling tool — just needs the modkit binary, no extra packages.",
+      "expected_output": "Detects MODE=monorepo REPO=sahuno/softwares. Generates ONT Dockerfile for modkit. Monorepo workflow (tool-v tag format). add_to_monorepo.sh path selected over setup_repo.sh.",
+      "files": [],
+      "assertions": [
+        {"name": "detects-monorepo-mode", "description": "detect_context.sh returns MODE=monorepo (not standalone)"},
+        {"name": "monorepo-repo-identified", "description": "Correct monorepo repo identified (sahuno/softwares or similar)"},
+        {"name": "uses-ont-base-image", "description": "FROM nanoporetech or ubuntu base appropriate for ONT tool"},
+        {"name": "oci-label-version-0.4.0", "description": "OCI label version = 0.4.0"},
+        {"name": "modkit-validation-layer", "description": "RUN modkit --version or equivalent validation"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "monorepo-tag-format", "description": "Workflow or summary references {tool}-v{version} tag format (modkit-v0.4.0)"},
+        {"name": "add-to-monorepo-path", "description": "Skill routes to add_to_monorepo.sh not setup_repo.sh"}
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Build a Docker container for CellRanger v8.0.0 from 10x Genomics for single-cell RNA-seq. It's a pre-built binary that I need to download and install.",
+      "expected_output": "LLM fallback for exotic tool: biocli/generic type, conda_base or multi-stage build, downloads CellRanger binary, OCI labels, cellranger --version validation, non-root user, workflow.",
+      "files": [],
+      "assertions": [
+        {"name": "cellranger-binary-installed", "description": "Dockerfile installs CellRanger binary (via download, COPY, or similar)"},
+        {"name": "oci-label-version-8.0.0", "description": "OCI label version = 8.0.0"},
+        {"name": "cellranger-validation-layer", "description": "RUN cellranger --version or equivalent validation"},
+        {"name": "non-root-user", "description": "Creates and switches to non-root user"},
+        {"name": "explicit-env-path", "description": "ENV PATH includes cellranger binary location"},
+        {"name": "workflow-tag-triggered", "description": "GitHub Actions workflow triggers on git tags"},
+        {"name": "platform-linux-amd64", "description": "Workflow specifies linux/amd64"}
+      ]
+    }
+  ]
+}

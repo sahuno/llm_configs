@@ -1,2 +1,4 @@
 share/claude/tmp
 claude/tests/logs/*.log
+sandbox/
+setup/
