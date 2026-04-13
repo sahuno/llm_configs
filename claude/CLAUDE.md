@@ -8,7 +8,6 @@
 ## 1. Session Initialization
 
 On every new conversation, do the following in order:
-
 1. **Ask the user** to classify the session:
    - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering
    - **Status**: Fresh project or continuation of existing project
@@ -203,7 +202,7 @@ Every analysis script must produce a **timestamped log file** that captures enou
 
 **Standard chain**: pod5 -> dorado basecall -> dorado align (or minimap2) -> samtools sort/index -> modkit pileup -> modkit dmr
 
-**Tool references**: Load containers from `profiles/software_configs/softwares_containers_config.yaml`.
+**Tool references**: Load containers from `~/.claude/profiles/software_configs/softwares_containers_config.yaml`.
 
 **QC checkpoints** (stop and report if any fail):
 1. After basecalling: Check read N50, total bases, pass/fail ratio from dorado summary.
@@ -292,7 +291,7 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - One config file per run, named to match the results directory.
 - Run naming convention: `{date}_{genome}_{description}` (e.g. `20260305_hg38_differential_methylation`, `20260310_mm10_v1`).
 
-**Nextflow**: Profiles are in `profiles/workflow_profiles/nextflow/`.
+**Nextflow**: Profiles are in `~/.claude/profiles/workflow_profiles/nextflow/`.
 
 ### CLI Tools and Packages
 - Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
@@ -306,16 +305,7 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - For Python packages: `pytest --tb=short` with coverage report.
 
 ### Snakemake Troubleshooting (Lessons Learned)
-- **"No rule to produce" for valid targets**: Check for whitespace in sample names or paths in the sample sheet. As a workaround, extract the failing step into a standalone shell script.
-- **Double-container invocation**: If a rule sets the `singularity:` directive, do NOT also add `singularity exec -B` inside the `shell:` block. The directive handles container execution automatically.
-- **Config access**: When using `--configfile`, values are accessed as `config["key"]`, not `config.key`.
-- **Cluster profile conflicts**: When using `--workflow-profile` with SLURM, ensure resource keys (`mem_mb`, `threads`, `runtime`) do not conflict with the cluster profile's own defaults. Check `.snakemake/log/` for the actual submitted job command if jobs fail silently.
-- **`--profile` absolute path required when `--directory` is set**: Snakemake resolves `--profile` relative to `--directory`, not relative to `--snakefile`. When the pipeline lives in one directory and the experiment in another, always pass `--profile` as an absolute path.
-- **Snakemake 9 `srun` memory conflict** (`SLURM_MEM_PER_NODE` vs `SLURM_MEM_PER_CPU` fatal): `snakemake-executor-plugin-slurm` wraps each rule's shell in `srun` inside the `sbatch` job. Snakemake 9 also injects a built-in `mem_mb = 1000` default. Fix: use `mem_mb_per_cpu` (not `mem_mb`) in all rule `resources:` blocks, and add `mem_mb: 0` to profile `default-resources` to zero out the built-in default. **ADDITIONAL**: If the Snakemake coordinator itself is submitted as an sbatch job (e.g. via submit_snakemake.sh), use `#SBATCH --mem-per-cpu=XXXX` (never `--mem=XG`) for the coordinator — `--mem` sets `SLURM_MEM_PER_NODE` in the coordinator env which propagates via `--export=ALL` to rule jobs, creating the same conflict. Also add `unset SLURM_MEM_PER_NODE` at the top of the coordinator script. Confirmed fix: 2026-02-26.
-- **Missing SLURM account causes silent rejection**: Add `slurm_account: <account>` to profile `default-resources`. The executor plugin does not read `SLURM_DEFAULT_ACCOUNT` from the environment.
-- **`software-deployment-method: apptainer` breaks conda-based pipelines**: Setting this wraps every rule's shell command in `apptainer exec`, breaking all rules that do not have a container directive. Omit it entirely for conda-based pipelines (see GPU note in §6 for when to use it).
-- **Stale lock file after killed coordinator**: Run `snakemake --unlock` before resubmitting. Add `--rerun-incomplete` on resubmission to pick up partial outputs.
-
+- refer to @rules/snakemake.md for lessons learnt
 ---
 
 ## 5. Domain Playbook: AI Engineering
@@ -337,17 +327,7 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 ## 6. Environment Reference
 
 ### Compute Awareness (SLURM)
-
-| Task | CPUs | Memory | GPU | Time Estimate |
-|------|------|--------|-----|---------------|
-| Dorado basecalling | 4 | 16G | 1x A100/V100 required | ~1h per 10Gb pod5 |
-| Minimap2 alignment | 8-16 | 32G | No | ~30min per 10M reads |
-| Clair3 variant calling | 8 | 32G | Optional (faster with) | ~2h per 30x WGS |
-| STAR alignment | 8 | 40G | No | ~30min per sample |
-| CellRanger | 16 | 64G | No | ~2-4h per sample |
-| DESeq2 / DGE | 4 | 16G | No | Minutes |
-| Scanpy/Seurat | 4-8 | 32-64G | No | 10-60min depending on cell count |
-| LLM fine-tuning | 4 | 32G | 1-4x GPU | Hours to days |
+###TODO: create a database of memory requirements for common workflows or create slurm templates, implement tags like `highCompute_highTime`, `lowTime_lowCompute`. slurm-mcp has snapshot of resource limitations like componc_onc <= 7days
 
 When writing SLURM job headers or snakemake resource directives, use these as starting estimates. Scale memory with data size — 2x safety margin for unknown inputs.
 
