@@ -1,0 +1,26 @@
+{
+  "skill_name": "cohort-overview",
+  "evals": [
+    {
+      "id": 0,
+      "name": "demo-from-scratch",
+      "prompt": "I saw the SPECTRUM cohort data availability heatmap in a paper and I want to recreate that for my own work eventually. Right now I don't have my own data yet — can you set up a working demo in /tmp/cohort_demo_1 with some fake patients and assays so I can see what the final figure looks like? I want the PNG to exist when you're done.",
+      "expected_output": "Claude scaffolds /tmp/cohort_demo_1 with scripts/, data/, results/; runs the mock generator to make cohort_wide.tsv; runs the plotter; produces results/png/cohort_overview_heatmap.png",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "custom-assays-and-colors",
+      "prompt": "I already have a cohort TSV at /Users/ahunos/myWork/sandbox/cohort_overview/data/cohort_wide.tsv. I only care about the DNA assays (DLP, WGS, ONT) for this figure, and the PI wants the 'Yes' cells in steel blue (#4682B4) instead of black, and NA cells as a very light pink (#FFE5E5). Put outputs under /tmp/cohort_demo_2 and name the file cohort_dna_only. PNG only, I don't need the PDF or SVG.",
+      "expected_output": "Claude runs the plotter with --input pointing at the user's TSV, --assays 'DLP,WGS,ONT', --yes-color #4682B4, --na-color #FFE5E5, --name cohort_dna_only, --outdir /tmp/cohort_demo_2, --no-pdf --no-svg. Produces /tmp/cohort_demo_2/png/cohort_dna_only.png",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "na-as-no-collapse",
+      "prompt": "For the cohort availability figure I'm making, I actually want to treat 'not attempted' samples the same as 'no' — the reviewers kept asking about the three-state legend and it's confusing them. Use the cohort TSV at /Users/ahunos/myWork/sandbox/cohort_overview/data/cohort_wide.tsv and give me the plot with a two-state legend (Yes/No only). Put it in /tmp/cohort_demo_3.",
+      "expected_output": "Claude invokes the plotter with --na-as-no flag on, producing a two-state figure under /tmp/cohort_demo_3/png/. Legend should show Yes/No only, no NA state.",
+      "files": []
+    }
+  ]
+}

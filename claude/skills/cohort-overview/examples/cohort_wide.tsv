@@ -1,0 +1,291 @@
+patient_id	sample_id	site	signature	BRCA1	BRCA2	CCNE1	DLP	ONT	WGS	mpIF	scATAC-seq	scRNA-seq	scRNAseqVDJ
+002	002_S01	Peritoneum	Undetermined	Present	Absent	Amplified	NA	NA	NA	NA	NA	NA	NA
+003	003_S01	Bowel	Undetermined	Unknown	Present	Not Amplified	NA	NA	Yes	NA	No	Yes	NA
+003	003_S02	Omentum	Undetermined	Unknown	Present	Not Amplified	Yes	No	Yes	No	NA	NA	No
+003	003_S03	Peritoneum	Undetermined	Unknown	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+004	004_S01	Other	TD	Present	Present	Not Amplified	Yes	NA	Yes	No	NA	NA	NA
+004	004_S02	Peritoneum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	No	No	NA
+004	004_S03	Ascites	TD	Present	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+004	004_S04	Upper Quadrant	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	Yes
+004	004_S05	Upper Quadrant	TD	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	NA
+004	004_S06	Adnexa	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	Yes	NA	NA
+004	004_S07	Omentum	TD	Present	Present	Not Amplified	Yes	NA	No	NA	NA	NA	NA
+005	005_S01	Peritoneum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	No
+005	005_S02	Adnexa	TD	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+005	005_S03	Ascites	TD	Present	Present	Not Amplified	NA	NA	NA	NA	No	Yes	NA
+006	006_S01	Bowel	HRD-Del	Absent	Present	Amplified	NA	NA	Yes	No	NA	Yes	NA
+006	006_S02	Adnexa	HRD-Del	Absent	Present	Amplified	NA	Yes	NA	Yes	No	NA	NA
+006	006_S03	Adnexa	HRD-Del	Absent	Present	Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+009	009_S01	Normal	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	NA	NA
+013	013_S01	Peritoneum	HRD	Absent	Absent	Not Amplified	NA	No	NA	No	NA	NA	NA
+013	013_S02	Bowel	HRD	Absent	Absent	Not Amplified	No	NA	NA	Yes	NA	NA	NA
+016	016_S01	Other	HRD-Dup	Present	Present	Not Amplified	No	Yes	Yes	NA	Yes	NA	NA
+016	016_S02	Omentum	HRD-Dup	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+016	016_S03	Omentum	HRD-Dup	Present	Present	Not Amplified	Yes	NA	NA	Yes	NA	NA	NA
+016	016_S04	Adnexa	HRD-Dup	Present	Present	Not Amplified	Yes	Yes	Yes	NA	NA	NA	NA
+020	020_S01	Adnexa	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+020	020_S02	Bowel	Undetermined	Present	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+020	020_S03	Bowel	Undetermined	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	Yes	Yes
+020	020_S04	Unknown	Undetermined	Present	Present	Not Amplified	NA	NA	NA	NA	Yes	NA	NA
+024	024_S01	Adnexa	HRD-Del	Absent	Present	Not Amplified	Yes	NA	NA	NA	Yes	NA	NA
+024	024_S02	Adnexa	HRD-Del	Absent	Present	Not Amplified	NA	NA	No	No	NA	NA	NA
+027	027_S01	Unknown	HRD	Absent	Present	Not Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+027	027_S02	Ascites	HRD	Absent	Present	Not Amplified	No	NA	NA	NA	NA	Yes	Yes
+027	027_S03	Unknown	HRD	Absent	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+033	033_S01	Omentum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	No	NA
+033	033_S02	Adnexa	TD	Present	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	Yes
+033	033_S03	Normal	TD	Present	Present	Not Amplified	NA	Yes	NA	NA	NA	NA	NA
+033	033_S04	Adnexa	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+033	033_S05	Bowel	TD	Present	Present	Not Amplified	NA	No	NA	NA	No	NA	NA
+033	033_S06	Bowel	TD	Present	Present	Not Amplified	Yes	Yes	NA	NA	NA	Yes	NA
+035	035_S01	Adnexa	HRD-Del	Absent	Present	Amplified	NA	NA	NA	Yes	NA	NA	NA
+035	035_S02	Adnexa	HRD-Del	Absent	Present	Amplified	NA	NA	Yes	NA	NA	NA	NA
+035	035_S03	Adnexa	HRD-Del	Absent	Present	Amplified	NA	NA	Yes	NA	No	NA	Yes
+035	035_S04	Unknown	HRD-Del	Absent	Present	Amplified	Yes	NA	Yes	NA	NA	NA	NA
+035	035_S05	Peritoneum	HRD-Del	Absent	Present	Amplified	Yes	NA	NA	No	NA	NA	NA
+036	036_S01	Unknown	HRD	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	NA
+036	036_S02	Upper Quadrant	HRD	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+036	036_S03	Peritoneum	HRD	Present	Present	Not Amplified	Yes	No	NA	NA	NA	No	Yes
+036	036_S04	Peritoneum	HRD	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	NA
+036	036_S05	Other	HRD	Present	Present	Not Amplified	Yes	NA	NA	NA	Yes	NA	No
+036	036_S06	Unknown	HRD	Present	Present	Not Amplified	Yes	NA	Yes	NA	No	NA	Yes
+036	036_S07	Bowel	HRD	Present	Present	Not Amplified	NA	Yes	NA	NA	NA	Yes	NA
+040	040_S01	Peritoneum	HRD	Absent	Absent	Not Amplified	Yes	NA	NA	NA	NA	NA	Yes
+040	040_S02	Upper Quadrant	HRD	Absent	Absent	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+040	040_S03	Normal	HRD	Absent	Absent	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+041	041_S01	Normal	TD	Present	Unknown	Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+042	042_S01	Ascites	NA	Present	Present	Not Amplified	NA	No	Yes	NA	No	No	NA
+042	042_S02	Adnexa	NA	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+042	042_S03	Peritoneum	NA	Present	Present	Not Amplified	No	NA	NA	No	Yes	Yes	No
+043	043_S01	Ascites	FBI	Present	Present	Not Amplified	NA	NA	Yes	Yes	NA	NA	NA
+043	043_S02	Upper Quadrant	FBI	Present	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+043	043_S03	Normal	FBI	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+043	043_S04	Upper Quadrant	FBI	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+047	047_S01	Omentum	NA	Unknown	Present	Not Amplified	NA	NA	No	NA	Yes	NA	Yes
+047	047_S02	Omentum	NA	Unknown	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	NA
+047	047_S03	Peritoneum	NA	Unknown	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+047	047_S04	Omentum	NA	Unknown	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+049	049_S01	Peritoneum	HRD-Del	Absent	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	NA
+049	049_S02	Other	HRD-Del	Absent	Present	Not Amplified	NA	NA	NA	Yes	No	Yes	NA
+054	054_S01	Other	FBI	Absent	Present	Amplified	NA	NA	NA	NA	Yes	NA	NA
+054	054_S02	Ascites	FBI	Absent	Present	Amplified	Yes	No	Yes	NA	NA	Yes	NA
+054	054_S03	Omentum	FBI	Absent	Present	Amplified	NA	NA	NA	NA	NA	Yes	NA
+057	057_S01	Omentum	FBI	Present	Unknown	Amplified	NA	Yes	Yes	NA	NA	Yes	NA
+057	057_S02	Normal	FBI	Present	Unknown	Amplified	NA	No	Yes	NA	NA	Yes	NA
+057	057_S03	Normal	FBI	Present	Unknown	Amplified	NA	NA	Yes	Yes	NA	NA	NA
+058	058_S01	Other	TD	Present	Present	Amplified	NA	Yes	NA	NA	NA	NA	NA
+058	058_S02	Ascites	TD	Present	Present	Amplified	NA	NA	Yes	NA	NA	NA	NA
+065	065_S01	Normal	NA	Present	Present	Not Amplified	NA	NA	NA	NA	NA	NA	No
+065	065_S02	Bowel	NA	Present	Present	Not Amplified	NA	Yes	NA	NA	Yes	NA	NA
+065	065_S03	Normal	NA	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+065	065_S04	Upper Quadrant	NA	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+065	065_S05	Peritoneum	NA	Present	Present	Not Amplified	Yes	NA	Yes	NA	No	NA	NA
+065	065_S06	Other	NA	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+065	065_S07	Omentum	NA	Present	Present	Not Amplified	Yes	Yes	Yes	NA	NA	NA	Yes
+068	068_S01	Adnexa	HRD-Del	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	Yes	NA
+068	068_S02	Normal	HRD-Del	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	Yes	No
+069	069_S01	Normal	NA	Present	Unknown	Not Amplified	Yes	No	Yes	Yes	NA	NA	NA
+071	071_S01	Omentum	FBI	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	No	NA
+071	071_S02	Normal	FBI	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	NA	Yes
+073	073_S01	Other	HRD-Dup	Present	Absent	Not Amplified	NA	NA	Yes	NA	Yes	Yes	NA
+073	073_S02	Unknown	HRD-Dup	Present	Absent	Not Amplified	NA	Yes	Yes	NA	NA	Yes	NA
+074	074_S01	Bowel	Undetermined	Present	Absent	Not Amplified	NA	NA	NA	No	NA	NA	NA
+074	074_S02	Peritoneum	Undetermined	Present	Absent	Not Amplified	NA	NA	Yes	NA	NA	NA	Yes
+074	074_S03	Bowel	Undetermined	Present	Absent	Not Amplified	Yes	Yes	Yes	Yes	NA	Yes	NA
+076	076_S01	Bowel	FBI	Unknown	Unknown	Amplified	NA	No	NA	NA	NA	Yes	NA
+082	082_S01	Ascites	HRD-Del	Absent	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	NA
+082	082_S02	Peritoneum	HRD-Del	Absent	Present	Not Amplified	No	NA	NA	NA	NA	No	NA
+082	082_S03	Unknown	HRD-Del	Absent	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+082	082_S04	Omentum	HRD-Del	Absent	Present	Not Amplified	NA	NA	Yes	Yes	Yes	NA	NA
+082	082_S05	Omentum	HRD-Del	Absent	Present	Not Amplified	NA	Yes	NA	Yes	NA	NA	No
+089	089_S01	Ascites	Undetermined	Present	Present	Amplified	Yes	NA	Yes	Yes	NA	NA	Yes
+089	089_S02	Peritoneum	Undetermined	Present	Present	Amplified	NA	NA	Yes	NA	NA	No	Yes
+089	089_S03	Adnexa	Undetermined	Present	Present	Amplified	Yes	Yes	NA	NA	NA	Yes	NA
+089	089_S04	Omentum	Undetermined	Present	Present	Amplified	NA	Yes	Yes	NA	NA	NA	NA
+091	091_S01	Adnexa	NA	Absent	Present	Not Amplified	NA	Yes	NA	NA	NA	Yes	NA
+091	091_S02	Adnexa	NA	Absent	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+091	091_S03	Ascites	NA	Absent	Present	Not Amplified	Yes	No	NA	NA	Yes	NA	NA
+091	091_S04	Normal	NA	Absent	Present	Not Amplified	Yes	Yes	No	NA	Yes	Yes	NA
+092	092_S01	Upper Quadrant	Undetermined	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	Yes
+099	099_S01	Normal	HRD-Del	Present	Absent	Not Amplified	Yes	NA	Yes	NA	NA	NA	Yes
+100	100_S01	Upper Quadrant	NA	Present	Unknown	Not Amplified	Yes	NA	Yes	No	NA	NA	NA
+100	100_S02	Omentum	NA	Present	Unknown	Not Amplified	Yes	NA	Yes	No	NA	NA	Yes
+101	101_S01	Omentum	FBI	Present	Present	Not Amplified	Yes	NA	NA	NA	Yes	No	Yes
+101	101_S02	Bowel	FBI	Present	Present	Not Amplified	Yes	NA	Yes	NA	Yes	NA	Yes
+101	101_S03	Other	FBI	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	NA
+101	101_S04	Adnexa	FBI	Present	Present	Not Amplified	Yes	Yes	NA	NA	NA	Yes	Yes
+102	102_S01	Unknown	FBI	Present	Absent	Amplified	Yes	NA	NA	NA	NA	Yes	NA
+102	102_S02	Omentum	FBI	Present	Absent	Amplified	Yes	NA	NA	NA	NA	NA	Yes
+102	102_S03	Bowel	FBI	Present	Absent	Amplified	No	NA	NA	NA	NA	NA	NA
+103	103_S01	Bowel	FBI	Present	Present	Amplified	No	NA	NA	Yes	No	NA	NA
+103	103_S02	Omentum	FBI	Present	Present	Amplified	NA	No	Yes	No	NA	Yes	NA
+103	103_S03	Peritoneum	FBI	Present	Present	Amplified	NA	NA	Yes	NA	Yes	Yes	Yes
+104	104_S01	Peritoneum	HRD-Del	Absent	Present	Not Amplified	NA	Yes	Yes	No	NA	NA	NA
+104	104_S02	Omentum	HRD-Del	Absent	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+104	104_S03	Normal	HRD-Del	Absent	Present	Not Amplified	Yes	Yes	Yes	Yes	NA	Yes	NA
+104	104_S04	Adnexa	HRD-Del	Absent	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+109	109_S01	Unknown	HRD	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+109	109_S02	Unknown	HRD	Present	Unknown	Not Amplified	NA	Yes	Yes	NA	NA	Yes	NA
+109	109_S03	Adnexa	HRD	Present	Unknown	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+109	109_S04	Normal	HRD	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+109	109_S05	Ascites	HRD	Present	Unknown	Not Amplified	NA	NA	NA	Yes	NA	No	NA
+110	110_S01	Other	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+110	110_S02	Upper Quadrant	TD	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	NA	NA
+110	110_S03	Bowel	TD	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	Yes	NA
+110	110_S04	Omentum	TD	Present	Present	Not Amplified	NA	Yes	NA	NA	NA	Yes	NA
+110	110_S05	Adnexa	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	Yes	Yes
+110	110_S06	Peritoneum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+110	110_S07	Adnexa	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	Yes
+110	110_S08	Normal	TD	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	No	NA
+111	111_S01	Peritoneum	TD	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	NA	NA
+111	111_S02	Peritoneum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+113	113_S01	Upper Quadrant	FBI	Present	Present	Not Amplified	NA	Yes	Yes	Yes	NA	NA	Yes
+113	113_S02	Unknown	FBI	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	Yes	NA
+113	113_S03	Other	FBI	Present	Present	Not Amplified	Yes	NA	NA	NA	Yes	NA	NA
+114	114_S01	Ascites	TD	Unknown	Present	Not Amplified	NA	NA	Yes	Yes	NA	Yes	NA
+114	114_S02	Peritoneum	TD	Unknown	Present	Not Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+114	114_S03	Bowel	TD	Unknown	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	No
+116	116_S01	Ascites	FBI	Present	Present	Not Amplified	Yes	Yes	Yes	NA	NA	NA	NA
+118	118_S01	Other	TD	Present	Present	Not Amplified	NA	NA	Yes	No	NA	Yes	No
+118	118_S02	Other	TD	Present	Present	Not Amplified	Yes	No	NA	NA	NA	NA	NA
+118	118_S03	Adnexa	TD	Present	Present	Not Amplified	Yes	Yes	NA	NA	No	Yes	Yes
+118	118_S04	Omentum	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+118	118_S05	Other	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	Yes	NA	NA
+122	122_S01	Ascites	Undetermined	Present	Present	Amplified	NA	No	Yes	Yes	NA	NA	NA
+122	122_S02	Adnexa	Undetermined	Present	Present	Amplified	NA	NA	Yes	NA	Yes	NA	NA
+122	122_S03	Peritoneum	Undetermined	Present	Present	Amplified	NA	NA	Yes	NA	NA	Yes	No
+122	122_S04	Bowel	Undetermined	Present	Present	Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+122	122_S05	Ascites	Undetermined	Present	Present	Amplified	Yes	Yes	Yes	Yes	Yes	NA	No
+128	128_S01	Unknown	FBI	Present	Present	Not Amplified	NA	NA	NA	Yes	Yes	NA	NA
+128	128_S02	Ascites	FBI	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	No
+128	128_S03	Unknown	FBI	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	No	Yes
+128	128_S04	Peritoneum	FBI	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	NA	NA
+128	128_S05	Unknown	FBI	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	NA	NA
+130	130_S01	Normal	FBI	Present	Present	Amplified	NA	Yes	Yes	Yes	NA	Yes	NA
+130	130_S02	Unknown	FBI	Present	Present	Amplified	NA	NA	NA	No	NA	NA	NA
+130	130_S03	Omentum	FBI	Present	Present	Amplified	NA	NA	Yes	Yes	No	Yes	NA
+130	130_S04	Omentum	FBI	Present	Present	Amplified	NA	Yes	NA	NA	NA	Yes	NA
+131	131_S01	Adnexa	HRD-Del	Present	Present	Not Amplified	Yes	No	Yes	NA	NA	Yes	NA
+134	134_S01	Adnexa	Undetermined	Present	Present	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+134	134_S02	Peritoneum	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	No
+134	134_S03	Adnexa	Undetermined	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	NA	Yes
+134	134_S04	Upper Quadrant	Undetermined	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	No
+134	134_S05	Unknown	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	Yes	NA	NA	NA
+134	134_S06	Unknown	Undetermined	Present	Present	Not Amplified	NA	No	Yes	Yes	NA	NA	No
+134	134_S07	Omentum	Undetermined	Present	Present	Not Amplified	Yes	NA	NA	Yes	No	Yes	NA
+136	136_S01	Omentum	Undetermined	Present	Present	Not Amplified	Yes	No	Yes	NA	NA	Yes	NA
+136	136_S02	Omentum	Undetermined	Present	Present	Not Amplified	NA	Yes	Yes	Yes	NA	NA	NA
+136	136_S03	Adnexa	Undetermined	Present	Present	Not Amplified	NA	Yes	NA	NA	Yes	NA	NA
+136	136_S04	Unknown	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	Yes	No	Yes	Yes
+136	136_S05	Peritoneum	Undetermined	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	NA
+136	136_S06	Omentum	Undetermined	Present	Present	Not Amplified	No	Yes	Yes	No	NA	NA	Yes
+138	138_S01	Normal	TD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+138	138_S02	Ascites	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	No	Yes	Yes
+138	138_S03	Adnexa	TD	Present	Present	Not Amplified	No	NA	Yes	NA	NA	NA	Yes
+143	143_S01	Other	Undetermined	Present	Present	Not Amplified	NA	NA	Yes	Yes	NA	NA	NA
+143	143_S02	Normal	Undetermined	Present	Present	Not Amplified	Yes	NA	Yes	Yes	NA	Yes	NA
+143	143_S03	Adnexa	Undetermined	Present	Present	Not Amplified	No	Yes	Yes	NA	Yes	Yes	Yes
+146	146_S01	Unknown	FBI	Present	Present	Amplified	Yes	NA	Yes	NA	NA	NA	Yes
+146	146_S02	Adnexa	FBI	Present	Present	Amplified	NA	Yes	Yes	NA	NA	NA	NA
+146	146_S03	Peritoneum	FBI	Present	Present	Amplified	NA	NA	NA	NA	NA	NA	NA
+146	146_S04	Omentum	FBI	Present	Present	Amplified	Yes	No	Yes	NA	NA	NA	NA
+146	146_S05	Adnexa	FBI	Present	Present	Amplified	Yes	NA	NA	NA	NA	NA	Yes
+146	146_S06	Unknown	FBI	Present	Present	Amplified	NA	NA	Yes	NA	NA	NA	Yes
+149	149_S01	Adnexa	NA	Present	Unknown	Not Amplified	NA	NA	NA	Yes	Yes	NA	NA
+149	149_S02	Adnexa	NA	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+149	149_S03	Other	NA	Present	Unknown	Not Amplified	Yes	Yes	NA	NA	NA	NA	Yes
+149	149_S04	Omentum	NA	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+149	149_S05	Unknown	NA	Present	Unknown	Not Amplified	Yes	NA	Yes	NA	NA	Yes	Yes
+150	150_S01	Adnexa	TD	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	Yes
+150	150_S02	Bowel	TD	Present	Present	Not Amplified	NA	NA	Yes	Yes	NA	NA	No
+151	151_S01	Normal	NA	Unknown	Present	Not Amplified	NA	NA	NA	NA	No	NA	NA
+153	153_S01	Adnexa	NA	Present	Absent	Amplified	Yes	Yes	Yes	Yes	NA	NA	NA
+153	153_S02	Omentum	NA	Present	Absent	Amplified	NA	NA	Yes	Yes	NA	NA	NA
+153	153_S03	Ascites	NA	Present	Absent	Amplified	No	NA	Yes	NA	NA	Yes	NA
+153	153_S04	Omentum	NA	Present	Absent	Amplified	Yes	Yes	Yes	Yes	NA	NA	NA
+153	153_S05	Adnexa	NA	Present	Absent	Amplified	Yes	NA	Yes	Yes	NA	NA	NA
+154	154_S01	Omentum	HRD	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	NA
+154	154_S02	Bowel	HRD	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	NA	NA
+154	154_S03	Other	HRD	Present	Present	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+158	158_S01	Adnexa	HRD	Absent	Absent	Not Amplified	NA	NA	NA	Yes	Yes	NA	No
+158	158_S02	Adnexa	HRD	Absent	Absent	Not Amplified	Yes	NA	Yes	Yes	Yes	No	Yes
+162	162_S01	Peritoneum	Undetermined	Present	Present	Not Amplified	No	NA	NA	NA	Yes	Yes	NA
+164	164_S01	Normal	Undetermined	Unknown	Present	Not Amplified	Yes	NA	Yes	No	Yes	NA	Yes
+164	164_S02	Adnexa	Undetermined	Unknown	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	No
+165	165_S01	Adnexa	NA	Absent	Present	Not Amplified	Yes	Yes	Yes	Yes	NA	NA	NA
+165	165_S02	Normal	NA	Absent	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	NA
+165	165_S03	Unknown	NA	Absent	Present	Not Amplified	Yes	NA	Yes	Yes	NA	NA	Yes
+167	167_S01	Unknown	NA	Present	Present	Not Amplified	NA	Yes	NA	NA	Yes	Yes	NA
+167	167_S02	Ascites	NA	Present	Present	Not Amplified	Yes	NA	NA	NA	Yes	NA	NA
+167	167_S03	Adnexa	NA	Present	Present	Not Amplified	NA	NA	No	NA	Yes	NA	No
+170	170_S01	Adnexa	HRD	Present	Present	Amplified	NA	NA	NA	NA	NA	NA	NA
+170	170_S02	Unknown	HRD	Present	Present	Amplified	NA	NA	Yes	NA	NA	Yes	NA
+178	178_S01	Adnexa	NA	Present	Unknown	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+178	178_S02	Upper Quadrant	NA	Present	Unknown	Not Amplified	NA	NA	NA	No	NA	NA	Yes
+178	178_S03	Peritoneum	NA	Present	Unknown	Not Amplified	Yes	NA	Yes	NA	NA	Yes	Yes
+178	178_S04	Peritoneum	NA	Present	Unknown	Not Amplified	NA	Yes	Yes	Yes	NA	Yes	NA
+178	178_S05	Omentum	NA	Present	Unknown	Not Amplified	NA	NA	Yes	No	NA	NA	NA
+178	178_S06	Omentum	NA	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	Yes	Yes
+178	178_S07	Ascites	NA	Present	Unknown	Not Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+179	179_S01	Adnexa	FBI	Present	Present	Amplified	Yes	NA	NA	NA	NA	Yes	NA
+179	179_S02	Other	FBI	Present	Present	Amplified	NA	Yes	Yes	No	Yes	NA	NA
+179	179_S03	Omentum	FBI	Present	Present	Amplified	NA	No	NA	Yes	NA	Yes	NA
+189	189_S01	Normal	Undetermined	Absent	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+189	189_S02	Normal	Undetermined	Absent	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	NA
+190	190_S01	Peritoneum	FBI	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	Yes
+190	190_S02	Unknown	FBI	Present	Present	Not Amplified	NA	NA	NA	NA	NA	Yes	Yes
+191	191_S01	Normal	NA	Present	Present	Not Amplified	NA	No	NA	Yes	NA	NA	NA
+192	192_S01	Adnexa	FBI	Present	Present	Not Amplified	No	Yes	Yes	NA	No	NA	Yes
+193	193_S01	Peritoneum	FBI	Present	Unknown	Not Amplified	Yes	NA	NA	NA	NA	NA	NA
+193	193_S02	Unknown	FBI	Present	Unknown	Not Amplified	NA	NA	NA	NA	NA	NA	NA
+193	193_S03	Normal	FBI	Present	Unknown	Not Amplified	NA	NA	Yes	NA	NA	Yes	NA
+193	193_S04	Unknown	FBI	Present	Unknown	Not Amplified	No	NA	NA	NA	No	NA	Yes
+194	194_S01	Normal	FBI	Present	Present	Amplified	Yes	NA	NA	NA	NA	NA	NA
+194	194_S02	Ascites	FBI	Present	Present	Amplified	Yes	NA	NA	NA	NA	No	NA
+194	194_S03	Other	FBI	Present	Present	Amplified	NA	NA	Yes	Yes	NA	NA	No
+194	194_S04	Bowel	FBI	Present	Present	Amplified	NA	NA	Yes	NA	NA	NA	NA
+194	194_S05	Peritoneum	FBI	Present	Present	Amplified	Yes	NA	Yes	NA	Yes	Yes	No
+194	194_S06	Ascites	FBI	Present	Present	Amplified	NA	NA	Yes	No	NA	NA	Yes
+195	195_S01	Other	FBI	Present	Present	Amplified	NA	Yes	Yes	No	NA	NA	NA
+195	195_S02	Ascites	FBI	Present	Present	Amplified	Yes	NA	Yes	No	NA	Yes	NA
+195	195_S03	Other	FBI	Present	Present	Amplified	NA	Yes	Yes	NA	NA	NA	NA
+196	196_S01	Normal	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	Yes
+196	196_S02	Omentum	TD	Present	Present	Not Amplified	NA	NA	NA	Yes	Yes	NA	NA
+196	196_S03	Ascites	TD	Present	Present	Not Amplified	NA	Yes	NA	NA	No	NA	NA
+196	196_S04	Normal	TD	Present	Present	Not Amplified	NA	Yes	Yes	NA	NA	Yes	Yes
+196	196_S05	Upper Quadrant	TD	Present	Present	Not Amplified	NA	No	NA	Yes	NA	Yes	NA
+196	196_S06	Normal	TD	Present	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	Yes
+196	196_S07	Unknown	TD	Present	Present	Not Amplified	NA	NA	NA	Yes	NA	NA	NA
+203	203_S01	Other	FBI	Present	Unknown	Amplified	NA	NA	NA	NA	NA	NA	NA
+203	203_S02	Other	FBI	Present	Unknown	Amplified	NA	Yes	Yes	NA	NA	No	NA
+204	204_S01	Unknown	NA	Unknown	Present	Not Amplified	Yes	Yes	NA	NA	NA	Yes	NA
+204	204_S02	Bowel	NA	Unknown	Present	Not Amplified	Yes	Yes	NA	NA	Yes	NA	NA
+204	204_S03	Omentum	NA	Unknown	Present	Not Amplified	Yes	NA	No	NA	NA	Yes	NA
+206	206_S01	Adnexa	HRD-Del	Absent	Present	Not Amplified	NA	NA	NA	No	NA	Yes	NA
+206	206_S02	Upper Quadrant	HRD-Del	Absent	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	NA
+206	206_S03	Adnexa	HRD-Del	Absent	Present	Not Amplified	Yes	No	Yes	Yes	NA	NA	NA
+206	206_S04	Normal	HRD-Del	Absent	Present	Not Amplified	Yes	NA	Yes	NA	NA	NA	Yes
+206	206_S05	Upper Quadrant	HRD-Del	Absent	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	Yes
+208	208_S01	Peritoneum	HRD	Present	Present	Not Amplified	Yes	NA	NA	NA	No	Yes	NA
+208	208_S02	Omentum	HRD	Present	Present	Not Amplified	Yes	Yes	NA	NA	Yes	Yes	NA
+208	208_S03	Omentum	HRD	Present	Present	Not Amplified	NA	NA	Yes	Yes	Yes	NA	Yes
+209	209_S01	Adnexa	TD	Present	Present	Not Amplified	Yes	NA	Yes	NA	No	NA	NA
+209	209_S02	Upper Quadrant	TD	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	Yes
+211	211_S01	Ascites	HRD	Present	Present	Not Amplified	NA	NA	Yes	NA	NA	NA	Yes
+211	211_S02	Upper Quadrant	HRD	Present	Present	Not Amplified	Yes	NA	NA	NA	NA	Yes	NA
+211	211_S03	Ascites	HRD	Present	Present	Not Amplified	Yes	Yes	Yes	NA	Yes	Yes	Yes
+211	211_S04	Bowel	HRD	Present	Present	Not Amplified	Yes	Yes	NA	NA	Yes	NA	NA
+211	211_S05	Other	HRD	Present	Present	Not Amplified	NA	NA	NA	NA	No	Yes	NA
+216	216_S01	Unknown	TD	Present	Present	Amplified	NA	Yes	NA	NA	NA	Yes	NA
+216	216_S02	Adnexa	TD	Present	Present	Amplified	Yes	NA	Yes	No	Yes	Yes	NA
+216	216_S03	Peritoneum	TD	Present	Present	Amplified	NA	Yes	Yes	NA	NA	No	Yes
+216	216_S04	Bowel	TD	Present	Present	Amplified	NA	NA	NA	No	NA	NA	NA
+216	216_S05	Ascites	TD	Present	Present	Amplified	Yes	NA	Yes	NA	NA	NA	NA
+216	216_S06	Omentum	TD	Present	Present	Amplified	NA	NA	Yes	No	NA	NA	NA
+216	216_S07	Peritoneum	TD	Present	Present	Amplified	NA	NA	Yes	NA	NA	NA	NA
+220	220_S01	Peritoneum	FBI	Present	Present	Amplified	NA	NA	NA	NA	Yes	No	NA
+220	220_S02	Adnexa	FBI	Present	Present	Amplified	Yes	NA	Yes	NA	NA	Yes	NA
+220	220_S03	Unknown	FBI	Present	Present	Amplified	Yes	NA	NA	Yes	NA	NA	Yes
+220	220_S04	Upper Quadrant	FBI	Present	Present	Amplified	NA	NA	Yes	NA	NA	No	NA
+220	220_S05	Omentum	FBI	Present	Present	Amplified	Yes	NA	Yes	Yes	No	Yes	NA
+220	220_S06	Normal	FBI	Present	Present	Amplified	Yes	NA	NA	NA	NA	Yes	NA
