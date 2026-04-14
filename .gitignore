@@ -2,3 +2,7 @@ share/claude/tmp
 claude/tests/logs/*.log
 sandbox/
 setup/
+
+# Local Claude env vars (secrets) — template is committed, .local.sh is not
+claude/profiles/env/claude_env.local.sh
+claude/profiles/env/*.local.sh
