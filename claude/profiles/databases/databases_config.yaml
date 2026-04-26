@@ -1,13 +1,12 @@
 ## list of frequently accessed databases for fast look up
-####################################################################################################################################
+############################################################
 
 #iris:
-
 reference_genomes:
         local:
             mm10:
                     fasta: /data1/greenbab/database/mm10/mm10.fa
-                    gtf: /data1/greenbab/database/mm10/annotations/gencode.vM36.annotation.gtf.gz
+                    gtf: /data1/greenbab/database/mm10/annotations/gencode.vM25.annotation.gtf.gz
                     sizes: /data1/greenbab/database/mm10/mm10.sorted.standard.chrom.sizes
                     CpGIslands: /data1/greenbab/database/mm10/mm10_CpGIslands.bed
                     repMaskerBed: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/rmsk_all_repeats_mm10.bed.gz
@@ -15,11 +14,13 @@ reference_genomes:
                     repMaskerAlign: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/mm10/rmsk405_20140131/mm10.fa.align.gz
             mm39:
                     fasta: /data1/greenbab/database/mm39/mm39.fa
-                    #gtf: 
+                    gtf: /data1/greenbab/database/gencode_annotations/mm39/gencode.vM37.annotation.gtf.gz
                     sizes: /data1/greenbab/database/mm39/mm39.sorted.standard.chrom.sizes
                     CpGIslands: /data1/greenbab/database/CpGIslands/mm39/mm39_CpG_Islands_UCSC.bed
             hg38:
                     fasta: /data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta
+                    EPDnewCoding: /data1/greenbab/database/EPDpromoters/data/processed/epdnew_human/2026-04-14/Hs_EPDnew.hg38.bed.gz
+                    EPDnewNonCoding: /data1/greenbab/database/EPDpromoters/data/processed/epdnewNC_human/2026-04-14/HsNC_EPDnew.hg38.bed.gz
                     gtf: /data1/greenbab/database/gencode_annotations/hg38/gencode.v47.annotation.gtf.gz
                     sizes: /data1/greenbab/database/sizes.Homo_sapiens_assembly38
                     repMaskerBed: /data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/hg38/RepLibrary20140131/rmsk_all_repeats_hg38.bed.gz

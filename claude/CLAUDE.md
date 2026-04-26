@@ -16,6 +16,10 @@ On every new conversation, do the following in order:
 3. **If fresh**, create a project markdown file at `~/projects/<slug>.md` with date, domain, and aims.
 4. **Search `~/memories/`** for any notes relevant to the current query before answering.
 5. **For analysis projects**, scaffold the directory structure automatically:
+
+- paths to genome references hg38:@/data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta; mm10@/data1/greenbab/database/mm10/mm10.fa; For all other refenerce files check @/data1/greenbab/users/ahunos/apps/llm_configs/claude/profiles/databases/databases_config.yaml
+- preserve file headers, don't make up headers at runtime
+- Route long processes/jobs to compute node (default: componc_cpu) via slurm-mcp.  Use nexflow for pipelines on compute nodes
    ```
    <project_root>/
    ├── config.yaml                 # project parameters, genome paths
@@ -196,6 +200,18 @@ Every analysis script must produce a **timestamped log file** that captures enou
 
 ---
 
+## 2A. Tool gotchas
+
+Tool-specific lessons live in `/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/`. Refer to these whenever the matching tool is involved — they capture non-obvious failure modes, fixes, and verification steps that are easy to miss otherwise.
+
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/snakemake.md — Snakemake 9 + SLURM executor pitfalls (mem_mb_per_cpu, srun memory conflict, cluster profile conflicts, stale locks)
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/dss.md — DSS Bioconductor silent corruption from `mclapply + detectCores()` ignoring SLURM cgroup limits; mandatory `ncores` arg, post-run verification
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/igv.md — IGV / igver hang on large ONT BAMs with `--methylation` preset; bigwig-mode autoscale fix via `setDataRange 0,100`; `modkit bedmethyl tobigwig` chrom.sizes mismatch (Rust SendError panic)
+
+When you create a new rules file, add an entry here so it's loaded into every session.
+
+---
+
 ## 3. Domain Playbook: Bioinformatics Analysis
 
 ### 3A. ONT Methylation Pipeline (pod5 to DMRs)
@@ -304,8 +320,9 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 - For pipelines: dry-run (`snakemake -n`) counts as a minimum test. A small-data end-to-end test is preferred.
 - For Python packages: `pytest --tb=short` with coverage report.
 
-### Snakemake Troubleshooting (Lessons Learned)
-- refer to @rules/snakemake.md for lessons learnt
+### Snakemake Troubleshooting
+See §2A Tool gotchas → `rules/snakemake.md`.
+
 ---
 
 ## 5. Domain Playbook: AI Engineering
