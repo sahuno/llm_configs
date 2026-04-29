@@ -42,3 +42,9 @@ DOCKER_HUB_CONTAINERS: {
     "value": "sahuno/numpyroml:latest"
   }
 }
+
+LOCAL_CONTAINERS:
+  - name: "samtools v1.23.1; samtools + bcftools + htslib (1.23.1)"
+    path: "/data1/greenbab/users/ahunos/apps/containers/samtools_v1.23.1.sif"
+    def:  "/data1/greenbab/users/ahunos/apps/containers/samtools.def"
+    source: "https://github.com/samtools/samtools/releases/tag/1.23.1"

@@ -1,0 +1,124 @@
+#!/usr/bin/env Rscript
+# Author: {{USER}}
+# Date: {{DATE}}
+# Purpose: Per-stage analysis for the {{TOOL_NAME}} {{COMMAND}} benchmark — load benchmark.csv, generate headline figures and a per-condition summary table.
+#
+# Usage: Rscript summarise_stage.R <run_dir>
+
+suppressPackageStartupMessages({
+  library(readr); library(dplyr); library(ggplot2); library(tidyr)
+  library(stringr); library(scales); library(forcats)
+})
+
+set.seed(42)
+
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 1) stop("Usage: summarise_stage.R <run_dir>")
+RUN_DIR <- normalizePath(args[1], mustWork = TRUE)
+CSV    <- file.path(RUN_DIR, "benchmark.csv")
+FIGDIR <- file.path(RUN_DIR, "figures")
+LOGDIR <- file.path(RUN_DIR, "logs")
+TIMESTAMP <- format(Sys.time(), "%Y%m%d_%H%M%S")
+dir.create(LOGDIR, showWarnings = FALSE, recursive = TRUE)
+LOG_FILE <- file.path(LOGDIR, sprintf("summarise_%s.log", TIMESTAMP))
+
+# === Logging (sink + handlers, per CLAUDE.md) ===
+log_con <- file(LOG_FILE, open = "wt")
+sink(log_con, type = "output", split = TRUE)
+on.exit({
+  cat(sprintf("[%s] === DONE: summarise_stage.R completed successfully ===\n", Sys.time()), file = log_con)
+  sink(); close(log_con)
+}, add = TRUE)
+
+cat(sprintf("[%s] Stage analysis\n", Sys.time()))
+cat("Run dir:  ", RUN_DIR, "\n")
+
+for (sub in c("png","pdf","svg")) dir.create(file.path(FIGDIR, sub), showWarnings = FALSE, recursive = TRUE)
+
+# === Load ===
+df <- read_csv(CSV, show_col_types = FALSE) %>%
+  mutate(sweep = str_extract(run_id, "(?<=^sw-)[^_]+"),
+         peak_rss_gb = peak_rss_kb / 1024 / 1024)
+cat("Loaded ", nrow(df), " rows; sweeps: ", paste(unique(df$sweep), collapse=", "), "\n", sep = "")
+
+# === Theme (per CLAUDE.md figure standards) ===
+theme_bench <- theme_classic(base_size = 25, base_family = "sans") +
+  theme(plot.title = element_text(face = "bold", size = 22, hjust = 0),
+        plot.subtitle = element_text(size = 18, color = "grey30"),
+        panel.grid.major.y = element_line(color = "grey92"),
+        legend.position = "right",
+        plot.margin = margin(10, 14, 10, 14))
+OKABE <- c("#0072B2", "#E69F00", "#D55E00", "#009E73", "#999999", "#CC79A7")
+
+save_fig <- function(plot, name, w = 11, h = 6.5) {
+  ggsave(file.path(FIGDIR, "png", paste0(name, ".png")), plot, width = w, height = h, dpi = 300)
+  ggsave(file.path(FIGDIR, "pdf", paste0(name, ".pdf")), plot, width = w, height = h, dpi = 50)
+  ggsave(file.path(FIGDIR, "svg", paste0(name, ".svg")), plot, width = w, height = h)
+  cat("Saved: ", name, "\n", sep = "")
+}
+
+# ===========================================================================
+# Per-sweep figures — adapt to your factors
+# ===========================================================================
+for (sw in unique(df$sweep)) {
+  sub <- df %>% filter(sweep == sw)
+
+  # Identify the varying factor for this sweep — adapt the mapping below
+  group_col <- switch(sw,
+    "threads" = "threads",
+    "mem"     = "mem_per_thread",
+    "comp"    = "compression_level",
+    "tmpdir"  = "tmp_dir",
+    NULL)
+
+  if (is.null(group_col)) {
+    cat("[skip] unknown sweep: ", sw, "\n", sep = "")
+    next
+  }
+
+  agg <- sub %>%
+    group_by(.data[[group_col]]) %>%
+    summarise(wall_med = median(wall_s),
+              wall_lo = min(wall_s),
+              wall_hi = max(wall_s),
+              cv_pct = 100*sd(wall_s)/mean(wall_s),
+              rss_gb = median(peak_rss_gb),
+              n = n(), .groups = "drop")
+  cat("\n=== ", sw, " ===\n", sep = "")
+  print(as.data.frame(agg))
+
+  if (max(agg$cv_pct, na.rm = TRUE) > 20) {
+    cat("WARNING: CV > 20% in sweep ", sw, " — investigate outlier replicates.\n", sep = "")
+  }
+
+  p <- ggplot(agg, aes_string(x = group_col, y = "wall_med", group = 1)) +
+    geom_ribbon(aes(ymin = wall_lo, ymax = wall_hi), alpha = 0.25, fill = OKABE[1]) +
+    geom_line(color = OKABE[1], linewidth = 1.2) +
+    geom_point(color = OKABE[1], size = 4) +
+    labs(x = group_col, y = "Wall time (s)",
+         title = sprintf("%s sweep — wall time", sw),
+         subtitle = "Ribbon = min/max across replicates") +
+    theme_bench
+  save_fig(p, sprintf("sweep_%s_wall", sw))
+}
+
+# ===========================================================================
+# Summary table
+# ===========================================================================
+summary_table <- df %>%
+  group_by(sweep, threads, mem_per_thread, compression_level) %>%
+  summarise(
+    n = n(),
+    wall_med_s = median(wall_s),
+    wall_min_s = min(wall_s),
+    wall_max_s = max(wall_s),
+    wall_cv_pct = 100 * sd(wall_s) / mean(wall_s),
+    cpu_pct_med = median(cpu_pct),
+    rss_gb_med = median(peak_rss_gb),
+    .groups = "drop"
+  ) %>% arrange(sweep, threads, mem_per_thread, compression_level)
+write_csv(summary_table, file.path(RUN_DIR, "summary_table.csv"))
+cat("\nSaved: ", file.path(RUN_DIR, "summary_table.csv"), " (", nrow(summary_table), " conditions)\n", sep = "")
+
+cat("\n=== sessionInfo ===\n")
+print(sessionInfo())

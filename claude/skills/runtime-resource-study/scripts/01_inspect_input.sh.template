@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Author: {{USER}}
+# Date: {{DATE}}
+# Purpose: Preflight inspection of a {{INPUT_FORMAT}} input for the {{TOOL_NAME}} benchmark — captures size, record count, format-specific metadata. Writes a YAML metadata file consumed by downstream stages.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Args
+# ---------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+INPUT=""
+TOOL_BIN="${TOOL_BIN:-{{TOOL_BIN}}}"
+OUT_DIR="$PROJECT_ROOT/results/preflight"
+LOG_DIR="$PROJECT_ROOT/logs"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") -i <input> [-t <tool_binary>] [-o <out_dir>]
+  -i  Input file (required)
+  -t  Tool binary (default: \$TOOL_BIN or '{{TOOL_BIN}}')
+  -o  Output directory for metadata YAML (default: $OUT_DIR)
+EOF
+}
+
+while getopts ":i:t:o:h" opt; do
+  case "$opt" in
+    i) INPUT="$OPTARG" ;;
+    t) TOOL_BIN="$OPTARG" ;;
+    o) OUT_DIR="$OPTARG" ;;
+    h) usage; exit 0 ;;
+    *) usage; exit 1 ;;
+  esac
+done
+
+[[ -z "$INPUT" ]] && { usage; exit 1; }
+[[ ! -f "$INPUT" ]] && { echo "Input not found: $INPUT" >&2; exit 1; }
+command -v "$TOOL_BIN" >/dev/null 2>&1 || { echo "Tool not found: $TOOL_BIN" >&2; exit 1; }
+
+mkdir -p "$OUT_DIR" "$LOG_DIR"
+
+TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
+SCRIPT_NAME="$(basename "$0" .sh)"
+LOG_FILE="$LOG_DIR/${SCRIPT_NAME}_${TIMESTAMP}.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+log_msg() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+START_TS=$SECONDS
+log_msg "=== Session header ==="
+log_msg "Input:        $INPUT"
+log_msg "Tool binary:  $TOOL_BIN"
+log_msg "Out dir:      $OUT_DIR"
+log_msg "Tool version: $($TOOL_BIN --version 2>&1 | head -1)"
+log_msg "Host:         $(hostname)"
+
+# ---------------------------------------------------------------------------
+# File-level metadata
+# ---------------------------------------------------------------------------
+BASENAME="$(basename "$INPUT")"
+BASENAME_NOEXT="${BASENAME%.*}"
+META_FILE="$OUT_DIR/${BASENAME_NOEXT}.preflight.yaml"
+FILE_SIZE_BYTES=$(stat -c '%s' "$INPUT")
+FILE_SIZE_HUMAN=$(numfmt --to=iec --suffix=B "$FILE_SIZE_BYTES")
+log_msg "File size: $FILE_SIZE_BYTES bytes ($FILE_SIZE_HUMAN)"
+
+# ---------------------------------------------------------------------------
+# Format-specific metadata
+# Uncomment / adapt the right block for your input format.
+# ---------------------------------------------------------------------------
+
+# === BAM ===
+# (default — assumes $TOOL_BIN is samtools or compatible)
+log_msg "=== BAM inspection ==="
+N_SQ=$("$TOOL_BIN" view -H "$INPUT" | grep -c '^@SQ' || true)
+log_msg "@SQ lines: $N_SQ"
+SORT_STATE=$("$TOOL_BIN" view -H "$INPUT" | awk -F'\t' '/^@HD/ { for (i=1;i<=NF;i++) if ($i ~ /^SO:/) print substr($i,4) }' || true)
+log_msg "Sort state: ${SORT_STATE:-unknown}"
+log_msg "Counting records (view -c)..."
+N_TOTAL=$("$TOOL_BIN" view -c "$INPUT")
+N_PRIM=$("$TOOL_BIN" view -c -F 0x900 "$INPUT")
+MEAN_BYTES_PER_REC=$(awk -v s="$FILE_SIZE_BYTES" -v n="$N_TOTAL" 'BEGIN { printf "%.2f", s/n }')
+log_msg "Records: $N_TOTAL total, $N_PRIM primary, ${MEAN_BYTES_PER_REC} bytes/record"
+
+# === VCF ===
+# (uncomment if input is VCF — requires bcftools)
+# log_msg "=== VCF inspection ==="
+# N_SAMPLES=$(bcftools query -l "$INPUT" | wc -l)
+# N_VARIANTS=$(bcftools view -H "$INPUT" | wc -l)
+# log_msg "Samples: $N_SAMPLES, variants: $N_VARIANTS"
+
+# === FASTQ ===
+# (uncomment if input is FASTQ — requires seqkit)
+# log_msg "=== FASTQ inspection ==="
+# seqkit stats "$INPUT" | tee -a "$LOG_FILE"
+
+# === POD5 ===
+# (uncomment if input is POD5 — requires pod5)
+# log_msg "=== POD5 inspection ==="
+# N_READS=$(pod5 inspect summary "$INPUT" | grep -i 'num_reads' | awk '{print $NF}')
+# log_msg "Reads: $N_READS"
+
+# ---------------------------------------------------------------------------
+# Write YAML metadata
+# ---------------------------------------------------------------------------
+log_msg "=== Writing YAML metadata ==="
+cat > "$META_FILE" <<EOF
+# Preflight metadata for {{TOOL_NAME}} benchmark
+# Generated: $(date -Iseconds)
+input: "$INPUT"
+file_size_bytes: $FILE_SIZE_BYTES
+file_size_human: "$FILE_SIZE_HUMAN"
+tool_version: "$("$TOOL_BIN" --version 2>&1 | head -1)"
+host: "$(hostname)"
+log_file: "$LOG_FILE"
+
+# === BAM-specific (delete if not BAM) ===
+n_sq_lines: $N_SQ
+sort_state: "${SORT_STATE:-unknown}"
+total_records: $N_TOTAL
+primary_records: $N_PRIM
+mean_bytes_per_record: $MEAN_BYTES_PER_REC
+
+# === Add other format-specific fields here ===
+EOF
+
+log_msg "Saved: $META_FILE"
+log_msg "Total runtime: $((SECONDS - START_TS))s"
+log_msg "=== DONE: $(basename "$0") completed successfully ==="

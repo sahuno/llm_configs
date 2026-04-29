@@ -1,0 +1,97 @@
+{
+  "skill_name": "nfcore-module",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to add samtools/sort to nf-core modules. It sorts BAM files by coordinate. It's on bioconda as samtools=1.21. Container is quay.io/biocontainers/samtools:1.21--h50ea8bc_0. I have a test BAM at /data1/greenbab/users/ahunos/apps/openSource/modules/modules/nf-core/samtools/sort/tests/data/test.bam — actually wait it's already there as a test module, pick a different one. Let's do samtools/collate instead. Test BAM is at /data1/greenbab/database/test_data/test.bam",
+      "expected_output": "Skill asks clarifying questions, classifies as Type A, scaffolds all files, runs lint to 0 failures, passes stub test, produces PR description",
+      "assertions": [
+        "Classified as Type A (bioconda)",
+        "main.nf uses quay.io/biocontainers container",
+        "environment.yml has bioconda::samtools",
+        "tests/nextflow.config has zero local paths",
+        "ext.args used (not ext.threads or ext.device)",
+        "nf-core modules lint passes 0 failures",
+        "stub test passes",
+        "PR description produced",
+        "No synthetic test data used"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I want to add a new module for dorado/summary — it runs `dorado summary` on a BAM file to produce a TSV of per-read stats. Not on bioconda (ONTPL licence). Container is nanoporetech/dorado:shac8f356489fa8b44b31beba841b84d2879de2088e — same image as dorado/basecaller. No GPU needed for summary. I have a test BAM at /data1/greenbab/users/ahunos/apps/openSource/modules/modules/nf-core/dorado/basecaller/tests/data/HG002_PAW70337_giab_10reads.pod5 — actually a BAM would be better, I'll run basecaller first. I don't have a BAM right now.",
+      "expected_output": "Skill correctly blocks on missing test data, asks user to provide a BAM, does NOT scaffold tests until data is confirmed. Classifies as Type B. When user provides data, scaffold proceeds correctly.",
+      "assertions": [
+        "Classified as Type B (licensed, non-bioconda)",
+        "Skill blocks and asks for test data — does not proceed with synthetic data",
+        "conda null with ONTPL licence comment",
+        "tests/nextflow.config has no local paths",
+        "No ext.device or other custom ext keys",
+        "PR description mentions ONTPL licence and parabricks precedent"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "/nfcore-module I want to wrap an R script that takes modkit pileup bedMethyl output (multiple files) and a samplesheet CSV, then plots methylation heatmaps grouped by condition. Tool: modkit/pileup/plot. It's pure R — r-base, r-ggplot2, r-pheatmap, r-data.table from conda-forge. No GPU. I have test bedMethyl files at /data1/greenbab/users/ahunos/apps/openSource/modules/modules/nf-core/modkit/pileup/tests/mm10_test/ and a samplesheet at /data1/greenbab/users/ahunos/apps/openSource/modules/modules/nf-core/modkit/localize/plot/tests/data/samplesheet.csv",
+      "expected_output": "Classified as Type D. Scaffolds main.nf with template directive, environment.yml with R packages, templates/plot_pileup_heatmap.R skeleton. Asks about Wave container. Applies Groovy escaping rules. Produces stub test that passes.",
+      "assertions": [
+        "Classified as Type D (R/Python script template)",
+        "main.nf uses template directive",
+        "environment.yml has r-base, r-ggplot2, r-pheatmap, r-data.table",
+        "templates/ directory and R script created",
+        "Groovy escaping correct in R template (sep = '\\t' not '\\\\t')",
+        "Wave container asked about or built",
+        "Stub test passes --profile conda",
+        "PR description produced"
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "/nfcore-module I want to add a new module for dorado/summary — it runs `dorado summary` on a BAM file to produce a TSV of per-read stats. Not on bioconda (ONTPL licence). Container is nanoporetech/dorado:shac8f356489fa8b44b31beba841b84d2879de2088e — same image as dorado/basecaller. No GPU needed for summary. Test BAM is at /data1/greenbab/users/ahunos/apps/openSource/modules/tests/test_datasets_public/HG002_PAW70337_giab_10reads.unaligned.hg38.bam",
+      "expected_output": "Skill classifies as Type B, scaffolds all 5 files, runs lint to 0 failures, passes stub test, produces PR description. Does NOT block — real data is provided.",
+      "assertions": [
+        "Classified as Type B (licensed, non-bioconda)",
+        "conda null with ONTPL licence comment",
+        "tests/nextflow.config has zero local paths (no params.test_bam, no commented SIF paths, no projectDir refs)",
+        "No custom ext keys (ext.device, ext.model, etc.)",
+        "Lint passes with 0 failures",
+        "Stub test passes",
+        "PR description produced"
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "/nfcore-module I want to add dorado/trim to nf-core. It trims adapter and barcode sequences from a dorado-basecalled BAM file. Not on bioconda — ONTPL licence. Container is nanoporetech/dorado:shac8f356489fa8b44b31beba841b84d2879de2088e (same image as dorado/basecaller and dorado/summary). No GPU needed. Test BAM: /data1/greenbab/users/ahunos/apps/openSource/modules/tests/test_datasets_public/HG002_PAW70337_giab_10reads.unaligned.hg38.bam",
+      "expected_output": "Skill classifies as Type B, scaffolds all files from scratch (no pre-existing scaffold), tests/nextflow.config is clean from the first write, lint 0 failures, stub tests pass, PR description produced.",
+      "assertions": [
+        "Classified as Type B (licensed, non-bioconda)",
+        "conda null with ONTPL licence comment in main.nf",
+        "tests/nextflow.config has zero local paths — written clean from scratch",
+        "No custom ext keys",
+        "Lint passes with 0 failures",
+        "Stub test passes",
+        "PR description produced"
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "/nfcore-module I want to add dorado/correct to nf-core. It performs error correction on ONT reads using a neural network model — improves read accuracy before downstream analysis. Requires GPU (CUDA). Not on bioconda — ONTPL licence. Container: nanoporetech/dorado:shac8f356489fa8b44b31beba841b84d2879de2088e. Input: unaligned BAM from dorado basecaller. Test BAM: /data1/greenbab/users/ahunos/apps/openSource/modules/tests/test_datasets_public/HG002_PAW70337_giab_10reads.unaligned.hg38.bam",
+      "expected_output": "Classified as Type C (GPU). Uses label process_gpu, conda null, correct container. tests/nextflow.config has singularity.runOptions = '--nv'. Real GPU test tagged 'gpu' and excluded from CI. Stub tests pass without GPU. tests/nextflow.config has zero local paths.",
+      "assertions": [
+        "Classified as Type C (GPU, licensed)",
+        "label 'process_gpu' in main.nf",
+        "conda null with ONTPL licence comment",
+        "singularity.runOptions = '--nv' in tests/nextflow.config",
+        "tests/nextflow.config has zero local paths",
+        "No custom ext keys (ext.device hardcoded in script body)",
+        "Stub test passes without GPU"
+      ],
+      "files": []
+    }
+  ]
+}

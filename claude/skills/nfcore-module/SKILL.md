@@ -1,0 +1,242 @@
+---
+name: nfcore-module
+description: |
+  End-to-end builder for new nf-core modules. Scaffolds all required files,
+  runs lint and nf-test in a loop until both pass, and produces PR-ready
+  artifacts (description, Slack draft, checklist). Use this skill proactively
+  whenever the user wants to: create a new nf-core module, add a tool to
+  nf-core/modules, write a DORADO_BASECALLER or MODKIT_LOCALIZE style process,
+  wrap a bioinformatics tool in Nextflow for nf-core, or asks "how do I submit
+  a module to nf-core". Also trigger for: adding GPU support to a module,
+  wrapping an R or Python script as an nf-core process, handling licensed/
+  non-bioconda tools in nf-core, fixing nf-core lint failures on a new module.
+  Do NOT trigger for: editing existing pipelines, writing Snakemake rules,
+  or debugging non-module Nextflow code.
+version: 1.2.0
+author: Samuel Ahuno (@sahuno)
+---
+
+# nf-core Module Builder
+
+Build new nf-core modules end-to-end: scaffold → lint loop → test loop → PR artifacts.
+Encodes hard-won lessons from building `dorado/basecaller`, `modkit/localize`,
+and `modkit/localize/plot`.
+
+## Quick Reference
+
+- Rules engine (all critical rules): `references/rules_engine.md`
+- File templates for all 4 module types: `references/module_templates.md`
+- PR description / Slack draft templates: `references/pr_artifacts.md`
+
+---
+
+## Phase 1: INTAKE — Gather Everything Before Writing a Line
+
+Start by reading `references/rules_engine.md` to load the rules into context.
+
+### 1a. Parse the user's prompt
+Extract what you can: tool name (`tool/subtool`), container image, one-line description,
+conda availability, GPU requirement, test data path.
+
+### 1b. Search for existing patterns
+Search `modules/nf-core/` for the closest existing module to use as a pattern:
+```bash
+ls modules/nf-core/<tool>/ 2>/dev/null
+find modules/nf-core/ -name "main.nf" | xargs grep -l "<similar_tool>" 2>/dev/null | head -5
+```
+Tell the user what you found and which files you're using as reference.
+
+### 1c. Ask clarifying questions upfront (all at once, not one by one)
+
+Ask every question you need in a single message. Minimum questions for any module:
+
+**Always ask if not provided:**
+1. `tool/subtool` name — e.g. `dorado/basecaller`, `samtools/sort`
+2. Container image — Docker Hub, quay.io, or Wave URI
+3. One-sentence description of what the tool does
+4. Is this tool on **bioconda**? (yes/no/unsure)
+
+**Ask if potentially GPU:**
+5. Does this tool require a **GPU at runtime**? (yes = CUDA, no = CPU only)
+   — If yes: what GPU flag does the tool use? (e.g. `--device cuda:all`, `--gpu`)
+
+**Ask if not on bioconda:**
+6. Why is it not on bioconda? (licence restriction, not yet submitted, custom script)
+7. Is there an official upstream Docker Hub image, or does one need to be built?
+
+**Always ask:**
+8. Do you have **real test data** to provide? If yes, what path(s)?
+   — If no: STOP and say "I need real test data to write working tests.
+     Please provide at least one input file. Do not proceed with synthetic data."
+
+Do not proceed until test data paths are confirmed.
+
+### 1d. Classify module type
+
+| Type | Condition | Key markers |
+|------|-----------|-------------|
+| **A** Standard | On bioconda, no GPU | `conda: bioconda::pkg=version`, `quay.io/biocontainers/...` |
+| **B** Licensed | Not on bioconda, no GPU | `conda null`, Docker Hub image, licence comment |
+| **C** GPU | Requires CUDA GPU | `conda null`, `label 'process_gpu'`, `--nv` flag |
+| **D** Script | R/Python template, no binary tool | `environment.yml`, Wave URI, `template` directive |
+
+Tell the user which type you've classified and why before scaffolding.
+
+---
+
+## Phase 2: SCAFFOLD — Create All Files
+
+Read `references/module_templates.md` for the exact file templates per module type.
+
+Create the full directory tree:
+```
+modules/nf-core/<tool>/<subtool>/
+├── main.nf
+├── meta.yml
+├── environment.yml
+├── templates/            # Type D only
+│   └── script.R / .py
+└── tests/
+    ├── main.nf.test
+    ├── nextflow.config
+    └── data/             # symlink or note real data location
+```
+
+### Critical rules enforced during scaffolding (see rules_engine.md for full detail):
+
+**ext keys** — ONLY these are allowed in main.nf:
+`ext.args`, `ext.args2`, `ext.args3`, `ext.prefix`, `ext.when`
+Never use `ext.device`, `ext.model`, `ext.threads`, or any custom key.
+Hardcode defaults in the script body instead (e.g. `--device cuda:all`).
+
+**tests/nextflow.config** — zero local paths, ever:
+```groovy
+process {
+    withName: 'TOOL_SUBTOOL' {
+        ext.args = params.module_args ?: ''
+    }
+}
+singularity.registry = ''
+docker.registry      = ''
+// Add only for GPU modules:
+// singularity.runOptions = '--nv'
+```
+
+**Test data references** — use concatenation, not interpolation:
+```groovy
+// ✅ correct — resolves at Nextflow runtime
+file(params.modules_testdata_base_path + 'genomics/homo_sapiens/genome/genome.fasta', checkIfExists: true)
+// ❌ wrong — params is null in nf-test Groovy context
+file("${params.modules_testdata_base_path}genomics/...", checkIfExists: true)
+```
+
+**nf-test assertions** — check output channels, not directories:
+```groovy
+// ✅ correct
+{ assert process.out.bam }
+// ❌ wrong — Java Path has no .isDirectory()
+{ assert path("output/").isDirectory() }
+```
+
+---
+
+## Phase 3: LINT LOOP — Zero Failures Required
+
+```bash
+nf-core modules lint --fix <tool/subtool>   # auto-fix first
+nf-core modules lint <tool/subtool>         # then check
+```
+
+Repeat until `[✗] 0 Tests Failed`. Fix each failure before re-running.
+
+**⚠ Run the R2 audit immediately after every `lint --fix` call:**
+```bash
+grep -n 'projectDir\|test_bam\|\.sif\|ext\.device\|ext\.model' \
+  modules/nf-core/<tool>/<subtool>/tests/nextflow.config
+```
+Expected: no output. If anything is found, remove it before re-running lint.
+
+> Why: `nf-core modules lint --fix` has been observed to inject banned patterns into
+> `tests/nextflow.config` — specifically `ext.device` (banned ext key, R1) and local `.sif`
+> container overrides (R2 violation). These silently survive subsequent lint checks because
+> lint doesn't validate ext keys in test configs. They only fail on CI.
+
+**Expected warnings** (not failures) for Type B/C — acceptable, explain in PR:
+- `container_links`: quay.io 404 for Docker Hub images
+- `main_nf_container`: container version mismatch warning
+- `process_standard_label`: `process_gpu` not in standard list
+
+Common failures and fixes:
+- `main_nf_ext_key`: invalid ext key → remove it, hardcode in script body
+- `correct_meta_inputs`: meta.yml doesn't match main.nf → run `--fix`
+- `has_meta_topics`: missing topics section → run `--fix`
+- `environment_yml`: missing/wrong schema → add `# yaml-language-server` header
+
+---
+
+## Phase 4: TEST LOOP — All Stub Tests Must Pass
+
+```bash
+nf-test test modules/nf-core/<tool>/<subtool>/tests/main.nf.test \
+  --profile conda --update-snapshot
+```
+
+Fix failures and re-run until all tests pass.
+
+**Stub tests** (always required, run in CI):
+- Use `options "-stub"` 
+- Always include: `{ assert process.success }` + `{ assert snapshot(process.out).match() }`
+- Use real data paths the user provided
+
+**GPU real tests** (Type C only, excluded from CI):
+- Tag with `tag "gpu"`
+- Documented but not run in this loop
+- Run locally with `--profile singularity,gpu --tag gpu`
+
+**Real test data paths** — must use `params.modules_testdata_base_path` concatenation (R4),
+never `${projectDir}/tests/...` or any absolute path.
+
+---
+
+## Phase 4b: R2 AUDIT — Run Before PR Artifacts (HIGH PRIORITY)
+
+This step catches violations that lint won't catch and that only fail on CI or a reviewer's machine.
+Run both greps. Expected result: **no output**. Any match is a blocker.
+
+```bash
+# Audit nextflow.config for banned patterns
+grep -n 'projectDir\|test_bam\|test_reference\|models_dir\|\.sif' \
+  modules/nf-core/<tool>/<subtool>/tests/nextflow.config
+
+# Audit test file for hardcoded local paths
+grep -n 'projectDir\|/data/\|/home/' \
+  modules/nf-core/<tool>/<subtool>/tests/main.nf.test
+```
+
+**What to fix if found:**
+
+| Pattern | Fix |
+|---------|-----|
+| `params { test_bam = ... }` | Delete the entire params block |
+| `// container = /path/to/...sif` | Delete the line (even comments are flagged by reviewers) |
+| `file("${projectDir}/tests/...")` | Replace with `file(params.modules_testdata_base_path + 'path/to/file', checkIfExists: true)` |
+| Any `/data/` or `/home/` path | Replace with testdata base path or remove entirely |
+
+After fixing any violations, re-run the test loop (Phase 4) to confirm tests still pass.
+
+---
+
+## Phase 5: PR ARTIFACTS — Always Produce, Never Auto-Submit
+
+Read `references/pr_artifacts.md` for templates.
+
+Always produce all three regardless of module type:
+1. **PR description** — follows `.github/PULL_REQUEST_TEMPLATE.md`
+2. **Slack `#new-modules` draft** — required for Type B/C/D (non-standard decisions)
+3. **PR checklist** — module-specific, covers lint warnings + CI gaps
+
+End with:
+> "Module is lint-clean and all stub tests pass. PR artifacts above are ready.
+> When you want to open the PR, say 'open the PR' and I'll run `gh pr create`."
+
+**Never run `gh pr create` until the user explicitly says so.**

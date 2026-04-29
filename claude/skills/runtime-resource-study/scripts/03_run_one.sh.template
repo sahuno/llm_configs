@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+# Author: {{USER}}
+# Date: {{DATE}}
+# Purpose: Single-condition runner for the {{TOOL_NAME}} {{COMMAND}} benchmark — runs the tool with one factor combination, captures wall time, CPU time, peak RSS, page faults, and FS I/O via GNU /usr/bin/time -v, and appends a row to a benchmark CSV (flock-guarded for concurrent writes).
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Args — adapt this block per tool. Keep the GNU-time + CSV machinery below.
+# ---------------------------------------------------------------------------
+INPUT=""
+OUTPUT_DIR=""
+TMP_DIR=""
+CSV_PATH=""
+THREADS=8
+MEM_PER_THREAD="2G"
+COMPRESSION_LEVEL=1
+# {{ADD_TOOL_FACTORS}}    # e.g., SORT_KEY="coord", OUTPUT_FMT="BAM", ...
+TOOL_BIN="${TOOL_BIN:-{{TOOL_BIN}}}"
+GTIME_BIN=""              # GNU time path; auto-detected from tool's env if empty
+BUILD_MODE="conda"
+REPLICATE=1
+RUN_ID=""
+WARMUP=0
+KEEP_OUTPUT=0
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+  Required:
+    -i  Input file
+    -o  Output directory
+    -T  Tmp directory (-T prefix dir for tools that spill)
+    -c  CSV path
+  Factor levels:
+    -t  Threads                    [default: $THREADS]
+    -m  Memory per thread          [default: $MEM_PER_THREAD]
+    -l  Compression level          [default: $COMPRESSION_LEVEL]
+    {{ADD_FACTOR_FLAGS}}
+  Other:
+    -s  Tool binary                [default: \$TOOL_BIN]
+    -G  GNU time binary            [default: <tool_dir>/time, fallback /usr/bin/time]
+    -b  Build mode label           [default: $BUILD_MODE]
+    -r  Replicate index            [default: $REPLICATE]
+    -u  Run ID                     [default: auto]
+    -W  Warmup (0|1)               [default: $WARMUP]
+    -K  Keep output (0|1)          [default: $KEEP_OUTPUT]
+EOF
+}
+
+# Customise the getopts string and case block per tool's factor list
+while getopts ":i:o:T:c:t:m:l:s:G:b:r:u:W:K:h" opt; do
+  case "$opt" in
+    i) INPUT="$OPTARG" ;;
+    o) OUTPUT_DIR="$OPTARG" ;;
+    T) TMP_DIR="$OPTARG" ;;
+    c) CSV_PATH="$OPTARG" ;;
+    t) THREADS="$OPTARG" ;;
+    m) MEM_PER_THREAD="$OPTARG" ;;
+    l) COMPRESSION_LEVEL="$OPTARG" ;;
+    s) TOOL_BIN="$OPTARG" ;;
+    G) GTIME_BIN="$OPTARG" ;;
+    b) BUILD_MODE="$OPTARG" ;;
+    r) REPLICATE="$OPTARG" ;;
+    u) RUN_ID="$OPTARG" ;;
+    W) WARMUP="$OPTARG" ;;
+    K) KEEP_OUTPUT="$OPTARG" ;;
+    h) usage; exit 0 ;;
+    *) usage; exit 1 ;;
+  esac
+done
+
+[[ -z "$INPUT" || -z "$OUTPUT_DIR" || -z "$TMP_DIR" || -z "$CSV_PATH" ]] && { usage; exit 1; }
+[[ ! -f "$INPUT" ]] && { echo "Input not found: $INPUT" >&2; exit 1; }
+command -v "$TOOL_BIN" >/dev/null 2>&1 || { echo "Tool not found: $TOOL_BIN" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Resolve GNU time (do not change — see rules/gnu_time.md)
+# ---------------------------------------------------------------------------
+if [[ -z "$GTIME_BIN" ]]; then
+  TOOL_RESOLVED=$(command -v "$TOOL_BIN")
+  CANDIDATE_SIBLING="$(dirname "$TOOL_RESOLVED")/time"
+  if [[ -x "$CANDIDATE_SIBLING" ]]; then
+    GTIME_BIN="$CANDIDATE_SIBLING"
+  elif [[ -x /usr/bin/time ]]; then
+    GTIME_BIN="/usr/bin/time"
+  else
+    echo "GNU time not found; pass -G <path> or install conda-forge::time alongside $TOOL_BIN" >&2
+    exit 1
+  fi
+fi
+"$GTIME_BIN" -v -- true >/dev/null 2>&1 || { echo "GNU time at $GTIME_BIN does not support -v" >&2; exit 1; }
+
+mkdir -p "$OUTPUT_DIR" "$TMP_DIR"
+TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
+TMP_TAG=$(basename "$TMP_DIR")
+[[ -z "$RUN_ID" ]] && RUN_ID="t${THREADS}_m${MEM_PER_THREAD}_l${COMPRESSION_LEVEL}_${TMP_TAG}_r${REPLICATE}_${TIMESTAMP}"
+
+OUT_FILE="$OUTPUT_DIR/${RUN_ID}.{{OUTPUT_EXT}}"      # e.g., .bam, .vcf.gz
+TIME_FILE="$OUTPUT_DIR/${RUN_ID}.time.txt"
+STDOUT_FILE="$OUTPUT_DIR/${RUN_ID}.stdout.log"
+STDERR_FILE="$OUTPUT_DIR/${RUN_ID}.stderr.log"
+
+# ---------------------------------------------------------------------------
+# === BUILD COMMAND ===  (adapt this for your tool)
+# ---------------------------------------------------------------------------
+TOOL_CMD=("$TOOL_BIN" {{COMMAND}})
+TOOL_CMD+=("--threads" "$THREADS")     # or -@ or -t depending on tool
+# {{ADD_TOOL_SPECIFIC_FLAGS}}
+# Example for samtools sort:
+#   TOOL_CMD+=("-@" "$THREADS" "-m" "$MEM_PER_THREAD" "-l" "$COMPRESSION_LEVEL")
+#   TOOL_CMD+=("-T" "${TMP_DIR}/${RUN_ID}.tmp")
+#   TOOL_CMD+=("-o" "$OUT_FILE")
+#   TOOL_CMD+=("$INPUT")
+TOOL_CMD+=("-o" "$OUT_FILE")
+TOOL_CMD+=("$INPUT")
+
+TMP_FS_TYPE=$(stat -f -c '%T' "$TMP_DIR" 2>/dev/null || echo "unknown")
+TOOL_VERSION=$("$TOOL_BIN" --version 2>&1 | head -1 | awk '{print $NF}')
+CPU_MODEL=$(awk -F': ' '/^model name/ {print $2; exit}' /proc/cpuinfo 2>/dev/null | tr ',' ' ' | tr -s ' ')
+[[ -z "$CPU_MODEL" ]] && CPU_MODEL="unknown"
+
+# ---------------------------------------------------------------------------
+# Optional warmup
+# ---------------------------------------------------------------------------
+if [[ "$WARMUP" == "1" ]]; then
+  echo "[warmup] discarded run..." >&2
+  "${TOOL_CMD[@]}" >/dev/null 2>&1 || true
+  find "$TMP_DIR" -maxdepth 1 -name "${RUN_ID}.tmp.*" -delete 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------------------
+# Timed run
+# ---------------------------------------------------------------------------
+echo "[run]   $RUN_ID" >&2
+echo "[cmd]   ${TOOL_CMD[*]}" >&2
+
+set +e
+"$GTIME_BIN" -v -o "$TIME_FILE" -- "${TOOL_CMD[@]}" >"$STDOUT_FILE" 2>"$STDERR_FILE"
+EXIT_STATUS=$?
+set -e
+
+find "$TMP_DIR" -maxdepth 1 -name "${RUN_ID}.tmp.*" -delete 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# Parse GNU time -v output (do not change)
+# ---------------------------------------------------------------------------
+parse_field() {
+  grep -F "$1" "$TIME_FILE" 2>/dev/null | head -1 | awk -F': ' '{print $NF}'
+}
+ELAPSED_RAW=$(parse_field "Elapsed (wall clock) time")
+USER_CPU=$(parse_field "User time (seconds)")
+SYS_CPU=$(parse_field "System time (seconds)")
+CPU_PCT_RAW=$(parse_field "Percent of CPU")
+PEAK_RSS_KB=$(parse_field "Maximum resident set size")
+MINOR_PF=$(parse_field "Minor (reclaiming a frame) page faults")
+MAJOR_PF=$(parse_field "Major (requiring I/O) page faults")
+FS_IN=$(parse_field "File system inputs")
+FS_OUT=$(parse_field "File system outputs")
+CPU_PCT="${CPU_PCT_RAW%\%}"
+
+elapsed_to_s() {
+  awk -v t="$1" 'BEGIN {
+    n = split(t, a, ":");
+    if (n == 3) printf "%.3f", a[1]*3600 + a[2]*60 + a[3];
+    else if (n == 2) printf "%.3f", a[1]*60 + a[2];
+    else printf "%s", t;
+  }'
+}
+WALL_S=$(elapsed_to_s "$ELAPSED_RAW")
+OUT_BYTES=$(stat -c '%s' "$OUT_FILE" 2>/dev/null || echo 0)
+
+# ---------------------------------------------------------------------------
+# CSV append (flock-guarded for concurrent jobs)
+# ---------------------------------------------------------------------------
+HEADER="run_id,timestamp,host,cpu_model,partition,slurm_jobid,tool_version,build_mode,input,threads,mem_per_thread,compression_level,tmp_dir,tmp_fs_type,replicate,wall_s,user_cpu_s,sys_cpu_s,cpu_pct,peak_rss_kb,minor_pf,major_pf,fs_in,fs_out,exit_status,output_bytes,output_path"
+ROW="${RUN_ID},${TIMESTAMP},$(hostname),${CPU_MODEL},${SLURM_JOB_PARTITION:-NA},${SLURM_JOB_ID:-NA},${TOOL_VERSION},${BUILD_MODE},${INPUT},${THREADS},${MEM_PER_THREAD},${COMPRESSION_LEVEL},${TMP_DIR},${TMP_FS_TYPE},${REPLICATE},${WALL_S},${USER_CPU},${SYS_CPU},${CPU_PCT},${PEAK_RSS_KB},${MINOR_PF},${MAJOR_PF},${FS_IN},${FS_OUT},${EXIT_STATUS},${OUT_BYTES},${OUT_FILE}"
+
+LOCK_FILE="${CSV_PATH}.lock"
+(
+  flock -x 200
+  [[ ! -f "$CSV_PATH" ]] && echo "$HEADER" > "$CSV_PATH"
+  echo "$ROW" >> "$CSV_PATH"
+) 200>"$LOCK_FILE"
+
+if [[ "$KEEP_OUTPUT" == "0" && -f "$OUT_FILE" ]]; then
+  rm -f "$OUT_FILE" "${OUT_FILE}.bai" "${OUT_FILE}.csi" "${OUT_FILE}.tbi" 2>/dev/null || true
+fi
+
+echo "[done]  $RUN_ID  wall=${WALL_S}s  rss=${PEAK_RSS_KB}KB  exit=${EXIT_STATUS}" >&2
+exit "$EXIT_STATUS"

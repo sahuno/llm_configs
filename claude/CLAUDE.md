@@ -207,6 +207,10 @@ Tool-specific lessons live in `/data1/greenbab/users/ahunos/apps/llm_configs/cla
 - @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/snakemake.md — Snakemake 9 + SLURM executor pitfalls (mem_mb_per_cpu, srun memory conflict, cluster profile conflicts, stale locks)
 - @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/dss.md — DSS Bioconductor silent corruption from `mclapply + detectCores()` ignoring SLURM cgroup limits; mandatory `ncores` arg, post-run verification
 - @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/igv.md — IGV / igver hang on large ONT BAMs with `--methylation` preset; bigwig-mode autoscale fix via `setDataRange 0,100`; `modkit bedmethyl tobigwig` chrom.sizes mismatch (Rust SendError panic)
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/mskcc_partitions.md — partition selection on MSKCC HPC: prefer `cpushort` (50+ idle, same hardware) over saturated `componc_cpu`; always `--exclude=isca071` (slower CPU vintage that doesn't show in scontrol Features)
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/slurm_mcp.md — slurm-mcp `submit_batch` quirks: cmdline injection of `--mem 64G`/`--time 04:00:00` overrides script directives and conflicts with `--mem-per-cpu`; no `--array` support; logs redirected to `~/slurm_logs/`
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/gnu_time.md — `/usr/bin/time` is not installed on MSKCC HPC; install GNU time via conda (`mamba install -c conda-forge time`) and resolve dynamically as a sibling of the tool's binary in benchmark wrappers
+- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/apptainer_vs_conda.md — for short HTSlib/samtools jobs on MSKCC HPC, prefer the apptainer SIF over the NFS-backed conda binary; conda pays a 1-2 M page-fault cold-start tax (~2.5 µs/fault) absent from the SIF
 
 When you create a new rules file, add an entry here so it's loaded into every session.
 

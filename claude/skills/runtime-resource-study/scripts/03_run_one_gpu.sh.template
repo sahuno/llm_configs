@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+# Author: {{USER}}
+# Date: {{DATE}}
+# Purpose: Single-condition runner for the {{TOOL_NAME}} {{COMMAND}} GPU benchmark — runs the tool with one factor combination, captures wall, CPU time, peak host RSS, and via an nvidia-smi sidecar: GPU model, peak GPU memory, mean GPU utilisation, mean power. Appends a row to a benchmark CSV (flock-guarded).
+#
+# Strict superset of 03_run_one.sh.template — same flock pattern, same GNU time wrap, plus GPU instrumentation.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Args — adapt the factor block per tool
+# ---------------------------------------------------------------------------
+INPUT=""
+OUTPUT_DIR=""
+TMP_DIR=""
+CSV_PATH=""
+THREADS=8                # CPU threads for pre/post-processing
+GPU_COUNT=1
+GPU_DEVICE="cuda:all"    # or cuda:0
+BATCH_SIZE="256"         # tool-specific
+NUM_RUNNERS=2            # tool-specific (dorado: --num-runners-per-device)
+MODEL="hac"              # tool-specific (dorado: fast/hac/sup)
+MOD_TAGS=""              # e.g., "5mCG_5hmCG@latest,6mA@latest" or empty
+TOOL_BIN="${TOOL_BIN:-{{TOOL_BIN}}}"
+GTIME_BIN=""
+USE_CONTAINER=0          # 1 if TOOL_BIN is a SIF path; 0 if direct binary
+SIF_PATH=""              # path to .sif if USE_CONTAINER=1
+BUILD_MODE="container"
+REPLICATE=1
+RUN_ID=""
+GPU_SAMPLE_HZ=1          # nvidia-smi sample rate (Hz); use 10 for short jobs <30s
+KEEP_OUTPUT=0
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+  Required:
+    -i  Input
+    -o  Output directory
+    -T  Tmp directory
+    -c  CSV path
+  Tool / GPU:
+    -t  CPU threads                [default: $THREADS]
+    -g  GPU count                  [default: $GPU_COUNT]
+    -D  GPU device spec            [default: $GPU_DEVICE]
+    -B  Batch size                 [default: $BATCH_SIZE]
+    -R  Runners per device         [default: $NUM_RUNNERS]
+    -M  Model name                 [default: $MODEL]
+    -X  Mod-base tags              [default: empty; e.g., 5mCG_5hmCG@latest,6mA@latest]
+    -s  Tool binary OR sif path    [default: \$TOOL_BIN]
+    -C  Use container (0|1)        [default: $USE_CONTAINER]
+    -S  SIF path                   [required if -C 1]
+  Other:
+    -G  GNU time binary            [auto]
+    -b  Build mode label           [default: $BUILD_MODE]
+    -r  Replicate index            [default: $REPLICATE]
+    -u  Run ID                     [default: auto]
+    -H  GPU sampling Hz            [default: $GPU_SAMPLE_HZ]
+    -K  Keep output (0|1)          [default: $KEEP_OUTPUT]
+EOF
+}
+
+while getopts ":i:o:T:c:t:g:D:B:R:M:X:s:C:S:G:b:r:u:H:K:h" opt; do
+  case "$opt" in
+    i) INPUT="$OPTARG" ;;
+    o) OUTPUT_DIR="$OPTARG" ;;
+    T) TMP_DIR="$OPTARG" ;;
+    c) CSV_PATH="$OPTARG" ;;
+    t) THREADS="$OPTARG" ;;
+    g) GPU_COUNT="$OPTARG" ;;
+    D) GPU_DEVICE="$OPTARG" ;;
+    B) BATCH_SIZE="$OPTARG" ;;
+    R) NUM_RUNNERS="$OPTARG" ;;
+    M) MODEL="$OPTARG" ;;
+    X) MOD_TAGS="$OPTARG" ;;
+    s) TOOL_BIN="$OPTARG" ;;
+    C) USE_CONTAINER="$OPTARG" ;;
+    S) SIF_PATH="$OPTARG" ;;
+    G) GTIME_BIN="$OPTARG" ;;
+    b) BUILD_MODE="$OPTARG" ;;
+    r) REPLICATE="$OPTARG" ;;
+    u) RUN_ID="$OPTARG" ;;
+    H) GPU_SAMPLE_HZ="$OPTARG" ;;
+    K) KEEP_OUTPUT="$OPTARG" ;;
+    h) usage; exit 0 ;;
+    *) usage; exit 1 ;;
+  esac
+done
+
+[[ -z "$INPUT" || -z "$OUTPUT_DIR" || -z "$TMP_DIR" || -z "$CSV_PATH" ]] && { usage; exit 1; }
+[[ "$USE_CONTAINER" == "1" && -z "$SIF_PATH" ]] && { echo "Container mode needs -S <sif>" >&2; exit 1; }
+command -v nvidia-smi >/dev/null 2>&1 || { echo "nvidia-smi not found — is this a GPU node?" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Resolve GNU time
+# ---------------------------------------------------------------------------
+if [[ -z "$GTIME_BIN" ]]; then
+  if [[ "$USE_CONTAINER" == "1" ]]; then
+    # Time wraps the apptainer invocation; resolve from PATH or /usr/bin
+    if [[ -x /usr/bin/time ]]; then
+      GTIME_BIN="/usr/bin/time"
+    elif command -v time >/dev/null 2>&1; then
+      GTIME_BIN="$(command -v time)"
+    fi
+  else
+    TOOL_RESOLVED=$(command -v "$TOOL_BIN" 2>/dev/null || echo "$TOOL_BIN")
+    CANDIDATE_SIBLING="$(dirname "$TOOL_RESOLVED")/time"
+    [[ -x "$CANDIDATE_SIBLING" ]] && GTIME_BIN="$CANDIDATE_SIBLING"
+    [[ -z "$GTIME_BIN" && -x /usr/bin/time ]] && GTIME_BIN="/usr/bin/time"
+  fi
+fi
+[[ -z "$GTIME_BIN" ]] && { echo "GNU time not found; pass -G <path>" >&2; exit 1; }
+"$GTIME_BIN" -v -- true >/dev/null 2>&1 || { echo "GNU time at $GTIME_BIN does not support -v" >&2; exit 1; }
+
+mkdir -p "$OUTPUT_DIR" "$TMP_DIR"
+TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
+[[ -z "$RUN_ID" ]] && RUN_ID="t${THREADS}_g${GPU_COUNT}_b${BATCH_SIZE}_r${REPLICATE}_${TIMESTAMP}"
+
+OUT_FILE="$OUTPUT_DIR/${RUN_ID}.{{OUTPUT_EXT}}"
+TIME_FILE="$OUTPUT_DIR/${RUN_ID}.time.txt"
+GPU_LOG="$OUTPUT_DIR/${RUN_ID}.gpu.csv"
+STDOUT_FILE="$OUTPUT_DIR/${RUN_ID}.stdout.log"
+STDERR_FILE="$OUTPUT_DIR/${RUN_ID}.stderr.log"
+
+# ---------------------------------------------------------------------------
+# GPU identity capture (deterministic per host)
+# ---------------------------------------------------------------------------
+GPU_MODEL=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | tr ',' ' ' | tr -s ' ')
+GPU_DRIVER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
+GPU_MEM_TOTAL=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1)
+N_GPU_VISIBLE=$(nvidia-smi -L | wc -l)
+[[ -z "$GPU_MODEL" ]] && GPU_MODEL="unknown"
+[[ -z "$GPU_DRIVER" ]] && GPU_DRIVER="unknown"
+
+CPU_MODEL=$(awk -F': ' '/^model name/ {print $2; exit}' /proc/cpuinfo 2>/dev/null | tr ',' ' ' | tr -s ' ')
+
+# ---------------------------------------------------------------------------
+# === BUILD COMMAND ===  (adapt this for your tool)
+# ---------------------------------------------------------------------------
+# Example: dorado basecaller in apptainer
+TOOL_CMD=()
+if [[ "$USE_CONTAINER" == "1" ]]; then
+  TOOL_CMD+=(apptainer exec --nv --bind /data1 --bind /tmp "$SIF_PATH")
+fi
+TOOL_CMD+=("$TOOL_BIN" {{COMMAND}})
+
+# {{REPLACE WITH TOOL-SPECIFIC FLAGS}}
+# Example for dorado basecaller:
+#   if [[ -z "$MOD_TAGS" ]]; then
+#     TOOL_CMD+=("$MODEL")
+#   else
+#     TOOL_CMD+=("${MODEL},${MOD_TAGS}")
+#   fi
+#   TOOL_CMD+=("--device" "$GPU_DEVICE")
+#   TOOL_CMD+=("--batchsize" "$BATCH_SIZE")
+#   TOOL_CMD+=("--num-runners-per-device" "$NUM_RUNNERS")
+#   TOOL_CMD+=("--emit-sam")
+#   TOOL_CMD+=("$INPUT")
+TOOL_CMD+=("$INPUT")
+TOOL_CMD+=("-o" "$OUT_FILE")     # delete if tool writes to stdout
+
+TOOL_VERSION=$( ([[ "$USE_CONTAINER" == "1" ]] && apptainer exec --nv "$SIF_PATH" "$TOOL_BIN" --version || "$TOOL_BIN" --version) 2>&1 | head -1 | awk '{print $NF}')
+
+# ---------------------------------------------------------------------------
+# Start nvidia-smi sidecar
+# ---------------------------------------------------------------------------
+SAMPLE_INTERVAL_MS=$(awk "BEGIN { printf \"%d\", 1000/$GPU_SAMPLE_HZ }")
+echo "timestamp,index,memory.used,utilization.gpu,utilization.memory,power.draw,temperature.gpu" > "$GPU_LOG"
+nvidia-smi --query-gpu=timestamp,index,memory.used,utilization.gpu,utilization.memory,power.draw,temperature.gpu \
+           --format=csv,noheader,nounits -lms "$SAMPLE_INTERVAL_MS" >> "$GPU_LOG" 2>/dev/null &
+GPU_MON_PID=$!
+trap "kill $GPU_MON_PID 2>/dev/null || true" EXIT INT TERM
+
+# Brief settle so first row is post-warmup
+sleep 1
+
+# ---------------------------------------------------------------------------
+# Timed run
+# ---------------------------------------------------------------------------
+echo "[run]   $RUN_ID  on $GPU_MODEL ($GPU_DRIVER)" >&2
+echo "[cmd]   ${TOOL_CMD[*]}" >&2
+
+set +e
+"$GTIME_BIN" -v -o "$TIME_FILE" -- "${TOOL_CMD[@]}" >"$STDOUT_FILE" 2>"$STDERR_FILE"
+EXIT_STATUS=$?
+set -e
+
+# Stop sidecar
+kill $GPU_MON_PID 2>/dev/null || true
+trap - EXIT INT TERM
+sleep 0.5    # let final samples flush
+
+# ---------------------------------------------------------------------------
+# Parse GNU time -v
+# ---------------------------------------------------------------------------
+parse_field() {
+  grep -F "$1" "$TIME_FILE" 2>/dev/null | head -1 | awk -F': ' '{print $NF}'
+}
+ELAPSED_RAW=$(parse_field "Elapsed (wall clock) time")
+USER_CPU=$(parse_field "User time (seconds)")
+SYS_CPU=$(parse_field "System time (seconds)")
+CPU_PCT_RAW=$(parse_field "Percent of CPU")
+PEAK_RSS_KB=$(parse_field "Maximum resident set size")
+CPU_PCT="${CPU_PCT_RAW%\%}"
+
+elapsed_to_s() {
+  awk -v t="$1" 'BEGIN {
+    n = split(t, a, ":");
+    if (n == 3) printf "%.3f", a[1]*3600 + a[2]*60 + a[3];
+    else if (n == 2) printf "%.3f", a[1]*60 + a[2];
+    else printf "%s", t;
+  }'
+}
+WALL_S=$(elapsed_to_s "$ELAPSED_RAW")
+
+# ---------------------------------------------------------------------------
+# Parse nvidia-smi sidecar log for peak / mean
+# ---------------------------------------------------------------------------
+# Skip first line (header) + first data row (warmup sample)
+PEAK_GPU_MEM_MB=$(awk -F',' 'NR>2 { v=$3+0; if (v>max) max=v } END { print max+0 }' "$GPU_LOG")
+MEAN_GPU_UTIL=$(awk -F',' 'NR>2 { sum+=$4+0; n++ } END { if (n>0) printf "%.1f", sum/n; else print "0" }' "$GPU_LOG")
+MEAN_GPU_MEM_UTIL=$(awk -F',' 'NR>2 { sum+=$5+0; n++ } END { if (n>0) printf "%.1f", sum/n; else print "0" }' "$GPU_LOG")
+MEAN_GPU_POWER=$(awk -F',' 'NR>2 { sum+=$6+0; n++ } END { if (n>0) printf "%.1f", sum/n; else print "0" }' "$GPU_LOG")
+MEAN_GPU_TEMP=$(awk -F',' 'NR>2 { sum+=$7+0; n++ } END { if (n>0) printf "%.1f", sum/n; else print "0" }' "$GPU_LOG")
+GPU_SAMPLES_N=$(awk 'NR>1' "$GPU_LOG" | wc -l)
+
+OUT_BYTES=$(stat -c '%s' "$OUT_FILE" 2>/dev/null || echo 0)
+
+# ---------------------------------------------------------------------------
+# CSV append (flock-guarded)
+# ---------------------------------------------------------------------------
+HEADER="run_id,timestamp,host,cpu_model,gpu_model,gpu_driver,gpu_count,gpu_mem_total_mb,partition,slurm_jobid,tool_version,build_mode,input,threads,batch_size,num_runners,model,mod_tags,replicate,wall_s,user_cpu_s,sys_cpu_s,cpu_pct,peak_rss_kb,peak_gpu_mem_mb,mean_gpu_util_pct,mean_gpu_mem_util_pct,mean_gpu_power_w,mean_gpu_temp_c,gpu_samples_n,exit_status,output_bytes,output_path"
+ROW="${RUN_ID},${TIMESTAMP},$(hostname),${CPU_MODEL},${GPU_MODEL},${GPU_DRIVER},${GPU_COUNT},${GPU_MEM_TOTAL},${SLURM_JOB_PARTITION:-NA},${SLURM_JOB_ID:-NA},${TOOL_VERSION},${BUILD_MODE},${INPUT},${THREADS},${BATCH_SIZE},${NUM_RUNNERS},${MODEL},${MOD_TAGS},${REPLICATE},${WALL_S},${USER_CPU},${SYS_CPU},${CPU_PCT},${PEAK_RSS_KB},${PEAK_GPU_MEM_MB},${MEAN_GPU_UTIL},${MEAN_GPU_MEM_UTIL},${MEAN_GPU_POWER},${MEAN_GPU_TEMP},${GPU_SAMPLES_N},${EXIT_STATUS},${OUT_BYTES},${OUT_FILE}"
+
+LOCK_FILE="${CSV_PATH}.lock"
+(
+  flock -x 200
+  [[ ! -f "$CSV_PATH" ]] && echo "$HEADER" > "$CSV_PATH"
+  echo "$ROW" >> "$CSV_PATH"
+) 200>"$LOCK_FILE"
+
+if [[ "$KEEP_OUTPUT" == "0" && -f "$OUT_FILE" ]]; then
+  rm -f "$OUT_FILE" "${OUT_FILE}.bai" "${OUT_FILE}.csi" 2>/dev/null || true
+fi
+
+echo "[done]  $RUN_ID  wall=${WALL_S}s  rss=${PEAK_RSS_KB}KB  gpu_mem=${PEAK_GPU_MEM_MB}MB  gpu_util=${MEAN_GPU_UTIL}%  power=${MEAN_GPU_POWER}W  exit=${EXIT_STATUS}" >&2
+exit "$EXIT_STATUS"

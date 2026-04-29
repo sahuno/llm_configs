@@ -1,0 +1,92 @@
+# Predictive model for {{TOOL_NAME}} {{COMMAND}}
+# Hardware: Intel Xeon Gold 6348 (Ice Lake-SP), MSKCC HPC cpushort partition
+# Calibration data: results/<date>_stage5_inputscan/benchmark.csv
+# Validation data:  results/<date>_stage6_validate/benchmark.csv
+# Generated: {{DATE}}
+
+# === Primary model (recommended) ===
+# Use Model C (two-term) if it validates better than Model A (one-term).
+wall_model_v2:
+  formula: |
+    wall_s = a + b * N_primary_records + c * file_size_bytes
+  a_seconds:                        [FILL IN]
+  b_us_per_record:                 [FILL IN]
+  c_seconds_per_GB:                [FILL IN]
+  r_squared:                       [FILL IN]
+  threads_calib:                   {{THREADS_REC}}
+  validation_max_error_pct:        [FILL IN]
+  validated_against_stages:        [S5_calibration, S6_validation]
+
+# === Alternative simpler model ===
+wall_model_v1_record_only:
+  formula:                         "wall_s = a + b * N_primary_records"
+  a_seconds:                       [FILL IN]
+  b_us_per_record:                 [FILL IN]
+  r_squared:                       [FILL IN]
+  notes:                           "Use when file_size is unavailable; ±20% error at extrapolation."
+
+# === RSS model ===
+rss_model:
+  formula:                         "rss_bytes = a + b * N_primary_records  (linear up to saturation)"
+  a_bytes:                         [FILL IN]
+  b_bytes_per_record:              [FILL IN]
+  r_squared_calibration:           [FILL IN]
+  saturation_observed_gb:          [FILL IN, e.g., 450]
+  recommendation:                  "Linear up to <N_threshold>; cap at saturation_observed_gb above that."
+
+# === Recommended config ===
+recommended_config:
+  threads:                         {{THREADS_REC}}
+  args:                            "{{ARGS_REC}}"
+  build_mode:                      "container"
+  container_path:                  "{{CONTAINER_PATH}}"
+  partition:                       "cpushort"
+  exclude_nodes:                   ["isca071"]
+
+# === Drop-in resource-sizing helper ===
+helper_function: |
+  def {{TOOL_NAME}}_resources(n_primary, file_size_gb, threads={{THREADS_REC}}):
+      """Recommended resources for {{TOOL_NAME}} {{COMMAND}}.
+      Returns kwargs suitable for Snakemake `resources:` directives."""
+      wall_s = max(a_seconds + c_seconds_per_GB * file_size_gb + b_us_per_record * 1e-6 * n_primary, 5)
+      runtime_s = int(wall_s * 1.3)
+      rss_gb = min(a_GB + b_bytes_per_record * 1e-9 * n_primary, saturation_cap_GB)
+      mem_mb = int(rss_gb * 1.3 * 1024)
+      m_per_thread_gb = max(2, int(rss_gb / threads * 1.3))
+      return dict(threads=threads, m=f"{m_per_thread_gb}G", runtime_s=runtime_s, mem_mb=mem_mb)
+
+# === Validation history ===
+validation:
+  description:        "Out-of-sample validation on held-out inputs"
+  observations:
+    - run_id:         "[FILL IN]"
+      n_primary:      [FILL IN]
+      file_size_gb:   [FILL IN]
+      wall_observed_s: [FILL IN]
+      wall_predicted_s: [FILL IN]
+      error_pct:      [FILL IN]
+      rss_observed_gb: [FILL IN]
+      rss_predicted_gb: [FILL IN]
+
+# === Variance partitioning ===
+variance_partition:
+  source:                          "lme4::lmer(wall_s ~ factor + (1|host))"
+  condition_pct:                   [FILL IN]
+  host_pct:                        [FILL IN]
+  residual_pct:                    [FILL IN]
+  warning_if_host_above_pct:       25
+  excluded_hosts:                  ["isca071"]
+
+# === Cost accounting ===
+cost_accounting:
+  rate_per_core_hour_usd:          0.05
+  recommended_config_cpu_hours:    [FILL IN]
+  recommended_config_usd_per_sample: [FILL IN]
+  pareto_frontier_csv:             "cost_pareto.csv"
+
+# === Caveats ===
+caveats:
+  - "Calibrated only on [FILL IN: input class]"
+  - "Calibrated only on Intel Xeon Gold 6348 (Ice Lake-SP); other CPUs unverified"
+  - "Valid only when -m * threads >= rss prediction (in-memory regime)"
+  - "Cluster-specific (MSKCC HPC); other clusters need recalibration"
