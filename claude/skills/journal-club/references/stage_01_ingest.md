@@ -57,20 +57,30 @@ metadata + abstract only and tells the user how to install.
    **Preprint source (bioRxiv / medRxiv)**:
    ```python
    from scripts.pmc_utils import fetch_preprint, parse_pmc_xml
-   info = fetch_preprint(doi, server='biorxiv', output_folder='xml/', pdf_folder='pdf/')
+   info = fetch_preprint(
+       doi, server='biorxiv',
+       output_folder=f'{paper_dir}/xml',
+       pdf_folder=f'{paper_dir}/pdf',
+       images_folder=f'{paper_dir}/images',  # auto-extracted on PDF success
+   )
    # info['source'] tells you which path succeeded:
    #   'europepmc'      → full JATS XML (preferred)
    #   'cloudscraper'   → full JATS XML via Cloudflare bypass
    #   'playwright-xml' → JATS XML via headless Chromium
-   #   'playwright-pdf' → PDF download (most common for new preprints)
+   #   'playwright-pdf' → PDF download + auto-extracted images
    #   'metadata-only'  → only abstract returned; user must fetch PDF manually
+
+   # When source == 'playwright-pdf':
+   #   info['pdf_path']   → saved PDF
+   #   info['images_dir'] → directory of per-page PNG figures
+   #   info['n_images']   → count of extracted images
+   # No separate `extract_pdf_images.py` invocation needed; it's automatic.
 
    if info['xml_path']:
        paper = parse_pmc_xml(info['xml_path'])
    elif info['pdf_path']:
-       # Convert PDF → markdown, then proceed without structured XML.
-       # Use markitdown + clean_markitdown_pdf.sh; figure catalogue from
-       # extract_pdf_images.py.
+       # PDF + images already extracted. Use markitdown +
+       # clean_markitdown_pdf.sh for text; images are at info['images_dir'].
        pass
    else:
        # Only metadata available. Use info['title'], info['abstract'].
