@@ -1,0 +1,26 @@
+{
+  "skill_name": "chimeric-read-validation",
+  "evals": [
+    {
+      "id": 1,
+      "name": "htlv1_atll_reproduce",
+      "prompt": "I have the ATLL HTLV-1 cohort run from May 2026 — 9 candidate viral integrations, all of which the reference run validated as PASS. Reproduce the validation in a new run directory using the generalized skill scripts (not the original ATLL-specific impl). The integrations are listed in /data1/greenbab/projects/ont/Project_17424/docs/manuscript/tables/Table1_htlv1_integrations.tsv (one row per integration, columns: patient, host_chrom, host_pos, severus_id, svlen_bp, provirus_class, strict_somatic). Tumor and normal BAMs live in /data1/greenbab/projects/ont/Project_17424/analysis/htlv1_offshelf_eval/20260501_hg38plusHTLV1EBV_cohort/realign/ named like `<patient>_tumor.combined.bam` and `<patient>_normal.combined.bam`. Target contig is HTLV1. Use the viral_integration rubric. Confirm that all 9 calls land in the PASS bucket; if any fail or land in needs_review, tell me which and why. Save the run under results/.",
+      "expected_output": "A new run directory with cohort_validation_report.tsv containing 9 rows, all verdict=pass. Also a Methods_validation.md with the manuscript-ready summary.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "fusion_call_validation",
+      "prompt": "I have a list of 6 candidate BCR-ABL fusion calls from a Manta run. I need to validate which ones are real. The calls TSV is at /tmp/example_fusion_calls.tsv (you'll need to mock it up — use realistic-looking BCR-ABL coordinates: chr22:23522397 +/- a few hundred bp on the BCR side, chr9:130834000 +/- a few hundred bp on the ABL1 side, with svlen blank since it's a translocation). Tumor BAMs are at /tmp/<patient>_tumor.bam (mock paths — don't actually run samtools, just walk through what the skill would do and produce a sample validation TSV showing what the output schema looks like, with 4 PASS, 1 needs_review, 1 FAIL). Use the gene_fusion rubric. Tell me what the verdict_reasons would be for the non-PASS calls.",
+      "expected_output": "A mocked validation TSV demonstrating the gene_fusion rubric in action, with realistic verdict_reasons strings for the needs_review and fail rows.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "explain_when_caller_pass_isnt_enough",
+      "prompt": "A colleague is pushing back on doing read-level validation. They say 'Severus already filters with PASS — if Severus says it's PASS, why bother?' Walk me through why caller PASS isn't sufficient and what the highest-leverage read-level checks are for a viral integration cohort. Concrete examples from the ATLL cohort would be ideal.",
+      "expected_output": "An explanation drawing on the skill's best_practices.md content: caller PASS is necessary but not sufficient; chimeric reads are the ground truth for breakpoint-style events; the bimodality check is the highest-leverage forensic; per-call T/N read-name overlap catches contamination at the right resolution. Should reference the ATLL cohort's specific findings (9/9 PASS, the p17424_2 stdev=2867 false-alarm story).",
+      "files": []
+    }
+  ]
+}
