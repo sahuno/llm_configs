@@ -298,6 +298,24 @@ Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per 
 
 ## 4. Domain Playbook: Software Development
 
+### Pre-flight check before scaffolding ANY pipeline (Snakemake or Nextflow)
+
+Before writing `workflow.smk`, `Snakefile`, `main.nf`, or any pipeline scaffold for a standard bioinformatics step, ALWAYS first check whether an established, validated implementation exists:
+
+1. **nf-core/modules** — search the registry: `https://github.com/nf-core/modules/tree/master/modules/nf-core`. Common matches: `samtools/*`, `modkit/pileup`, `modkit/bedmethyltobigwig`, `dorado/basecaller`, `severus`, `mosdepth`, `clair3`, `sniffles`, `gatk4/*`, `bwa/*`, `star/*`, `hisat2/*`, `salmon/*`, `featurecounts`, `deseq2`, `multiqc`. nf-core modules ship with `nf-test`, validated container references, and battle-tested invocation flags.
+2. **nf-core pipelines** — does an end-to-end pipeline cover this workflow? `rnaseq`, `sarek`, `atacseq`, `methylong`, `taxprofiler`, `viralintegration`, `oncoanalyser`, `nanoseq`, `differentialabundance`, `mag`, `smrnaseq`. End-to-end pipelines bundle their own modules + tested-together default configs.
+3. **Lab-internal pipelines** — `ls ~/code/ pipelines/ workflows/` for an existing implementation in this lab.
+4. **Other community sources** — `snakemake-wrappers`, Galaxy ToolShed, published workflow repositories.
+
+**REPORT what you found before scaffolding new code.** Build from scratch ONLY when:
+- No suitable existing solution exists, OR
+- The user explicitly says "build from scratch", OR
+- The existing solution has a deal-breaking gap (document the gap)
+
+If you choose to build new, the report must name what existed and why you rejected it. Pause for confirmation before writing the workflow.
+
+The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelines/modkit_pileup/workflow.smk` from scratch on 2026-05-01, I missed that `--cpg` requires `--modified-bases` in modkit 0.6.1 — an nf-core `modkit/pileup` module would have shipped with the right invocation pre-validated. Wasted one batch dispatch.
+
 ### Pipeline Development (Snakemake / Nextflow)
 
 **Snakemake rules**:
