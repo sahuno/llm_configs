@@ -48,3 +48,7 @@ LOCAL_CONTAINERS:
     path: "/data1/greenbab/users/ahunos/apps/containers/samtools_v1.23.1.sif"
     def:  "/data1/greenbab/users/ahunos/apps/containers/samtools.def"
     source: "https://github.com/samtools/samtools/releases/tag/1.23.1"
+  - name: "minimap2 v2.30; built from source, includes paftools.js + k8"
+    path: "/data1/greenbab/users/ahunos/apps/containers/minimap2_v2.30.sif"
+    def:  "/data1/greenbab/users/ahunos/apps/installedSoftwares/installminimap2/minimap2.def"
+    source: "https://github.com/lh3/minimap2/releases/tag/v2.30"
