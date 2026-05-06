@@ -9,16 +9,12 @@
 
 On every new conversation, do the following in order:
 1. **Ask the user** to classify the session:
-   - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering
-   - **Status**: Fresh project or continuation of existing project
+   - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering | Writing
    - **Aim**: Ask for a clear, numbered list of objectives
-2. **If continuing**, read the relevant project file from `~/projects/` before proceeding.
-3. **If fresh**, create a project markdown file at `~/projects/<slug>.md` with date, domain, and aims.
-4. **Search `~/memories/`** for any notes relevant to the current query before answering.
-5. **For analysis projects**, scaffold the directory structure automatically:
+2. **For analysis projects**, scaffold the directory structure automatically:
 
-- paths to genome references hg38:@/data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta; mm10@/data1/greenbab/database/mm10/mm10.fa; For all other refenerce files check @/data1/greenbab/users/ahunos/apps/llm_configs/claude/profiles/databases/databases_config.yaml
-- preserve file headers, don't make up headers at runtime
+- paths to genome references hg38:@/data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta; mm10@/data1/greenbab/database/mm10/mm10.fa; refer to @/data1/greenbab/users/ahunos/apps/llm_configs/claude/profiles/databases/databases_config.yaml for all other references
+- Preserve file headers; don't make up headers at runtime
 - Route long processes/jobs to compute node (default: componc_cpu) via slurm-mcp.  Use nexflow for pipelines on compute nodes
    ```
    <project_root>/
