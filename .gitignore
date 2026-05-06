@@ -13,3 +13,8 @@ claude/skills/*-workspace/
 # Python bytecode (always regenerated; version-specific)
 __pycache__/
 *.pyc
+
+# Claude Code per-project runtime/local config — ignore everything except
+# project-shared settings.json (keep an escape hatch for future shared config).
+.claude/*
+!.claude/settings.json
