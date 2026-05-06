@@ -9,3 +9,7 @@ claude/profiles/env/*.local.sh
 
 # Skill development workspaces (iteration scratch — not part of the skill)
 claude/skills/*-workspace/
+
+# Python bytecode (always regenerated; version-specific)
+__pycache__/
+*.pyc
