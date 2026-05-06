@@ -1,0 +1,50 @@
+{
+  "skill_name": "scatter-gather",
+  "evals": [
+    {
+      "id": 0,
+      "name": "variant-call-scatter",
+      "prompt": "I have a single-sample human WGS BAM (~30x coverage, hg38, sorted+indexed) at data/processed/hg38/patient42.hg38.sorted.bam. Single-node GATK HaplotypeCaller is taking 40+ hours and I want to scatter the variant calling across the genome to finish faster. What's the best way to scatter, and how do I gather the per-shard VCFs back into one whole-genome VCF that's equivalent to running unscattered? I'm on a SLURM cluster (greenbab account, MSKCC HPC).",
+      "files": [],
+      "assertions": [
+        "Recommends sub-chromosomal scatter (region tiling, GATK SplitIntervals, balanced intervals) instead of plain 24-shard chromosome scatter — addresses load imbalance",
+        "Specifies a dynamic contig list source (.fai, fasta index, chrom.sizes, sequence dictionary, or Broad interval_list) and does not hardcode chr1..chr22,chrX,chrY",
+        "Recommends bcftools concat OR GATK GatherVcfs/MergeVcfs for the VCF gather, and explicitly avoids or warns against plain cat",
+        "Mentions index regeneration on the gathered VCF (tabix, .tbi, .csi, or bcftools index)",
+        "Recommends a workflow engine (Snakemake or Nextflow) for the SLURM execution rather than ad-hoc bash",
+        "Provides at least two concrete sanity-check commands or validations beyond running the pipeline (Ti/Tv, line count, ValidateVariants, idxstats, etc.)",
+        "Surfaces a non-obvious pitfall specific to GATK or to scatter-gather (e.g. BQSR is not shardable, chrM ploidy, alts handling, GVCF emission)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "dss-poolability",
+      "prompt": "I'm running DSS DMLtest on 6 ONT methylation samples (mm10, ~21M CpGs total). The whole-genome run takes ~2 hours of wall time. I want to scatter it per-chromosome — kick off 22 parallel jobs and concatenate the DMR bed files at the end — to bring total wall down to ~10 minutes. Sound reasonable? Anything I should watch out for?",
+      "files": [],
+      "assertions": [
+        "Clearly identifies that the user's stated plan (per-chrom DMLtest + per-chrom callDMR + concatenate DMR beds) is NOT equivalent to a whole-genome DSS run",
+        "Cites the empirical-Bayes prior, dispersion shrinkage, or some global-fit / global-pool rationale as the reason the per-chrom approach diverges from whole-genome",
+        "Recommends gathering DMLtest intermediate outputs (rbind the per-chrom DMLtest tables) and running callDMR ONCE on the merged table — not gathering DMR beds",
+        "Surfaces the DSS ncores / SLURM_CPUS_PER_TASK silent-corruption pitfall (mclapply + detectCores ignoring SLURM cgroups)",
+        "Mentions at least one validation tied to that corruption signature (recycling warning, sacct OUT_OF_MEMORY, oom_kill events, or 'number of items to replace' in stderr)",
+        "Recommends a workflow engine (Snakemake or Nextflow) for the SLURM execution",
+        "Tempers or qualifies the user's 12x speedup expectation (e.g. bounded by chr1 wall, realistic ~10-15 min, longest-shard caveat)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "modkit-bedmethyl-gather",
+      "prompt": "I scattered modkit pileup per-chromosome for 4 ONT samples on hg38 and now I have a directory of bedMethyl files like shards/{SAMPLE}.{chrom}.bedmethyl.gz (one per chrom × sample, including chrM). I need to gather these per-sample so I end up with one whole-genome bedMethyl per sample, ready to feed into modkit dmr. What's the right gather command and what should I sanity-check before declaring it done?",
+      "files": [],
+      "assertions": [
+        "Recommends sort-based gather (sort -k1,1 -k2,2n or sort -m or equivalent), not plain cat, with reasoning about why cat is wrong",
+        "Specifies a dedupe key wider than (chr, start) — must include at least modtype/mod_code AND strand to handle modkit's per-modification per-strand output rows",
+        "Mentions BGZF compression (bgzip) and tabix indexing (-p bed) for the gathered output, since downstream tooling expects them",
+        "Mentions LC_ALL=C (or equivalent locale fix) for sort consistency on RHEL/UTF-8 hosts",
+        "Provides at least 3 distinct sanity checks (line count parity, contig set match, sort order, modtype/value-range checks, tabix smoke test, etc.)",
+        "Surfaces the # header convention from CLAUDE.md genomic output rules (single # header line preserved on the gathered file)",
+        "Provides either a clean shell pipeline OR a Snakemake/Nextflow rule ready to run, not just a sketch"
+      ]
+    }
+  ]
+}
