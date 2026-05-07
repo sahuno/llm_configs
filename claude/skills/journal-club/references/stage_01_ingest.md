@@ -9,19 +9,29 @@ the user can scan in 60 seconds.
 - A paper identifier: PMCID (preferred), bioRxiv/medRxiv DOI, PMID, or path to a local PDF
 - (Optional) audience profile and time budget — if not given, ask once
 
-## One-time setup (for preprint support)
+## One-time setup (for the rare not-yet-PMC-indexed preprint)
 
-bioRxiv and medRxiv preprints are protected by Cloudflare Turnstile, so
-fetching full text requires a real headless browser. Install once per machine:
+For PMC-indexed papers (the common case, including most bioRxiv preprints
+within a few weeks of posting), the vendored `scripts/pmc_fetch.py` works
+out of the box with stdlib only. **No setup needed.**
+
+For the rare not-yet-PMC-indexed preprint where Cloudflare Turnstile blocks
+direct bioRxiv fetches, install playwright + cloudscraper once per machine:
 
 ```bash
 pip install playwright cloudscraper
 python -m playwright install chromium
 ```
 
-`scripts/pmc_utils.py::fetch_preprint()` will use these tools automatically
-when needed. If they're missing, the function gracefully degrades to
-metadata + abstract only and tells the user how to install.
+For closed-access papers where the user provides a local PDF, the vendored
+`scripts/extract_pdf_images.py` requires PyMuPDF:
+
+```bash
+pip install pymupdf
+```
+
+`pdftotext` (poppler) is needed for text extraction from PDFs and is usually
+already installed; on macOS via Homebrew: `brew install poppler`.
 
 ## Procedure
 
@@ -45,65 +55,123 @@ metadata + abstract only and tells the user how to install.
 3. **Create paper directory**: `<journal_club_home>/<paper_id>/`
    plus subdirectories `pdf/`, `xml/`, `images/` (created on demand).
 
-3. **Fetch + parse** (route by source):
+3. **Fetch + parse** using the **vendored** `scripts/pmc_fetch.py` (stdlib only,
+   ships with the skill — no dependency on the user's main project).
 
-   **PMC source**:
+   **PMC source** (also covers bioRxiv preprints once PMC-indexed):
    ```python
-   from scripts.pmc_utils import download_pmc_xml, parse_pmc_xml
-   download_pmc_xml([pmc_id], output_folder='xml/')
-   paper = parse_pmc_xml(f'xml/{pmc_id}.xml')
-   ```
+   import sys
+   sys.path.insert(0, '<skill_dir>/scripts')  # e.g. ~/.claude/skills/journal-club/scripts
+   from pmc_fetch import fetch_paper
 
-   **Preprint source (bioRxiv / medRxiv)**:
-   ```python
-   from scripts.pmc_utils import fetch_preprint, parse_pmc_xml
-   info = fetch_preprint(
-       doi, server='biorxiv',
-       output_folder=f'{paper_dir}/xml',
-       pdf_folder=f'{paper_dir}/pdf',
-       images_folder=f'{paper_dir}/images',  # auto-extracted on PDF success
+   paper = fetch_paper(
+       pmcid='PMC12918801',           # OR: pmid='41727087', OR: doi='10.64898/2026.02.12.705658'
+       out_dir=paper_dir,
+       fetch_supplement=True,         # pulls EuropePMC supplementaryFiles ZIP, unpacks PDFs+images
    )
-   # info['source'] tells you which path succeeded:
-   #   'europepmc'      → full JATS XML (preferred)
-   #   'cloudscraper'   → full JATS XML via Cloudflare bypass
-   #   'playwright-xml' → JATS XML via headless Chromium
-   #   'playwright-pdf' → PDF download + auto-extracted images
-   #   'metadata-only'  → only abstract returned; user must fetch PDF manually
-
-   # When source == 'playwright-pdf':
-   #   info['pdf_path']   → saved PDF
-   #   info['images_dir'] → directory of per-page PNG figures
-   #   info['n_images']   → count of extracted images
-   # No separate `extract_pdf_images.py` invocation needed; it's automatic.
-
-   if info['xml_path']:
-       paper = parse_pmc_xml(info['xml_path'])
-   elif info['pdf_path']:
-       # PDF + images already extracted. Use markitdown +
-       # clean_markitdown_pdf.sh for text; images are at info['images_dir'].
-       pass
-   else:
-       # Only metadata available. Use info['title'], info['abstract'].
-       # Tell the user the preprint isn't fully accessible programmatically
-       # and suggest manual PDF download via info['pdf_url'].
-       pass
+   # paper['xml_path'] → saved JATS XML
+   # paper['figures']  → list of dicts: {label, headline, caption_full, graphic_href, url}
+   # paper['data_availability'], paper['funding'], paper['supplements']
+   # paper['supplement_zip_path'] → None if no supplement; else path
+   # paper['unpacked'] → {'pdfs': [...], 'images': [...]} (None if no zip)
    ```
 
-   **Local PDF**: use markitdown + `clean_markitdown_pdf.sh` for text and
-   `extract_pdf_images.py` for figures. Build a synthetic `paper` dict with
-   the same shape as `parse_pmc_xml()` output so downstream stages don't
-   need to know which source produced it.
+   `fetch_paper()` chains: `pmid_to_pmcid` (or `doi_to_pmcid`) → `download_pmc_xml`
+   → `parse_pmc_xml` (verbatim caption extraction included) → `fetch_supplement_zip`
+   → `unpack_supplement_zip`. Returns the parsed `paper` dict augmented with
+   `xml_path` and supplement paths.
 
-4. **Build figure catalogue**:
-   - **PMC**: parse `<fig>` blocks in the JATS XML for label, caption, and
-     `<graphic xlink:href>` filename. Construct URL:
-     `https://www.ncbi.nlm.nih.gov/pmc/articles/<PMCID>/bin/<filename>`.
-   - **Preprint XML (EPMC / Playwright)**: parse `<fig>` blocks the same way.
-     bioRxiv preprint figures aren't always linked in the XML — for those,
-     fall back to PDF figure extraction.
-   - **PDF (preprint or local)**: run `scripts/extract_pdf_images.py` on the
-     PDF. List extracted images with page numbers. For preprints, the PDF is
-     usually saved at `pdf/<server>_<slug>.pdf` by `fetch_preprint()`.
+   **bioRxiv preprint NOT yet PMC-indexed** (rare; most appear in PMC within
+   weeks):
+   ```python
+   from pmc_fetch import doi_to_pmcid, fetch_biorxiv_metadata
+
+   pmcid = doi_to_pmcid('10.1101/2026.xx.xx.yyyyyy')
+   if pmcid:
+       paper = fetch_paper(pmcid=pmcid, out_dir=paper_dir)
+   else:
+       # Fall back to bioRxiv API for metadata + abstract (not Cloudflare-protected)
+       meta = fetch_biorxiv_metadata(doi)
+       # paper title, authors, abstract, license available
+       # For full text, fall back to playwright/cloudscraper-based fetch_preprint()
+       # (not vendored — install separately per the one-time setup section above).
+   ```
+
+   **Closed-access local PDF**: text via `pdftotext -layout` (poppler),
+   figures via the vendored `scripts/extract_pdf_images.py` (PyMuPDF).
+   Build a synthetic `paper` dict matching `parse_pmc_xml()` output shape so
+   downstream stages remain source-agnostic.
+
+   ```bash
+   pdftotext -layout local_paper.pdf paper.txt
+   python <skill_dir>/scripts/extract_pdf_images.py local_paper.pdf \
+       --out-dir images/ --render-pages --dpi 200
+   ```
+
+4. **Build figure catalogue with full caption text**. Captions are
+   load-bearing for downstream stages — Stage 5 speaker notes pull from
+   them, Stage 2c per-figure micro-audit checks N/error-bar conventions
+   stated in legend text, and Stage 6 Q&A prep depends on them. Extract
+   captions verbatim, do not paraphrase.
+
+   - **PMC / Preprint XML (EPMC / Playwright)**: parse `<fig>` blocks
+     in the JATS XML. For each figure, capture four fields:
+     - `label` — e.g., `"Fig. 1."`
+     - `caption_full` — verbatim text of the entire `<caption>` element,
+       all panels (A/B/C/...). Concatenate `itertext()` and strip whitespace.
+     - `graphic_href` — value of `<graphic xlink:href>`; use this to
+       construct the URL: `https://www.ncbi.nlm.nih.gov/pmc/articles/<PMCID>/bin/<href>`.
+     - `headline` — derived: the first sentence of `caption_full` (split
+       on `". "`); typical journal convention puts the headline finding there.
+
+     Reference snippet (Python, stdlib only):
+     ```python
+     import xml.etree.ElementTree as ET
+     XLINK = '{http://www.w3.org/1999/xlink}href'
+
+     def text_of(el):
+         return ' '.join(t.strip() for t in el.itertext()).strip()
+
+     def figure_catalogue(xml_path, pmcid):
+         root = ET.parse(xml_path).getroot()
+         out = []
+         for fig in root.iter('fig'):
+             label_el = fig.find('label')
+             cap_el = fig.find('caption')
+             gfx_el = fig.find('graphic')
+             caption = text_of(cap_el) if cap_el is not None else ''
+             href = gfx_el.attrib.get(XLINK, '') if gfx_el is not None else ''
+             out.append({
+                 'label': label_el.text if label_el is not None else '',
+                 'caption_full': caption,
+                 'headline': caption.split('. ', 1)[0] + '.' if caption else '',
+                 'graphic_href': href,
+                 'url': f'https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/bin/{href}' if href and pmcid else '',
+             })
+         return out
+     ```
+
+     bioRxiv preprint figures aren't always linked via `<graphic>` in the
+     XML — for those, fall back to PDF figure extraction (below) but
+     still extract caption text from the XML when available; the JATS
+     `<fig>` blocks usually retain captions even when image links don't
+     resolve.
+
+   - **PDF (preprint or local)**: figures from PyMuPDF page-level
+     extraction do not carry captions automatically. Pair caption to
+     figure heuristically — caption text is conventionally the paragraph
+     immediately below or beside the figure on the same page. Best-effort
+     options: `pdfplumber` for layout-aware text extraction, or
+     `pdftotext -layout` followed by regex match on `^(Figure|Fig\.?)\s+\d+`.
+     If the pairing is uncertain, mark caption as `(auto-paired, verify)`
+     in the artifact rather than guessing.
+
+   - **Caption length**: captions can run 100–2000+ characters
+     (Lee et al. 2026 Fig. 2 caption is 1420 chars). Keep the per-figure
+     summary table compact (one-line `headline` only) and put the
+     verbatim `caption_full` in a separate "Figure captions" section
+     below the table. Do not truncate `caption_full` — downstream stages
+     need it intact.
 
 5. **Build glossary**: Identify 8–15 technical terms that a non-specialist in
    the audience might struggle with. Define each in one line. Sources: abstract,
@@ -117,9 +185,9 @@ metadata + abstract only and tells the user how to install.
    - User's existing knowledge of the topic
    - Date of presentation
 
-7. **Write artifacts**:
-   - `journal_club/<paper_id>/_meta.json`
-   - `journal_club/<paper_id>/01_ingest.md` (template below)
+7. **Write artifacts** under `<journal_club_home>/<paper_id>/`:
+   - `_meta.json`
+   - `01_ingest.md` (template below)
 
 ## Output template — `01_ingest.md`
 
@@ -156,10 +224,25 @@ metadata + abstract only and tells the user how to install.
 - METHODS → <key methods worth presenting>
 
 ## Figure catalogue
-| # | Label | One-line description | URL/path |
-|---|-------|---------------------|----------|
-| 1 | Figure 1 | <description> | <url> |
+| # | Label | Headline (first sentence of caption) | URL/path |
+|---|-------|--------------------------------------|----------|
+| 1 | Fig. 1 | <first sentence of caption — the headline finding for that figure> | <url> |
 | ... |
+
+## Figure captions (verbatim)
+
+> Captions extracted directly from the paper's `<fig><caption>` blocks.
+> Used by Stage 2c per-figure micro-audit, Stage 5 speaker notes, and
+> Stage 6 Q&A prep. Do not paraphrase or truncate.
+
+### Fig. 1 — <headline>
+> <full caption text, including all panel descriptions A/B/C/...>
+
+### Fig. 2 — <headline>
+> <full caption text>
+
+### Fig. N — <headline>
+> <full caption text>
 
 ## Glossary
 - **<term>**: <one-line definition>
@@ -194,18 +277,53 @@ Run `/journal-club quiz` to test your comprehension before you build slides.
   "fetch_source": "pmc | europepmc | playwright-xml | playwright-pdf | metadata-only",
   "xml_path": "xml/PMC11464121.xml",
   "pdf_path": null,
+  "supplement_path": null,
+  "supplement_text_path": null,
+  "supplement_pages": null,
+  "supplement_fetch_source": null,
   "audience": "HIV/aging postdocs",
   "talk_minutes": 25,
   "qa_minutes": 5,
   "presentation_date": "2026-05-15",
   "user_angle": "...",
-  "stages_completed": ["ingest"]
+  "stages_completed": ["ingest"],
+  "audit_iterations": []
 }
 ```
 
 For preprints, populate `fetch_source` from `info['source']` returned by
 `fetch_preprint()`. Downstream stages use this to know whether they have
 structured XML or only PDF / metadata.
+
+**Supplement fields** (populated by Stage 2c Step 0 when retrieved):
+- `supplement_path`: path to the supplement PDF, e.g. `pdf/media-1.pdf`
+- `supplement_text_path`: path to extracted text, e.g. `pdf/media-1.txt`
+  (produced by `pdftotext -layout` for grep-based audit search)
+- `supplement_pages`: integer page count (from `pdfinfo`)
+- `supplement_fetch_source`: one of `europepmc-supplementaryFiles-zip`,
+  `pmc-bin-direct`, `playwright-pdf`, `manual-upload`
+
+**`audit_iterations`** is an append-only log of Stage 2c re-runs. Each
+entry captures evidence-state at the time of audit so that re-running
+the audit (e.g., after fetching the supplement) preserves a record of
+how findings shifted. Entry shape:
+
+```json
+{
+  "stage": "stats",
+  "date": "2026-04-30 10:40 EDT",
+  "scope": "body-XML + supplement SD1",
+  "supplement_retrieved": true,
+  "deferred_row_rate_pct": 10,
+  "artifact": "2c_stats_repro.md",
+  "superseded_artifact": "2c_stats_repro.md.bak.20260430"
+}
+```
+
+The latest entry's `artifact` is the canonical audit; earlier entries
+point to timestamped `.bak.<YYYYMMDD>` backups. This pattern generalizes
+to other stages (Stage 3 critique re-runs after new evidence, Stage 6
+rehearsal re-runs after audience change) — keep the field stage-agnostic.
 
 ## Notes
 

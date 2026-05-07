@@ -55,15 +55,14 @@ except ImportError as e:
 
 # ---------- markdown parsing ---------------------------------------------------
 
+# Each slide block runs from "## Slide N \u2014 title" to the NEXT H2 of any kind
+# (next slide, or any post-deck section like "## Pre-talk checklist", "## Source
+# map", "## Conversion to PowerPoint", etc.) or end-of-file. The any-H2
+# terminator avoids needing a hard-coded list of post-deck section names \u2014 new
+# section names in Stage 5 drafts won't bleed into the last slide's body.
 SLIDE_PATTERN = re.compile(
-    r"^## Slide (\d+)\s*[\u2014\-]\s*(.+?)\n(.*?)(?=^## Slide |\Z)",
+    r"^## Slide (\d+)\s*[\u2014\-]\s*(.+?)\n(.*?)(?=^## |\Z)",
     re.MULTILINE | re.DOTALL,
-)
-
-STOP_MARKERS = (
-    "## Pre-talk checklist",
-    "## Conversion to PowerPoint",
-    "## Source map",
 )
 
 IMAGE_KEYWORDS = (
@@ -89,10 +88,6 @@ def parse_bullets(text: str) -> list[str]:
 
 def parse_slides(md_path: Path) -> list[dict]:
     text = md_path.read_text()
-    for marker in STOP_MARKERS:
-        idx = text.find(marker)
-        if idx != -1:
-            text = text[:idx]
     slides = []
     for m in SLIDE_PATTERN.finditer(text):
         body = m.group(3)

@@ -1,6 +1,6 @@
 ---
 name: journal-club
-description: Orchestrates a phased workflow for rigorously analyzing and presenting research papers — paper ingestion, comprehension quiz, causal-claims breakdown with quoted evidence (necessity vs. sufficiency vs. what was not proven), critical evaluation, slide outline, slide draft, Q&A rehearsal, and post-talk writeup. Use this skill whenever the user mentions journal club, lab meeting paper presentation, paper deep-dive, preparing slides for a research paper, walking through a study, or asks for help understanding/critiquing/presenting a specific paper — even if they don't explicitly say "journal club." Also trigger on requests like "give me a structured breakdown of this paper", "what causal claims does paper X make and what couldn't they prove", "extract necessity and sufficiency experiments", "what mechanism does this paper establish", or any combination of paper-id (PMID/PMCID/DOI) plus a request for structured analysis, mechanism, causation, or critical reading.
+description: Orchestrates a phased workflow for rigorously analyzing and presenting research papers — paper ingestion, comprehension quiz, causal-claims breakdown with quoted evidence (necessity vs. sufficiency vs. what was not proven), statistics & reproducibility audit (sample sizes, multiple-testing, deposition, code/reagent identity), critical evaluation, slide outline, slide draft, Q&A rehearsal, and post-talk writeup. Use this skill whenever the user mentions journal club, lab meeting paper presentation, paper deep-dive, preparing slides for a research paper, walking through a study, or asks for help understanding/critiquing/presenting a specific paper — even if they don't explicitly say "journal club." Also trigger on requests like "give me a structured breakdown of this paper", "what causal claims does paper X make and what couldn't they prove", "extract necessity and sufficiency experiments", "what mechanism does this paper establish", "audit the stats / reproducibility of this paper", "is the data deposited", "did they correct for multiple testing", "check the GitHub repo / antibody RRIDs", or any combination of paper-id (PMID/PMCID/DOI) plus a request for structured analysis, mechanism, causation, statistical rigor, reproducibility, or critical reading.
 ---
 
 # Journal Club Workflow Skill
@@ -27,8 +27,10 @@ come back later, and pick up where they left off.
 
 ```
 /journal-club ingest <PMCID|DOI|PDF_path>     # Stage 1: parse paper
-/journal-club quiz                            # Stage 2: comprehension Q&A
+/journal-club quiz                            # Stage 2: comprehension Q&A (text mode)
+/journal-club quiz --figures                  # Stage 2: figure mode (multimodal — Claude looks at the images)
 /journal-club causal                          # Stage 2b: causal claims breakdown (with quoted evidence)
+/journal-club stats                           # Stage 2c: statistics & reproducibility audit (checklist + per-figure)
 /journal-club critique                        # Stage 3: critical evaluation
 /journal-club outline --time <minutes>        # Stage 4: slide outline
 /journal-club draft                           # Stage 5: slide content
@@ -59,6 +61,7 @@ projects, instead of fragmenting `journal_club/` folders into every repo.
     ├── 01_ingest.md
     ├── 02_comprehension.md
     ├── 2b_causal.md                 # Stage 2b — causal claims with quoted evidence
+    ├── 2c_stats_repro.md            # Stage 2c — stats & reproducibility audit
     ├── 03_critique.md
     ├── 04_outline.md
     ├── 05_slides_draft.md
@@ -86,10 +89,11 @@ consistent.
 
 When the skill triggers:
 
-1. **If the user named a stage** (`ingest`, `quiz`, `causal`, `critique`, `outline`, `draft`, `rehearse`, `writeup`), run that stage.
+1. **If the user named a stage** (`ingest`, `quiz`, `causal`, `stats`, `critique`, `outline`, `draft`, `rehearse`, `writeup`), run that stage.
 2. **If the user named a paper but no stage**, run Stage 1 (`ingest`).
 3. **If the user asks a one-shot causal/mechanism question** about a paper (e.g., "what causal claims does X make and what couldn't they prove?"), run Stage 1 silently, then Stage 2b.
-4. **If neither**, list the user's `journal_club/` directory and ask which paper + stage they want to resume.
+4. **If the user asks a one-shot stats/reproducibility question** (e.g., "audit the stats", "is the data deposited", "did they correct for multiple testing", "check the GitHub repo / antibody RRIDs"), run Stage 1 silently, then Stage 2c.
+5. **If neither**, list the user's `<journal_club_home>/` directory (resolved per the override priority above — default `~/journalClub/`) and ask which paper + stage they want to resume.
 
 For each stage, read the matching reference file in `references/` for the
 detailed protocol — they contain the templates and prompts that make each
@@ -100,6 +104,7 @@ stage actually useful.
 | 1. Ingest      | `references/stage_01_ingest.md` |
 | 2. Quiz        | `references/stage_02_quiz.md` |
 | 2b. Causal     | `references/stage_2b_causal.md` |
+| 2c. Stats & Reproducibility | `references/stage_2c_stats_repro.md` |
 | 3. Critique    | `references/stage_03_critique.md` |
 | 4. Outline     | `references/stage_04_outline.md` |
 | 5. Draft       | `references/stage_05_draft.md` |
@@ -111,22 +116,53 @@ The presentation skeleton used by Stages 4–5 lives in
 
 ## Tools to prefer
 
-- **PMC papers**: use `scripts/pmc_utils.py` from the user's project (functions:
-  `download_pmc_xml`, `parse_pmc_xml`, `explore_pmc_xml`). It produces structured
-  output (sections, abstract, references, keywords) that's far cleaner than PDF
-  parsing.
-- **bioRxiv / medRxiv preprints**: use `scripts/pmc_utils.py::fetch_preprint(doi)`.
-  It tries Europe PMC first, then cloudscraper, then Playwright headless
-  Chromium for Cloudflare-Turnstile-protected XML, and finally Playwright PDF
-  download. Returns `{xml_path, pdf_path, full_text_available, source, notes}`.
-- **Closed-access PDFs (local files)**: `scripts/extract_pdf_images.py` for
-  figures plus `scripts/clean_markitdown_pdf.sh` for text.
-- **Figure URLs**: for PMC papers, parse `<graphic xlink:href>` tags in the
-  XML — the resulting filenames map to
-  `https://www.ncbi.nlm.nih.gov/pmc/articles/<PMCID>/bin/<filename>`.
+The skill bundles two stdlib-mostly scripts under its own `scripts/` directory.
+These are **vendored** (live with the skill, not in the user's project) so the
+skill works in any working directory.
 
-If `scripts/pmc_utils.py` is missing, mention this and proceed with whatever
-parser is available — don't block on it.
+- **`scripts/pmc_fetch.py`** (stdlib only) — preferred for any paper indexed
+  in PMC, including bioRxiv preprints once they have a PMC ID. Capabilities:
+  - Resolve PMID / DOI → PMCID via NCBI eutils
+  - Download JATS XML via eutils efetch
+  - Parse JATS into a structured paper dict including **verbatim figure
+    captions** (label, headline, full caption, graphic URL), data-availability,
+    funding, supplements, and references
+  - Pull supplementary files via the EuropePMC `supplementaryFiles` ZIP
+    endpoint (**not Cloudflare-protected** — works for bioRxiv preprints
+    once PMC-indexed)
+  - One-call driver: `fetch_paper(pmcid=..., out_dir=..., fetch_supplement=True)`
+
+  CLI:
+  ```bash
+  python ~/.claude/skills/journal-club/scripts/pmc_fetch.py PMC12918801 --out-dir <paper_dir>/
+  python ~/.claude/skills/journal-club/scripts/pmc_fetch.py --doi 10.64898/2026.02.12.705658 --out-dir <paper_dir>/
+  ```
+
+- **`scripts/extract_pdf_images.py`** (requires PyMuPDF) — for closed-access
+  journal PDFs only. Page-render mode (default for journal-club) renders each
+  page to PNG at the specified DPI; embedded-image mode pulls raster resources
+  out of the PDF stream. Skip for PMC-indexed papers — `pmc_fetch.py
+  --supplement` already pulls pre-rasterized figure JPGs/GIFs from EuropePMC
+  without needing the PDF or PyMuPDF.
+
+- **bioRxiv / medRxiv preprints not yet PMC-indexed**: these are
+  Cloudflare-protected. If `pmc_fetch.py` returns no PMCID for the DOI, fall
+  back to playwright/cloudscraper-based fetch (not vendored — install
+  separately per `stage_01_ingest.md` instructions). Most bioRxiv preprints
+  show up in PMC within ~weeks of posting, so the playwright path is a
+  rare-case fallback.
+
+- **Figure URLs**: `pmc_fetch.py::parse_pmc_xml()` populates `figures[*].url`
+  using `https://www.ncbi.nlm.nih.gov/pmc/articles/<PMCID>/bin/<href>`. For
+  papers where these direct URLs 404, the EuropePMC ZIP route still works.
+
+These scripts have no dependency on the user's main project. If you see
+`pmc_utils.py` referenced in older notes, it has been replaced by
+`pmc_fetch.py` — the new function names are `download_pmc_xml`, `parse_pmc_xml`,
+`fetch_supplement_zip`, `fetch_paper`. The old `clean_markitdown_pdf.sh` is no
+longer required: text extraction from closed-access PDFs is best done with
+`pdftotext -layout` (poppler) which is universally available and produces
+cleaner output for grep-based audit search than markitdown.
 
 ## One-time setup (preprint support)
 
