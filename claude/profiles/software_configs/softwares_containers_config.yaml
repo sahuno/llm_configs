@@ -52,3 +52,10 @@ LOCAL_CONTAINERS:
     path: "/data1/greenbab/users/ahunos/apps/containers/minimap2_v2.30.sif"
     def:  "/data1/greenbab/users/ahunos/apps/installedSoftwares/installminimap2/minimap2.def"
     source: "https://github.com/lh3/minimap2/releases/tag/v2.30"
+  - name: "modkit v0.6.2; bioconda ont-modkit (binary --version reports 0.6.1 — upstream Cargo.toml not bumped)"
+    path: "/data1/greenbab/software/images/def_files/modkit_v0.6.2.sif"
+    def:  "/data1/greenbab/software/images/def_files/modkit_v0.6.2.def"
+    source: "https://github.com/nanoporetech/modkit/releases/tag/v0.6.2"
+    symlinks:
+      - "/data1/greenbab/software/images/modkit_latest.sif"           # group-shared 'latest' alias
+      - "/data1/greenbab/users/ahunos/apps/containers/modkit_latest.sif"  # personal 'latest' alias
