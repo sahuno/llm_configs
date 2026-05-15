@@ -12,6 +12,10 @@
 > in a later iteration. For now, inference output is a generic
 > structured form; once casetrack's manifest schema is stable, we
 > shape the output to match.
+>
+> **Schema state**: §4 carries **v0.2**, which absorbs the ten deltas
+> from `03_phase0_target_yaml.md` and fourteen more from
+> `04_realcase_DESeq2_addendum.md` (S11–S25). v0.1 is retired.
 
 ---
 
@@ -239,7 +243,25 @@ For each modelling call:
 - For each term, resolve to a column in the design dataframe (which
   must itself be tracked via §3.2).
 - Record the reference level by looking for prior `factor(x, levels=…)`
-  or `relevel()` calls.
+  or `relevel()` calls; first level = reference.
+- Record the **design subset**: for scripts that build per-model
+  dataframes (e.g. DESeq2 with one DDS per contrast), capture
+  `design_subset.rows` (the dataframe id of the per-model metadata
+  slice) and `design_subset.cols` (the per-model column subset of the
+  count matrix). This makes "what data is this model fit to?"
+  auditable.
+- Record the **per-model `pre_filter`**: filters applied immediately
+  before `DESeq()` / `lmFit()` / etc. are model-local, distinct from
+  global filters in `transformations:`.
+- Record each `results()` / `topTags()` / contrast-extraction call as
+  a sub-entry in `models[].contrasts[]`, with its own `site` and
+  `coef_or_contrast` identifier. Downstream figures and outputs
+  reference these contrast ids.
+- **Cross-model symmetry**: when a script fits multiple models, the
+  auditor should compute `models.filter_symmetry` — flag if the same
+  filter expression appears literally identical across all models
+  (likely intentional symmetry), differs only in threshold values
+  (likely drift), or is structurally different (likely deliberate).
 
 ### 3.4 Filter inference
 
@@ -251,117 +273,406 @@ Detect filtering predicates (`filter()`, `subset()`, `df[mask, ]`,
 
 ### 3.5 Stochastic-op / seed inference
 
-- Build a set of known stochastic call sites in the script.
+Per call site:
+
+- Build a set of known stochastic call sites in the script
+  (`sample`, `kmeans`, `umap`, `Rtsne`, `clusterProfiler::GSEA`,
+  `np.random.*`, `random.*`, `sklearn.*` with `random_state=None`,
+  etc.).
 - Walk the control-flow graph backwards from each: is there a
   reaching definition of `set.seed` / `np.random.seed` /
   `random.seed`?
-- If yes → record the seed value.
-- If no → **WARNING** (your CLAUDE.md mandates seeds for all
-  stochastic ops; this is a compliance check).
+- Record `seed_set: bool` and `seed_value: <literal | expr>` per
+  call.
+
+After walking all sites, populate the top-level `seed_policy:`
+summary:
+
+- `declared_value` — the most common seed in the script (e.g. `1`).
+- `coverage` — counts of `{seeded, unseeded, total}`.
+- `divergence_from_claude_default` — `true` when `declared_value`
+  differs from CLAUDE.md's mandated default of `42`.
+- `severity` — `WARNING` if any stochastic op is unseeded;
+  `NOTE` if all are seeded but the value differs from default;
+  `OK` if seeded with the default value.
+
+The per-call array is the audit evidence; the policy block is the
+headline finding.
+
+### 3.6 Compliance-check inference (positive findings)
+
+Most audit rules in CLAUDE.md describe what *not* to do; a few
+describe what *should* be present (logging discipline, alignment
+guards before DESeq2, seed coverage, etc.). The inference layer
+should pattern-match for *positive evidence* and emit
+`compliance_checks[]` entries with `status: pass | fail | n/a`. The
+patterns that move the needle today:
+
+- **`logging-dual-capture`**: detect `sink(..., split = TRUE)` plus
+  either `globalCallingHandlers(message = …)` or a tee'd `stderr`.
+  Pass = both present and ordered correctly; fail = neither; n/a =
+  script is a bash launcher or one-shot script.
+- **`alignment-guard-before-DDS`**: detect a `setdiff` / `match` /
+  `stop()` block in the ≤ 30 lines preceding any
+  `DESeqDataSetFromMatrix` / `lmFit` call. Pass = present;
+  fail = absent and a DDS-style constructor is called.
+- **`seed-coverage`**: pass = every stochastic op has a reaching
+  `set.seed`; fail otherwise.
+- **`genome-build-tag`**: pass = at least one path segment matches
+  one of {mm10, mm39, GRCm39, hg38, GRCh38, hg19, GRCh37, t2t,
+  chm13}; fail = data is clearly genomic but no tag.
+- **`relative-paths-only`**: pass = every CLI default and module
+  constant is relative; fail otherwise.
+- **`forbidden-variable-names`**: pass = no exact-match binding to
+  `{counts, results, mean, median, sum, conditions}`; fail
+  otherwise.
+
+`compliance_checks[]` entries carry `evidence_sites:` lists so the
+final report can hyperlink to the supporting code. Positives feed
+the per-category scores in the final `audit_report.md`.
 
 ---
 
-## 4. Inferred-output shape (draft)
+## 4. Inferred-output shape — schema v0.2
 
-Generic for now; a future iteration aligns this to casetrack's
-manifest schema. Stored at `results/.../audit/inferred/<script>.yaml`.
+Replaces the v0.1 draft. Absorbs the ten deltas from
+`03_phase0_target_yaml.md` and fourteen more from
+`04_realcase_DESeq2_addendum.md` (S11–S25). Stored under
+`.audit/<run>/inferred/<analysis_unit_id>.yaml` per the Q1 default.
+A future iteration aligns this to the casetrack manifest schema.
+
+### 4.1 Top-level field map
+
+| Field | Status | Purpose |
+|---|---|---|
+| `schema_version` | required | "0.2" |
+| `analysis_unit` | required | id + whether `single` or `pair` |
+| `pair_unit` | optional | launcher↔analysis binding when `kind: pair` |
+| `script` | required | path, language, git rev, inference layers used |
+| `runtime_context` | required | effective cwd, host, user at inference time |
+| `config_interface` | required | optparse / argparse / getopts / module-constant surface |
+| `inputs` | may-be-empty | filesystem reads + their schemas |
+| `outputs` | may-be-empty | filesystem writes + written schemas + groupings |
+| `package_resources` | optional | annotation / curated-set data shipped in packages |
+| `env_vars_read` / `env_vars_written` | may-be-empty | process env interaction |
+| `dataframes` | may-be-empty | per-frame lineage (empty for bash) |
+| `transformations` | may-be-empty | filter / normalise / merge / aggregate ops |
+| `models` | may-be-empty | each with `design_subset`, `reference_level`, `contrasts[]` |
+| `figures` | may-be-empty | first-class; `derived_from` a contrast or dataframe id |
+| `stochastic_ops` | may-be-empty | per-call sites, with seed scope evidence |
+| `seed_policy` | required | top-level summary across all stochastic ops |
+| `functions_defined` | optional | in-script helpers + their propagated I/O |
+| `hardcoded_data` | optional | embedded sample / gene / contig / threshold blocks |
+| `external_binaries` | optional | spawned binaries performing the actual I/O |
+| `driver_pattern` | optional | script-emits-script across languages |
+| `validation` | optional | inline pre-flight checks (`stop()`, `[[ -f $X ]]`) |
+| `side_effects` | may-be-empty | mkdir, options(), env writes, locks |
+| `environment` | required | language version, packages, container |
+| `organism_inferred` | optional | mouse / human / etc. — from packages / symbol case |
+| `genome_build_declared` | optional | "mm10" / "hg38" / etc. when extractable |
+| `compliance_checks` | required | positive AND negative findings vs CLAUDE.md rules |
+| `audit_findings_preview` | required | static findings; finalised in `audit_report.md` |
+| `unresolved` | may-be-empty | anything inference couldn't decide |
+
+`may-be-empty` = field is present as `[]` even when the script has
+no instances. `optional` = field is omitted if absent.
+
+### 4.2 Worked example
+
+Modeled after the DESeq2 + GSEA pair from
+`04_realcase_DESeq2_addendum.md`. Truncated with `...` where structure
+repeats — full coverage would be 800+ lines and add nothing.
 
 ```yaml
-schema_version: 0.1
+schema_version: 0.2
+
+analysis_unit:
+  id: RNA-seq_DiffExpr/DESeq2_GSEA_run
+  kind: pair                              # single | pair
+
+pair_unit:
+  launcher:
+    path: scripts/run_manually_run_DeSeq2.sh
+    language: bash
+  analysis:
+    path: scripts/manually_run_DeSeq2.R
+    language: R
+  binding:                                 # launcher var → analysis CLI flag
+    - { launcher_var: SOURCE_DIR,       analysis_flag: --source_dir,       site: "launcher:18 → analysis:62" }
+    - { launcher_var: METADATA,         analysis_flag: --metadata_File,    site: "launcher:19 → analysis:84" }
+    - { launcher_var: QC_METRICS,       analysis_flag: --qc_metrics,       site: "launcher:20 → analysis:81" }
+    - { launcher_var: REF_VARIABLE,     analysis_flag: --ref_variable,     site: "launcher:27 → analysis:75" }
+    - { launcher_var: DROP_SAMPLES,     analysis_flag: --drop_samples,     site: "launcher:28 → analysis:73" }
+    - { launcher_var: MIN_READ_COUNTS,  analysis_flag: --min_read_counts,  site: "launcher:29 → analysis:77" }
+    # ... 7 more
+  effective_cwd_at_analysis: "${OUTPUT_DIR}"     # launcher cd's at launcher:48
+
 script:
-  path: src/03_de_analysis.R
+  path: scripts/manually_run_DeSeq2.R
   language: R
-  git_rev: 8f3a2c1
-  inferred_at: 2026-05-14T12:34:56Z
-  layers_used: [static, runtime_trace]
+  git_rev: <runtime>
+  inferred_at: <runtime>
+  layers_used: [static]
+
+runtime_context:
+  cwd_at_invocation: "${OUTPUT_DIR}"
+  resolved_cwd: ${WORKFLOW_DIR}/results
+  host: <runtime>
+  user: <runtime>
+
+config_interface:
+  framework: optparse
+  options:
+    - { name: --source_dir,           default: "/data1/.../rerun_RNASeq_11032025/", default_kind: absolute, role: input_dir }
+    - { name: --workflow_dir,         default: "/data1/.../RNA-seq_DiffExpr/",      default_kind: absolute, role: workflow_root }
+    - { name: --metadata_File,        default: "/data1/.../metadata_triplicates_recoded.csv", default_kind: absolute, role: input_path }
+    - { name: --qc_metrics,           default: ".../qc.tsv",                        default_kind: absolute, role: input_path }
+    - { name: --drop_samples,         default: "R.S.2,R.C.3",                       role: filter_spec }
+    - { name: --ref_variable,         default: "DMSO",                              role: model_param }
+    - { name: --min_read_counts,      default: 50,    role: filter_threshold }
+    - { name: --smallest_group_size,  default: 3,     role: filter_threshold }
+    - { name: --blind_transform,      default: true,  role: model_param }
+    - { name: --log_dir,              default: "logs", default_kind: relative,      role: log_dir }
+    - { name: --png_dpi,              default: 150,   role: figure_param }
+    - { name: --rasterise_dpi,        default: 100,   role: figure_param }
 
 inputs:
-  - path_template: data/processed/{genome}/counts.tsv
-    slot_bindings: { genome: hg38 }
+  - id: counts_main
+    path_template: "{opt.source_dir}/CT/counts.tsv"
+    kind: tabular
     format: tsv
-    read_call:
-      function: readr::read_tsv
-      site: src/03_de_analysis.R:12
-      args: { col_types: cols(.default = "d", gene_id = "c") }
-    schema_observed:   # populated by runtime trace
-      n_rows: 24531
-      columns: [gene_id, S01, S02, S03, S04, S05, S06]
-      dtypes: [c, d, d, d, d, d, d]
-  - path_template: sample_sheet.tsv
-    ...
+    read_call: { fn: data.table::fread, site: 175 }
+    referenced_columns: [gene.id, "<one column per sample>"]
+  - id: annotation
+    path_template: "{opt.source_dir}/annot.tsv"
+    kind: tabular
+    format: tsv
+    read_call: { fn: data.table::fread, site: 173 }
+    referenced_columns: [gene.id, gene.symbol, description, entrez.gene.id, gene.type, chr, length]
+  - id: metadata
+    path_template: "{opt.metadata_File}"
+    kind: tabular
+    format: csv
+    read_call: { fn: base::read.csv, site: 370 }
+    referenced_columns: [samples, condition, new_samples_name, condition_long]
+  # ... qc_metrics, counts_annot
 
 outputs:
-  - path_template: results/{date}/{genome}/de_{contrast}.tsv
-    slot_bindings: { date: $today, genome: hg38, contrast: tx_vs_ctrl }
+  - id: de_results_qstat_cki_vs_dmso
+    group: per_contrast_de_results
+    kind: tabular
+    path_template: "data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_DESeq2_results.tsv"
     format: tsv
-    write_call:
-      function: readr::write_tsv
-      site: src/03_de_analysis.R:88
+    write_call: { fn: data.table::fwrite, site: 3099 }
+    write_mode: overwrite
     schema_written:
-      columns: [gene_id, baseMean, log2FoldChange, lfcSE, pvalue, padj]
+      columns: [gene.id, baseMean, log2FoldChange, lfcSE, stat, pvalue, padj, lfc_group]
+      origin: contrast_results_table
+  - id: de_results_cki_vs_dmso        # parallel structure
+    group: per_contrast_de_results
+    # ...
+  - id: gsea_hallmark_qstat_cki
+    group: per_contrast_gsea_hallmark
+    kind: tabular
+    path_template: "data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_Hallmark_results.tsv"
+    write_call: { fn: data.table::fwrite, site: 3123 }
+  - id: target_gene_lists_wide
+    group: target_gene_lists
+    kind: tabular
+    path_template: "data/manual_DeSeq2/target_gene_lists.tsv"
+    write_call: { fn: data.table::fwrite, site: 355 }
+    schema_written:
+      columns: ["<one column per gene category>"]
+      origin: hardcoded_data.gene_lists
+  # ... 17 more across groups: per_contrast_gsea_c5_GO,
+  #     per_contrast_gsea_m5_GO, per_contrast_normalized_counts,
+  #     cross_contrast_summary, target_gene_vst
+
+package_resources:
+  - { package: org.Mm.eg.db,    role: gene_annotation,     species: mouse,  version: <runtime> }
+  - { package: msigdbr,         role: gene_set_collection, collections_used: [H, C5/GO, M5/GO], version: <runtime> }
+  - { package: DESeq2,          role: stats_engine,        version: <runtime> }
+  - { package: clusterProfiler, role: gsea_engine,         version: <runtime> }
+
+env_vars_read: []
+env_vars_written: []
 
 dataframes:
-  - id: counts
-    origin: src/03_de_analysis.R:12
-    schema: [gene_id, S01..S06]
-    flows_to: [dds]
-  - id: meta
-    origin: src/03_de_analysis.R:18
-    schema: [sample, condition, batch]
-    flows_to: [dds]
-  - id: dds
-    origin: src/03_de_analysis.R:30
-    derived_from: [counts, meta]
-    transform: DESeqDataSetFromMatrix
-  ...
+  - { id: cts,           origin: 175, derived_from: ["{opt.source_dir}/CT/counts.tsv"] }
+  - { id: annot,         origin: 173, derived_from: ["{opt.source_dir}/annot.tsv"] }
+  - { id: cts_coding,    origin: 192, derived_from: [cts, annot],
+      transform: { op: filter, predicate: "gene.type == 'protein_coding'" } }
+  - { id: metadata_df,   origin: 370, derived_from: ["{opt.metadata_File}"] }
+  - { id: metadata_df_dropped, origin: 395, derived_from: [metadata_df],
+      transform: { op: filter, predicate: "!samples %in% drop_samples" } }
+  - { id: qstat_cki_vs_dmso_metadata, origin: 502, derived_from: [metadata_df_dropped],
+      transform: { op: row_subset, predicate: "condition %in% c('DMSO','QSTAT-CKi')" } }
+  - { id: qstat_cki_vs_dmso_df, origin: 511, derived_from: [cts_coding],
+      transform: { op: col_subset, columns: [dmso_samples, qstatCKI_samples] } }
+  # ... parallel for the other two contrasts
 
 transformations:
-  - site: src/03_de_analysis.R:35
-    op: filter
-    target: dds
-    predicate: rowSums(counts(dds)) >= 10
-    rows_before: 24531
-    rows_after: 18742   # from runtime trace
-  - site: src/03_de_analysis.R:41
-    op: normalisation
-    method: DESeq2_size_factors
-    target: dds
+  - { site: 192,  op: filter,  target: cts_coding, predicate: "gene.type == 'protein_coding'" }
+  - { site: 395,  op: filter,  target: metadata_df, predicate: "!samples %in% drop_samples" }
+  - { site: 506,  op: relevel, target: qstat_vs_dmso_metadata.condition, levels: [DMSO, QSTAT] }
+  - { site: 536,  op: filter,  target: qstat_cki_vs_dmso_dds,
+      predicate: "rowSums(counts(dds) >= MIN_ReadsCounts) >= smallestGroupSize" }
+  # ... two more pre-DESeq filters at 1331, 1380 (per-model)
 
 models:
-  - site: src/03_de_analysis.R:52
+  - id: qstat_cki_vs_dmso_dds
+    site: 516
     fn: DESeq2::DESeq
-    formula: "~ batch + condition"
+    formula: "~ condition"
     formula_resolution: literal
-    design_columns: [batch, condition]
-    reference_levels: { condition: control, batch: 1 }
+    reference_level: DMSO
+    design_subset:
+      rows: qstat_cki_vs_dmso_metadata          # dataframe id
+      cols: [dmso_samples, qstatCKI_samples]
+    pre_filter: { site: 536, predicate: "rowSums(counts) >= 50, in >= 3 samples" }
     contrasts:
-      - name: condition_treated_vs_control
-        site: src/03_de_analysis.R:60
+      - { id: qstat_cki_vs_dmso_res, site: 540, coef_or_contrast: "default (last vs first level)" }
+  - id: cki_vs_dmso_dds
+    site: 520
+    fn: DESeq2::DESeq
+    formula: "~ condition"
+    reference_level: DMSO
+    design_subset: { rows: cki_vs_dmso_metadata, cols: [dmso_samples, CKI_samples] }
+    pre_filter: { site: 1331 }
+    contrasts: [{ id: cki_vs_dmso_res, site: 1334 }]
+  - id: qstat_vs_dmso_dds                         # parallel
+    site: 524
+    # ...
+  filter_symmetry: pairwise_identical_thresholds  # auditor-derived
+
+figures:
+  - id: volcano_qstat_cki_vs_dmso
+    site: 1234
+    depicts: volcano_plot
+    derived_from: qstat_cki_vs_dmso_res
+    written_by: save_figure_3fmt
+    paths: ["figures/manual_DeSeq2/{pdf,png,svg}/volcano/..."]
+  - id: gsea_dotplot_hallmark_qstat_cki
+    site: 1320
+    depicts: gsea_dotplot
+    derived_from: gsea_h
+  # ...
 
 stochastic_ops:
-  - site: src/03_de_analysis.R:67
-    fn: stats::kmeans
-    seed_in_scope: false
-    severity: WARNING
+  - { site: 1298, fn: clusterProfiler::GSEA, seed_set: true, seed_value: 1 }
+  - { site: 1357, fn: clusterProfiler::GSEA, seed_set: true, seed_value: 1 }
+  - { site: 1406, fn: clusterProfiler::GSEA, seed_set: true, seed_value: 1 }
+  # ... 9 more across L2178–L2669
+
+seed_policy:
+  declared_value: 1
+  coverage: { stochastic_ops: 12, seeded: 12, unseeded: 0 }
+  divergence_from_claude_default: true             # CLAUDE.md default = 42
+  severity: NOTE
+  note: "consistent seed=1 across 12 GSEA/permutation calls; defensible but non-default; document in script header"
+
+functions_defined:
+  - { id: save_figure_3fmt,           site: "563-602", signature: "(plot_obj, filename_base, output_dir, width, height, units, dpi, rasterise, device_type)", io_emitted: [pdf, png, svg] }
+  - { id: compute_tpm,                site: "617-622", io_emitted: [] }
+  - { id: inject_gene_lengths_to_dds, site: "630-642", io_emitted: [] }
+  - { id: plot_gene_norm_counts,      site: "660-740+", io_emitted: [] }
+
+hardcoded_data:
+  - id: hdac_targets
+    site: "218-223"
+    kind: curated_geneset
+    count: 11
+    citations: []
+    note: "HDAC class I + II target list"
+  - id: CKi27_genes
+    site: "278-302"
+    kind: curated_geneset_structured
+    count: 40
+    citations: ["PMID:25422890", "PMID:40439998", "PMID:34288272", "PMID:40020669", "PMID:41109929", "PMID:29731968"]
+  - id: drop_samples_default
+    site: 73                                       # optparse default
+    kind: sample_id_list
+    values: [R.S.2, R.C.3]
+    count: 2
+  # ... downstream_effectors, cell_cycle_apoptosis, ferroptosis, stemness
+
+external_binaries: []        # analysis is pure R
+driver_pattern: null         # bash → R via Rscript is plain invocation, not script-emits-script
+
+validation:
+  - { site: "382-391", kind: pre_drop_check,   description: "validate drop_samples present in metadata and counts before dropping" }
+  - { site: "411-416", kind: dup_check,        description: "stop() on duplicate new_samples_name" }
+  - { site: "439-441", kind: dup_check,        description: "stop() on duplicate samples" }
+  - { site: "451-462", kind: alignment_guard,  description: "metadata rownames must match count colnames (setdiff in both directions)" }
+  - { site: "468-470", kind: alignment_guard,  description: "final assertion: all(colnames(cts_coding) == rownames(metadata_rown_df))" }
 
 side_effects:
-  - site: src/03_de_analysis.R:5
-    kind: global_option
-    detail: "options(stringsAsFactors = FALSE)"
+  - { site: 25,        kind: r_option,  detail: "options(width=200)" }
+  - { site: "35-47",   kind: r_option,  detail: "theme_set(ggplot2 global theme)" }
+  - { site: "107-108", kind: mkdir,     paths: [figures/manual_DeSeq2, data/manual_DeSeq2] }
+  - { site: 114,       kind: mkdir,     paths: [logs] }
+  - { site: "119-142", kind: sink_open, detail: "stdout to log_file with split=TRUE; message routed via globalCallingHandlers" }
 
 environment:
-  r_version: 4.3.2
-  packages:
-    - { name: DESeq2, version: 1.42.0, source: bioc }
-    - { name: readr, version: 2.1.5, source: cran }
-  container: docker://bioconductor/bioconductor_docker:RELEASE_3_18
+  r_version: <runtime>
+  r_packages: [DESeq2, tidyverse, EnhancedVolcano, pheatmap, data.table, clusterProfiler, org.Mm.eg.db, msigdbr, enrichplot, ggrastr, optparse, ...]
+  container: null
+
+organism_inferred: mouse                           # inferred from org.Mm.eg.db + symbol case (Cdkn1a vs CDKN1A)
+genome_build_declared: null                        # no mm10/mm39/GRCm39 token anywhere
+
+compliance_checks:
+  - { rule: logging-dual-capture,       status: pass, evidence_sites: [119, 126, 135, 144] }
+  - { rule: alignment-guard-before-DDS, status: pass, evidence_sites: ["451-470"] }
+  - { rule: seed-coverage,              status: pass, evidence_sites: [1298, 1357, 1406, 2178, 2190, 2202, 2419, 2441, 2454, 2643, 2656, 2669] }
+  - { rule: genome-build-tag,           status: fail, note: "no genome tag in paths; organism is mouse" }
+  - { rule: relative-paths-only,        status: fail, evidence_sites: [63, 66, 82, 85] }
+  - { rule: forbidden-variable-names,   status: pass, note: "no exact-match collisions with [counts, results, mean, median, sum, conditions]" }
+
+audit_findings_preview:
+  - { severity: WARNING, rule: relative-paths-only,
+      sites: [63, 66, 82, 85, "launcher:14,17-20,24"],
+      note: "optparse + launcher defaults are absolute; override-able via CLI but defaults won't run on another machine" }
+  - { severity: WARNING, rule: genome-build-tag,
+      note: "organism inferred=mouse from org.Mm.eg.db; no genome build (mm10/mm39/GRCm39) declared anywhere in pair" }
+  - { severity: NOTE, rule: seed-policy-non-default,
+      note: "seed=1 used across 12 stochastic ops; CLAUDE.md default is 42; document in script header" }
+  - { severity: NOTE, rule: hardcoded-data-block,
+      sites: [218, 226, 236, 248, 254, 278],
+      note: "6 curated gene lists embedded; consider promoting to YAML config under workflow_dir/configs/ for downstream reuse" }
+  - { severity: OK, rule: alignment-guard,
+      note: "DESeq2 alignment failure-mode (silent wrong assignment when colnames != rownames) is explicitly defended at L451-470" }
+  - { severity: OK, rule: logging-discipline,
+      note: "dual stdout+stderr capture via sink() + globalCallingHandlers" }
 
 unresolved:
-  - kind: dynamic_path
-    site: src/03_de_analysis.R:75
-    expression: paste0("results/extra_", Sys.getenv("RUN_ID"), ".tsv")
-    note: depends on RUN_ID env var; resolved value unknown at static time
+  - { kind: figure_paths_via_helper, site: 1204,
+      note: "save_figure_3fmt writes 3 file extensions per call; full output enumeration requires walking every call site (dozens)" }
 ```
+
+### 4.3 Notes on field semantics
+
+- **`analysis_unit.kind: pair`** triggers the `pair_unit:` block.
+  When `single`, the launcher binding is omitted.
+- **`outputs[].group:`** lets the report fold ~20 per-contrast outputs
+  into one bullet ("3 contrasts × 5 result types = 15 files"),
+  keeping the audit log short.
+- **`models[].filter_symmetry:`** is auditor-derived, not present in
+  the source — it flags drift across multi-model scripts that should
+  be symmetric.
+- **`compliance_checks:`** is the only place positive-status findings
+  show up alongside negatives; the *severity* axis in
+  `audit_findings_preview:` (with `OK` as a valid level) drives the
+  scored final report.
+- **`seed_policy:`** is the headline; `stochastic_ops:` is the
+  evidence array.
+- **`organism_inferred:` mismatch with file paths**, or
+  `genome_build_declared: null` while data is clearly mouse/human →
+  finding.
+- **Cardinality of outputs**: the `outputs[]` array enumerates
+  *distinct identities*. When a single `save_figure_3fmt()` call
+  emits three files (pdf/png/svg), that's one output entry with
+  `format: multi` and a `paths:` list — not three entries.
 
 ---
 
@@ -385,30 +696,97 @@ unresolved:
 6. **R's `<<-`, `assign()`, and `attach()`** — break lexical scoping.
    Solution: flag any of these; refuse to infer cross-scope dataflow
    through them.
+7. **Launcher↔analysis binding** (v0.2). Bash that invokes an
+   `Rscript`/`python` with literal `--flag $VAR` pairs is a *pair
+   unit*. Solution: detect the pair, match launcher var assignments
+   against the analysis script's optparse/argparse signature, emit
+   `pair_unit.binding[]` with site refs on both sides. Caveat: if the
+   launcher constructs flags dynamically (`for x in …; do --flag $x;
+   done`), record as `binding_resolution: dynamic` with confidence
+   medium.
+8. **In-script helper I/O must propagate upward** (v0.2). A function
+   defined in the script (`save_figure_3fmt`, `write_results`) that
+   performs file I/O contributes to `outputs:` — but the entries
+   should be attributed to the *call sites*, not the definition site,
+   so the audit traces back to the contrast/dataframe that drove
+   each write. Solution: two-pass walk — pass 1 catalogues
+   `functions_defined[]` with their declared I/O; pass 2 expands
+   each call into output entries with call-site attribution.
+9. **Package-shipped data is not a filesystem read** (v0.2).
+   `library(org.Mm.eg.db)` loads species annotations from inside the
+   installed R package. Inference must recognise a small allowlist of
+   data-shipping packages (`org.*.eg.db`, `msigdbr`, `BSgenome.*`,
+   `TxDb.*`, GENCODE/Ensembl helpers) and emit
+   `package_resources[]` instead of `inputs[]`. Mismatches between
+   package species and inferred organism → finding.
+10. **Effective cwd is a function of the process chain** (v0.2). A
+    bash launcher `cd "$OUT"` before invoking R means the R script's
+    relative paths resolve under `$OUT`, not under the script's
+    directory. Solution: track `runtime_context.cwd_at_invocation`
+    through every `cd` / `os.chdir` / `setwd()` along the chain;
+    record the *resolved* cwd as a separate field so audit findings
+    cite the absolute path the reader will actually look for.
+11. **Multiple models per script with model-local subsets** (v0.2).
+    DESeq2 scripts commonly fit one DDS per contrast against a
+    metadata/count subset. Solution: track `models[].design_subset`
+    pointing at the per-model dataframe id; cross-check `models.
+    filter_symmetry` to flag drift across what should be parallel
+    models.
+12. **Curated geneset blocks vs accidental hardcoded data** (v0.2).
+    A 40-element list of gene symbols cited with PMIDs is curated
+    science; a stray 5-element sample-id list is usually accidental
+    embedding. Solution: `hardcoded_data[].kind:` taxonomy
+    distinguishes; presence of `citations:` argues for "curated";
+    short lists without context default to `accidental_embed`.
 
 ---
 
 ## 6. Compliance checks the inference layer can do *for free*
 
-Once inference is producing the structured output above, several of
-your CLAUDE.md rules become trivial pass/fail predicates:
+Once inference is producing the v0.2 structured output, every
+CLAUDE.md rule with a syntactic signature becomes a pass/fail
+predicate against the YAML. Grouped by severity:
 
-- `header=FALSE` followed by no `colnames<-` assignment → BLOCKER
-  (your "never strip headers" rule).
+### BLOCKERs (audit gate)
+- `header=FALSE` followed by no `colnames<-` assignment → "never
+  strip headers" rule.
+- Output path resolves under `data/raw/` → "raw data is immutable".
+  Cross-references the existing `block-raw-data-writes.sh` hook.
 - Output path not under `data/processed/{genome}/` or
-  `results/{date}_{genome}_{description}/` → BLOCKER.
-- Any write whose path resolves under `data/raw/` → BLOCKER (also
-  caught by your existing hook; cheap double-check).
-- Hardcoded contig name (`"chr1"`, `"chrX"`) → BLOCKER (your
-  `block-hardcoded-contigs.sh` already does this; inference adds the
-  "this contig flowed into model X" context).
-- Stochastic op with no seed in scope → WARNING.
-- Forbidden variable name (`counts`, `results`, `mean`, `median`,
-  `sum`, `conditions`) bound in script → WARNING.
-- Filename missing genome tag where pattern requires it → WARNING.
+  `results/{date}_{genome}_{description}/` → file-layout rule.
+- Hardcoded contig name in code (`"chr1"`, `"chrX"`) → already caught
+  by `block-hardcoded-contigs.sh`; inference adds the "flowed into
+  model X" trace.
 
-These are the cheapest wins. They run from Layer A alone, no manifest
-needed.
+### WARNINGs (review-required)
+- Stochastic op with no seed in scope → seed-discipline rule.
+- Forbidden variable name (`counts`, `results`, `mean`, `median`,
+  `sum`, `conditions`) bound in script → naming rule.
+- Filename / config missing genome tag when organism is clearly
+  genomic → genome-build-tag rule. Driven by
+  `organism_inferred` vs `genome_build_declared`.
+- Any optparse / argparse / launcher default with `default_kind:
+  absolute` → "relative paths in scripts and configs" rule.
+- `seed_value` not equal to CLAUDE.md default (42), even when set →
+  NOTE-promoted to WARNING if undocumented.
+
+### POSITIVE compliance checks (v0.2 — feed the scored report)
+These emit `compliance_checks[]` with `status: pass`:
+
+- `logging-dual-capture` — `sink(..., split=TRUE)` plus
+  `globalCallingHandlers(message=…)` in R; `logging` with FileHandler
+  + StreamHandler in Python; `exec > >(tee -a $LOG) 2>&1` in bash.
+- `alignment-guard-before-DDS` — `setdiff`/`stop()` block in the ≤30
+  lines preceding any `DESeqDataSetFromMatrix` call (or analogous
+  `lmFit` / `methylKit::unite` etc.).
+- `seed-coverage` — every stochastic op site has a reaching
+  `set.seed` / `np.random.seed` / `random.seed`.
+- `script-header-metadata` — author + date + one-line purpose comment
+  at top of script (CLAUDE.md §2 "Documentation").
+
+These are the cheapest wins. They all run from Layer A alone, no
+manifest required. The scored final report uses the pass:fail ratio
+across these checks as one of its per-category grades.
 
 ---
 
