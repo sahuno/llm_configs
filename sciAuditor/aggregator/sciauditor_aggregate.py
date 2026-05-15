@@ -18,10 +18,12 @@ Date:   2026-05-14
 from __future__ import annotations
 
 import argparse
+import multiprocessing as mp
 import os
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -157,9 +159,58 @@ def language_for(path: Path) -> str:
 GRADE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "F": 4, "N/A": 5, "—": 5}
 
 
+def audit_one_script(work: dict) -> dict:
+    """Worker function: parse one script, return its per_script_row and the
+    rows for cohort_findings.tsv. Self-contained / picklable so it can run
+    in a multiprocessing.Pool."""
+    s             = Path(work["script"])
+    project_dir   = Path(work["project_dir"])
+    sub_out       = Path(work["sub_out"])
+    lang          = work["language"]
+    rscript_bin   = work["rscript_bin"]
+    python_bin    = work["python_bin"]
+    pair_launcher = Path(work["pair_launcher"]) if work["pair_launcher"] else None
+
+    res = run_parser(s, sub_out,
+                     language=lang,
+                     rscript_bin=rscript_bin,
+                     python_bin=python_bin,
+                     pair_launcher=pair_launcher if lang == "R" else None)
+    score, grade = headline_from_report(res["report_md"])
+    counts = severity_counts(res["findings_tsv"])
+    row = {
+        "script":   str(s.relative_to(project_dir)),
+        "language": lang,
+        "paired":   "✓" if pair_launcher else "",
+        "errored":  res["errored"],
+        "score":    score,
+        "grade":    grade,
+        **counts,
+    }
+    findings = []
+    if res["findings_tsv"] is not None and res["findings_tsv"].exists():
+        with res["findings_tsv"].open() as f:
+            next(f, None)
+            for line in f:
+                parts = line.rstrip("\n").split("\t", 3)
+                if len(parts) < 4:
+                    parts += [""] * (4 - len(parts))
+                sev, rule, sites, note = parts
+                findings.append({
+                    "script_path": str(s.relative_to(project_dir)),
+                    "language":    lang,
+                    "severity":    sev,
+                    "rule":        rule,
+                    "sites":       sites,
+                    "note":        note,
+                })
+    return {"row": row, "findings": findings}
+
+
 def aggregate(project_dir: Path, output_dir: Path,
               rscript_bin: str, python_bin: str,
-              skip_consumed_launchers: bool = True) -> dict:
+              skip_consumed_launchers: bool = True,
+              jobs: int = 1) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     per_dir = output_dir / "per_script"
     per_dir.mkdir(parents=True, exist_ok=True)
@@ -168,68 +219,61 @@ def aggregate(project_dir: Path, output_dir: Path,
     pairs   = detect_pairs(scripts, python_bin)
     consumed_launchers = set(pairs.values())
 
-    per_script_rows = []
-    all_findings   = []  # list of dicts: severity, rule, sites, note, script_path
-
+    # Build the work list (cheap, sequential)
+    work_items = []
     for s in scripts:
         if skip_consumed_launchers and s in consumed_launchers:
-            continue  # this bash is consumed by its analysis-side pair
-
+            continue
         lang = language_for(s)
         if lang == "unknown":
             continue
-
-        # Make a stable, name-clash-resistant subdir for this script
         try:
             rel = s.relative_to(project_dir)
         except ValueError:
             rel = Path(s.name)
         subdir_id = str(rel).replace("/", "__").replace(" ", "_")
         sub_out = per_dir / subdir_id
-
-        # Pair detection: only R supports --pair_launcher today
         pair_launcher = None
-        is_paired = False
         for analysis, launcher in pairs.items():
             if analysis == s.resolve():
-                pair_launcher = launcher; is_paired = True
-                break
-
-        res = run_parser(s, sub_out,
-                         language=lang,
-                         rscript_bin=rscript_bin,
-                         python_bin=python_bin,
-                         pair_launcher=pair_launcher if lang == "R" else None)
-
-        score, grade = headline_from_report(res["report_md"])
-        counts = severity_counts(res["findings_tsv"])
-        per_script_rows.append({
-            "script":     str(s.relative_to(project_dir)),
-            "language":   lang,
-            "paired":     "✓" if is_paired else "",
-            "errored":    res["errored"],
-            "score":      score,
-            "grade":      grade,
-            **counts,
+                pair_launcher = launcher; break
+        work_items.append({
+            "script":        str(s),
+            "project_dir":   str(project_dir),
+            "sub_out":       str(sub_out),
+            "language":      lang,
+            "rscript_bin":   rscript_bin,
+            "python_bin":    python_bin,
+            "pair_launcher": str(pair_launcher) if pair_launcher else None,
         })
 
-        # Stream findings into the cohort TSV buffer
-        if res["findings_tsv"] is not None and res["findings_tsv"].exists():
-            with res["findings_tsv"].open() as f:
-                next(f, None)  # header
-                for line in f:
-                    parts = line.rstrip("\n").split("\t", 3)
-                    if len(parts) < 4:
-                        parts += [""] * (4 - len(parts))
-                    sev, rule, sites, note = parts
-                    all_findings.append({
-                        "script_path": str(s.relative_to(project_dir)),
-                        "language":    lang,
-                        "severity":    sev,
-                        "rule":        rule,
-                        "sites":       sites,
-                        "note":        note,
-                    })
+    per_script_rows = []
+    all_findings   = []
+    n = len(work_items)
+    t0 = time.time()
+    if jobs > 1 and n > 1:
+        print(f"[sciauditor_aggregate] auditing {n} scripts with {jobs} workers ...",
+              flush=True)
+        # Spawn ensures children re-import the module cleanly (no fork-state pickling issues)
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(processes=jobs) as pool:
+            for i, result in enumerate(
+                    pool.imap_unordered(audit_one_script, work_items), start=1):
+                per_script_rows.append(result["row"])
+                all_findings.extend(result["findings"])
+                print(f"  [{i}/{n}] {result['row']['script']}  "
+                      f"{result['row']['grade']}", flush=True)
+    else:
+        print(f"[sciauditor_aggregate] auditing {n} scripts sequentially ...",
+              flush=True)
+        for i, work in enumerate(work_items, start=1):
+            result = audit_one_script(work)
+            per_script_rows.append(result["row"])
+            all_findings.extend(result["findings"])
+            print(f"  [{i}/{n}] {result['row']['script']}  "
+                  f"{result['row']['grade']}", flush=True)
+    wall_s = time.time() - t0
+    print(f"[sciauditor_aggregate] parse phase done in {wall_s:.1f}s", flush=True)
 
     # ----- emit cohort_findings.tsv -----
     findings_path = output_dir / "cohort_findings.tsv"
@@ -358,6 +402,10 @@ def main():
                     default="none",
                     help="exit 1 if cohort has any findings at or above this "
                          "severity (CI gate). 'none' (default) always exits 0.")
+    ap.add_argument("--jobs", "-j", type=int,
+                    default=min(os.cpu_count() or 1, 8),
+                    help="number of parallel worker processes "
+                         "[default: min(cpu_count, 8)]; 1 disables parallelism")
     args = ap.parse_args()
 
     pd  = Path(args.project_dir).resolve()
@@ -365,8 +413,8 @@ def main():
     if not pd.exists():
         sys.exit(f"project dir not found: {pd}")
 
-    print(f"[sciauditor_aggregate] scanning {pd} ...")
-    res = aggregate(pd, out, args.rscript, args.python)
+    print(f"[sciauditor_aggregate] scanning {pd} (jobs={args.jobs}) ...")
+    res = aggregate(pd, out, args.rscript, args.python, jobs=args.jobs)
     print(f"[sciauditor_aggregate] {res['n_scripts']} scripts audited "
           f"({res['n_pairs']} paired, {res['n_errors']} parser errors)")
     print(f"[sciauditor_aggregate]   totals: BLOCKER={res['totals']['BLOCKER']} "

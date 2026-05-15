@@ -2,7 +2,7 @@
 
 - **Project dir**: `/data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts`
 - **Scripts audited**: 35
-- **Inferred at**: 2026-05-14T23:38:09-04:00
+- **Inferred at**: 2026-05-14T23:57:34-04:00
 
 ## Headline
 

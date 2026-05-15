@@ -10,11 +10,30 @@ per-script reports.
 ```bash
 /home/ahunos/miniforge3/envs/snakemake/bin/python3 sciauditor_aggregate.py \
     --project-dir /path/to/project/scripts \
-    --output-dir  /tmp/cohort_audit
+    --output-dir  /tmp/cohort_audit \
+    --jobs 8 \
+    --fail-on BLOCKER
 ```
 
-Defaults: `--rscript /home/ahunos/miniforge3/envs/r-env/bin/Rscript`,
-`--python /home/ahunos/miniforge3/envs/snakemake/bin/python3`.
+Defaults:
+
+- `--rscript /home/ahunos/miniforge3/envs/r-env/bin/Rscript`
+- `--python /home/ahunos/miniforge3/envs/snakemake/bin/python3`
+- `--jobs min(cpu_count(), 8)` — set `--jobs 1` to disable parallelism
+- `--fail-on none` — set to `BLOCKER` / `WARNING` / `NOTE` to make
+  the auditor exit 1 when the cohort has findings at or above that
+  severity (CI gate). Inclusive: `--fail-on WARNING` counts BLOCKERs
+  too. A single line `GATE: PASS|FAIL (reason)` is emitted to stderr.
+
+Benchmark (`coding_peptides_DNAme/scripts`, 35 audited scripts):
+
+| Mode | Parse-phase | Wall total |
+|---|---|---|
+| `--jobs 1` (sequential) | 26.0 s | 30.0 s |
+| `--jobs 8` (parallel)   | 8.2 s  | 12.2 s |
+
+~2.5x wall speedup with byte-identical cohort findings (verified via
+`diff <(sort seq.tsv) <(sort par.tsv)`).
 
 ## What it does
 
@@ -81,11 +100,9 @@ Runtime: ~2-3 min on a workstation login node for the 35-script run.
 
 ## What's not yet implemented
 
-- Parallel script auditing (currently sequential)
 - Workflow-DAG awareness (which script produces what input for which
   other script) — that's the "round 2 cross-script audit" deferred
   from `01_first_principles_brainstorm.md` §12.5
 - `--ignore` / `--include` glob filters
 - Bash audit_report.md (rolling into Python parser would let
   standalone bash scripts get scored too)
-- CI severity-gate exit code (e.g. exit 1 if any BLOCKER fired)
