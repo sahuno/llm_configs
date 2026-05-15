@@ -1,0 +1,164 @@
+schema_version: '0.2'
+analysis_unit:
+  id: aggregate_DNAme_across_regions
+  kind: single
+pair_unit: null
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/workflows/ont_modkit_pileup/scripts/aggregate_DNAme_across_regions.py
+  language: python
+  git_rev: <runtime>
+  inferred_at: '2026-05-14T23:04:25-04:00'
+  layers_used:
+  - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: argparse
+  options:
+  - name: --bedmethyl
+    type: null
+    default: null
+    default_kind: null
+    required: true
+    help: Path to bedMethyl file from modkit pileup
+    site: 203
+  - name: --bed
+    type: null
+    default: null
+    default_kind: null
+    required: true
+    help: Path to BED file of L1 loci (chr-prefixed)
+    site: 207
+  - name: --output
+    type: null
+    default: null
+    default_kind: null
+    required: true
+    help: Path for output TSV file
+    site: 211
+  - name: --sample-id
+    type: null
+    default: unknown
+    default_kind: relative
+    required: null
+    help: Sample identifier to include in output
+    site: 215
+inputs:
+- id: input_01
+  path_template: '{bed_path}'
+  kind: file
+  format: unknown
+  read_call:
+    fn: open
+    site: 51
+  header_dropped: false
+  resolution_confidence: medium
+- id: input_02
+  path_template: '{args.output}'
+  kind: file
+  format: output}
+  read_call:
+    fn: open
+    site: 254
+  header_dropped: false
+  resolution_confidence: high
+outputs: []
+package_resources: null
+env_vars_read: []
+env_vars_written: []
+dataframes: []
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: null
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: null
+hardcoded_data: null
+external_binaries: []
+driver_pattern: null
+validation: null
+side_effects: []
+environment:
+  python_packages:
+  - argparse
+  - csv
+  - gzip
+  - sys
+  - collections
+  - pathlib
+  container: null
+organism_inferred: null
+genome_build_declared: null
+compliance_checks:
+- rule: script-header-metadata
+  status: pass
+  evidence_sites:
+  - 1
+  note: null
+- rule: relative-paths-only
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: forbidden-variable-names
+  status: fail
+  evidence_sites: &id001
+  - 146
+  note: 'collisions: results'
+- rule: seed-coverage
+  status: n/a
+  evidence_sites: []
+  note: no stochastic ops detected
+- rule: logging-dual-capture
+  status: fail
+  evidence_sites: &id002 []
+  note: no FileHandler+StreamHandler logging detected
+- rule: raw-data-write
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: header-preserved
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: hardcoded-contig
+  status: pass
+  evidence_sites: []
+  note: null
+audit_findings_preview:
+- severity: OK
+  rule: script-header-metadata
+  note: 'compliance check passed: script-header-metadata'
+- severity: OK
+  rule: relative-paths-only
+  note: 'compliance check passed: relative-paths-only'
+- severity: WARNING
+  rule: forbidden-variable-names
+  sites: *id001
+  note: 'collisions: results'
+- severity: NOTE
+  rule: logging-dual-capture
+  sites: *id002
+  note: no FileHandler+StreamHandler logging detected
+- severity: OK
+  rule: raw-data-write
+  note: 'compliance check passed: raw-data-write'
+- severity: OK
+  rule: header-preserved
+  note: 'compliance check passed: header-preserved'
+- severity: OK
+  rule: hardcoded-contig
+  note: 'compliance check passed: hardcoded-contig'
+unresolved:
+- kind: round_1_python_scope
+  note: 'round 1 python: argparse, pandas I/O, side_effects, seed_policy, hardcoded_data,
+    five compliance checks (incl. 3 BLOCKERs). dataframes[]/transformations[]/models[]/figures[]/functions_defined[]
+    deferred.'
