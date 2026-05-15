@@ -325,6 +325,25 @@ def aggregate(project_dir: Path, output_dir: Path,
     }
 
 
+SEVERITY_GATE_ORDER = ["BLOCKER", "WARNING", "NOTE"]
+
+
+def compute_gate_status(totals: dict, fail_on: str) -> tuple[bool, int, str]:
+    """Returns (gate_failed, total_at_or_above, reason). When fail_on='none',
+    always passes."""
+    if fail_on == "none":
+        return (False, 0, "gate disabled (--fail-on none)")
+    if fail_on not in SEVERITY_GATE_ORDER:
+        return (False, 0, f"unknown gate level '{fail_on}'")
+    idx = SEVERITY_GATE_ORDER.index(fail_on)
+    triggered = SEVERITY_GATE_ORDER[: idx + 1]  # gate level + everything stricter
+    count = sum(totals.get(s, 0) for s in triggered)
+    if count > 0:
+        return (True, count,
+                f"{count} finding(s) at >= {fail_on} ({'/'.join(triggered)})")
+    return (False, 0, f"no findings at >= {fail_on}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--project-dir", "-p", required=True,
@@ -335,6 +354,10 @@ def main():
                     help=f"Rscript binary [default: {DEFAULT_RSCRIPT}]")
     ap.add_argument("--python",  default=DEFAULT_PYTHON,
                     help=f"python3 binary [default: {DEFAULT_PYTHON}]")
+    ap.add_argument("--fail-on", choices=["BLOCKER", "WARNING", "NOTE", "none"],
+                    default="none",
+                    help="exit 1 if cohort has any findings at or above this "
+                         "severity (CI gate). 'none' (default) always exits 0.")
     args = ap.parse_args()
 
     pd  = Path(args.project_dir).resolve()
@@ -351,6 +374,12 @@ def main():
           f"OK={res['totals']['OK']}")
     print(f"[sciauditor_aggregate]   report: {res['report']}")
     print(f"[sciauditor_aggregate]   findings: {res['findings']}")
+
+    # CI gate
+    failed, _, reason = compute_gate_status(res["totals"], args.fail_on)
+    status = "FAIL" if failed else "PASS"
+    sys.stderr.write(f"[sciauditor_aggregate] GATE: {status} ({reason})\n")
+    sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":
