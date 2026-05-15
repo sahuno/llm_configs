@@ -7,7 +7,7 @@ script:
   path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/data/src/30_anchor_check_methylation.py
   language: python
   git_rev: <runtime>
-  inferred_at: '2026-05-14T23:19:21-04:00'
+  inferred_at: '2026-05-14T23:29:54-04:00'
   layers_used:
   - static
 runtime_context:
@@ -91,7 +91,27 @@ outputs:
 package_resources: null
 env_vars_read: []
 env_vars_written: []
-dataframes: []
+dataframes:
+- id: df
+  site: 72
+  origin: '{path}'
+  origin_kind: file
+  transform:
+    op: read
+    fn: pd.read_csv
+- id: df
+  site: 200
+  derived_from: null
+  transform:
+    op: DataFrame
+- id: summary
+  site: 206
+  derived_from:
+  - df
+  transform:
+    op: chain
+    expr: "df.groupby('anchor').agg(n_samples=('sample', 'nunique'), n_pass=('pass',\
+      \ 'sum'), median_weighted_pct=('weighted_pct', 'median'), median_simple_mean_pct=('simp\u2026"
 transformations: []
 models: []
 figures: []

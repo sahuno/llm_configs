@@ -76,7 +76,10 @@ STDLIB = {
 # Helpers
 # ---------------------------------------------------------------------------
 def call_name(node: ast.Call) -> str | None:
-    """Return a dotted-string name for `node.func`, or None if not extractable."""
+    """Return a dotted-string name for `node.func`. For chained calls like
+    `pd.DataFrame({...}).sort_values(...)` returns just the outer name
+    ('sort_values'); for `module.fn` returns 'module.fn'. None only when
+    the func isn't extractable at all."""
     f = node.func
     parts = []
     while True:
@@ -87,7 +90,9 @@ def call_name(node: ast.Call) -> str | None:
             parts.append(f.id)
             break
         else:
-            return None
+            break
+    if not parts:
+        return None
     return ".".join(reversed(parts))
 
 
@@ -365,6 +370,255 @@ def collect_stochastic_ops(tree: ast.Module) -> list:
             s["inline_random_state"],
         )
     return stoch, seed_pairs
+
+
+# ---------------------------------------------------------------------------
+# dataframes[] and models[] collectors
+# ---------------------------------------------------------------------------
+# Pandas methods that produce a new DataFrame/Series (positive allowlist).
+DF_MUTATING_METHODS = {
+    "merge", "join", "concat", "append",
+    "filter", "query", "loc", "iloc",
+    "drop", "dropna", "fillna", "ffill", "bfill",
+    "groupby", "agg", "apply", "transform", "assign",
+    "rename", "reset_index", "set_index", "sort_values", "sort_index",
+    "pivot", "pivot_table", "melt", "stack", "unstack", "explode",
+    "head", "tail", "sample", "nlargest", "nsmallest",
+    "astype", "copy", "to_frame", "select_dtypes",
+}
+# Module-level pandas calls that produce a frame
+PD_MODULE_FNS = {
+    "pd.merge", "pd.concat", "pd.DataFrame", "pd.Series",
+    "pandas.merge", "pandas.concat", "pandas.DataFrame", "pandas.Series",
+    "pd.crosstab", "pandas.crosstab",
+}
+# Functions/methods whose return is a scalar — never a frame
+SCALAR_RETURNING_METHODS = {
+    "sum", "mean", "median", "std", "var", "min", "max", "count",
+    "size", "shape", "nunique", "all", "any", "describe",
+    "first", "last", "idxmax", "idxmin",
+}
+SCALAR_BUILTIN_FNS = {
+    "len", "min", "max", "sum", "abs", "int", "float", "str", "bool",
+    "list", "tuple", "dict", "set", "any", "all", "round", "sorted",
+    "print", "open",  # open returns file handle, not frame
+}
+
+# Known model classes — sklearn / statsmodels / scipy.stats
+MODEL_CLASSES = {
+    # sklearn linear
+    "LinearRegression", "LogisticRegression", "LogisticRegressionCV",
+    "Ridge", "RidgeCV", "Lasso", "LassoCV", "ElasticNet", "ElasticNetCV",
+    "SGDClassifier", "SGDRegressor", "BayesianRidge",
+    # sklearn ensemble / tree / svm / nn
+    "RandomForestClassifier", "RandomForestRegressor",
+    "GradientBoostingClassifier", "GradientBoostingRegressor",
+    "AdaBoostClassifier", "AdaBoostRegressor",
+    "DecisionTreeClassifier", "DecisionTreeRegressor",
+    "SVC", "SVR", "LinearSVC", "LinearSVR", "NuSVC", "NuSVR",
+    "MLPClassifier", "MLPRegressor",
+    "KNeighborsClassifier", "KNeighborsRegressor",
+    # sklearn clustering / mixture
+    "KMeans", "MiniBatchKMeans", "DBSCAN", "AgglomerativeClustering",
+    "Birch", "OPTICS", "MeanShift", "SpectralClustering",
+    "GaussianMixture", "BayesianGaussianMixture",
+    # sklearn dim-reduction (audit-relevant as transformers)
+    "PCA", "IncrementalPCA", "KernelPCA", "TruncatedSVD", "NMF",
+    "TSNE", "Isomap", "LocallyLinearEmbedding", "UMAP",
+    # statsmodels
+    "OLS", "WLS", "GLS", "GLM", "Logit", "MNLogit", "Poisson",
+    "NegativeBinomial", "MixedLM", "PHReg", "RLM",
+    # scipy.stats — only the regression-y ones
+    "linregress",
+}
+
+
+def name_of_target(node):
+    """For `x = expr`, return 'x'. For `x = y = expr`, return 'x' (first tgt)."""
+    if isinstance(node, ast.Assign) and node.targets:
+        t = node.targets[0]
+        if isinstance(t, ast.Name):
+            return t.id
+    return None
+
+
+def extract_name_refs(node):
+    """Recursively yield every ast.Name id appearing in `node`."""
+    out = []
+    for n in ast.walk(node):
+        if isinstance(n, ast.Name):
+            out.append(n.id)
+    return out
+
+
+def short_name(fn):
+    return fn.rsplit(".", 1)[-1] if fn else ""
+
+
+def _chain_root_call(call):
+    """Walk inward through a method-call chain. Returns the innermost Call
+    node (so for `pd.DataFrame(x).sort_values()` returns the pd.DataFrame
+    call). Returns the input unchanged if not chained."""
+    cur = call
+    while (isinstance(cur, ast.Call)
+           and isinstance(cur.func, ast.Attribute)
+           and isinstance(cur.func.value, ast.Call)):
+        cur = cur.func.value
+    return cur
+
+
+def df_classify(rhs, known):
+    """Positive-allowlist classification of a Python AST node as a
+    dataframe-producing operation. Handles direct reads, pd.* module
+    calls, pandas methods on known frames, and method-chain forms like
+    `pd.DataFrame({...}).sort_values()` / `df.dropna().reset_index()`."""
+    # df[mask] / df.loc[mask] / df.iloc[mask]
+    if isinstance(rhs, ast.Subscript):
+        base = rhs.value
+        if isinstance(base, ast.Name) and base.id in known:
+            return {"derived_from": [base.id],
+                    "transform": {"op": "subset",
+                                  "expr": expr_text(rhs, 160)}}
+        if (isinstance(base, ast.Attribute)
+                and isinstance(base.value, ast.Name)
+                and base.attr in ("loc", "iloc")
+                and base.value.id in known):
+            return {"derived_from": [base.value.id],
+                    "transform": {"op": base.attr,
+                                  "expr": expr_text(rhs, 160)}}
+        return None
+    if not isinstance(rhs, ast.Call):
+        return None
+    fn = call_name(rhs)
+    last = short_name(fn or "")
+    # Scalar shortcuts
+    if last in SCALAR_RETURNING_METHODS or fn in SCALAR_BUILTIN_FNS:
+        return None
+
+    # Direct reads
+    if fn in READ_FNS:
+        p_arg = (get_kw(rhs, "filepath_or_buffer") or get_kw(rhs, "path")
+                 or get_arg(rhs, 0))
+        tmpl, _ = path_template(p_arg, {})
+        return {"origin": tmpl, "origin_kind": "file",
+                "transform": {"op": "read", "fn": fn}}
+
+    # pd.merge / pd.concat / pd.DataFrame / pd.crosstab — module-level
+    if fn in PD_MODULE_FNS:
+        refs = [n for n in extract_name_refs(rhs) if n in known]
+        params = {}
+        for kw in ("on", "how", "axis"):
+            v = const_value(get_kw(rhs, kw))
+            if v is not None: params[kw] = v
+        return {"derived_from": list(dict.fromkeys(refs)) or None,
+                "transform": dict({"op": last}, **params)}
+
+    # Method-call form. Could be:
+    #   df.merge(...)              — receiver is a Name in `known`
+    #   df.dropna().sort_values()  — chain on a Name
+    #   pd.DataFrame({...}).sort_values()  — chain rooted in a pd module call
+    if last in DF_MUTATING_METHODS and isinstance(rhs.func, ast.Attribute):
+        root = _chain_root_call(rhs)
+        root_fn = call_name(root) if isinstance(root, ast.Call) else None
+        # Chain rooted in a pd module constructor / read
+        if root_fn and (root_fn in PD_MODULE_FNS or root_fn in READ_FNS):
+            refs = [n for n in extract_name_refs(rhs) if n in known]
+            tag = "chain_" + short_name(root_fn)
+            return {"derived_from": list(dict.fromkeys(refs)) or None,
+                    "transform": {"op": tag, "expr": expr_text(rhs, 160)}}
+        # Chain bottoms out at a Name (the receiver after stripping calls)
+        base = rhs.func.value
+        while isinstance(base, ast.Call) and isinstance(base.func, ast.Attribute):
+            base = base.func.value
+        if isinstance(base, ast.Name) and base.id in known:
+            refs = [n for n in extract_name_refs(rhs) if n in known]
+            op = last if base is rhs.func.value else "chain"
+            return {"derived_from": list(dict.fromkeys(refs)),
+                    "transform": {"op": op, "expr": expr_text(rhs, 160)}}
+    return None
+
+
+def collect_dataframes(tree: ast.Module) -> list:
+    """Walk every assignment (any depth); record bindings whose RHS classifies
+    as a dataframe-producing op."""
+    out, known = [], set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        tgt = node.targets[0]
+        if not isinstance(tgt, ast.Name):
+            continue
+        cls = df_classify(node.value, known)
+        if cls is None:
+            continue
+        entry = {"id": tgt.id, "site": node.lineno}
+        entry.update(cls)
+        out.append(entry)
+        known.add(tgt.id)
+    return out
+
+
+def collect_models(tree: ast.Module) -> list:
+    """sklearn / statsmodels detection.
+    Pattern 1: `m = SomeClass(...)` — class is in MODEL_CLASSES
+    Pattern 2: `m = SomeClass(...).fit(X, y)` — same, with fit chained
+    Then attach a `.fit()` call site if a later `m.fit(...)` is found."""
+    models = []
+    name_to_idx = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        tgt = node.targets[0]
+        if not isinstance(tgt, ast.Name):
+            continue
+        rhs = node.value
+        # Walk through .fit() chain if present
+        fit_args = None
+        is_chained_fit = False
+        if isinstance(rhs, ast.Call) and isinstance(rhs.func, ast.Attribute) \
+           and rhs.func.attr == "fit":
+            fit_args = rhs.args
+            rhs_under = rhs.func.value
+            is_chained_fit = True
+            rhs = rhs_under
+        if not isinstance(rhs, ast.Call):
+            continue
+        cls_name = short_name(call_name(rhs) or "")
+        if cls_name not in MODEL_CLASSES:
+            continue
+        # Extract a few hyperparameters (best-effort)
+        hparams = {}
+        for kw in rhs.keywords:
+            v = const_value(kw.value)
+            if v is None:
+                v = expr_text(kw.value, 40)
+            if isinstance(v, (str, int, float, bool)) or v is None:
+                hparams[kw.arg] = v
+        entry = {
+            "id":     tgt.id,
+            "site":   node.lineno,
+            "fn":     cls_name,
+            "fit_site": node.lineno if is_chained_fit else None,
+            "fit_args": ([expr_text(a, 40) for a in fit_args] if fit_args else None),
+            "hyperparameters": hparams or None,
+        }
+        models.append(entry)
+        name_to_idx[tgt.id] = len(models) - 1
+
+    # Pass 2: find `m.fit(X, y)` for already-recorded m
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "fit"
+                and isinstance(node.func.value, ast.Name)):
+            continue
+        recv = node.func.value.id
+        idx = name_to_idx.get(recv)
+        if idx is None:
+            continue
+        if models[idx]["fit_site"] is None:
+            models[idx]["fit_site"] = node.lineno
+            models[idx]["fit_args"] = [expr_text(a, 40) for a in node.args]
+    return models
 
 
 def collect_hardcoded_data(tree: ast.Module, raw_lines: list) -> list:
@@ -736,6 +990,8 @@ def assemble(path, raw_lines, tree):
     side_effects = collect_side_effects(tree)
     stoch_ops, seed_pairs = collect_stochastic_ops(tree)
     hardcoded = collect_hardcoded_data(tree, raw_lines)
+    dataframes_l = collect_dataframes(tree)
+    models_l     = collect_models(tree)
     checks = compliance_checks(tree, raw_lines, config_iface, stoch_ops, inputs, outputs)
     findings = findings_from_compliance(checks)
 
@@ -818,9 +1074,9 @@ def assemble(path, raw_lines, tree):
         "package_resources": None,
         "env_vars_read":    [],
         "env_vars_written": [],
-        "dataframes":       [],
+        "dataframes":       dataframes_l,
         "transformations":  [],
-        "models":           [],
+        "models":           models_l,
         "figures":          [],
         "stochastic_ops":   stoch_ops,
         "seed_policy":      seed_policy,

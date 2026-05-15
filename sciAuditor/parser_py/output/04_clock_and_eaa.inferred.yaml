@@ -1,0 +1,343 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 04_clock_and_eaa
+  kind: single
+pair_unit: null
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/AgingLINE1/src/04_clock_and_eaa.py
+  language: python
+  git_rev: <runtime>
+  inferred_at: '2026-05-14T23:29:32-04:00'
+  layers_used:
+  - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: argparse
+  options:
+  - name: --project_root
+    type: null
+    default: .
+    default_kind: relative
+    required: null
+    help: null
+    site: 80
+  - name: --sample_sheet
+    type: null
+    default: sample_sheet.tsv
+    default_kind: relative
+    required: null
+    help: null
+    site: 81
+  - name: --clinical_meta
+    type: null
+    default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_priority_master_12_10_25.tsv
+    default_kind: absolute
+    required: null
+    help: null
+    site: 82
+  - name: --matrix_dir
+    type: null
+    default: data/processed/hg38
+    default_kind: relative
+    required: null
+    help: null
+    site: 85
+  - name: --results_dir
+    type: null
+    default: results/20260408_hg38_v1
+    default_kind: relative
+    required: null
+    help: null
+    site: 86
+  - name: --log_dir
+    type: null
+    default: logs
+    default_kind: relative
+    required: null
+    help: null
+    site: 87
+  - name: --seed
+    type: int
+    default: 42
+    default_kind: null
+    required: null
+    help: Random seed
+    site: 88
+inputs:
+- id: input_01
+  path_template: '{args.sample_sheet}'
+  kind: tabular
+  format: csv
+  read_call:
+    fn: pd.read_csv
+    site: 357
+  header_dropped: false
+  resolution_confidence: high
+- id: input_02
+  path_template: '{args.clinical_meta}'
+  kind: tabular
+  format: csv
+  read_call:
+    fn: pd.read_csv
+    site: 360
+  header_dropped: false
+  resolution_confidence: high
+- id: input_03
+  path_template: '{pkl_path}'
+  kind: file
+  format: unknown
+  read_call:
+    fn: open
+    site: 394
+  header_dropped: false
+  resolution_confidence: medium
+outputs:
+- id: output_01
+  path_template: '{perf_path}'
+  kind: tabular
+  format: csv
+  write_call:
+    fn: perf_df.to_csv
+    site: 447
+  write_mode: overwrite
+  write_params:
+    sep: "\t"
+    index: false
+  resolution_confidence: medium
+- id: output_02
+  path_template: '{cpg_path}'
+  kind: tabular
+  format: csv
+  write_call:
+    fn: to_csv
+    site: 459
+  write_mode: overwrite
+  write_params:
+    sep: "\t"
+    index: false
+  resolution_confidence: medium
+- id: output_03
+  path_template: '{eaa_path}'
+  kind: tabular
+  format: csv
+  write_call:
+    fn: eaa_df.to_csv
+    site: 522
+  write_mode: overwrite
+  write_params:
+    sep: "\t"
+    index: false
+  resolution_confidence: medium
+- id: output_04
+  path_template: '{fpath}'
+  kind: artifact
+  format: multi
+  write_call:
+    fn: fig.savefig
+    site: 98
+  write_mode: overwrite
+  write_params:
+    sep: null
+    index: null
+  resolution_confidence: medium
+- id: output_05
+  path_template: '?'
+  kind: artifact
+  format: unknown
+  write_call:
+    fn: perf_df.to_string
+    site: 444
+  write_mode: overwrite
+  write_params:
+    sep: null
+    index: false
+  resolution_confidence: low
+package_resources: null
+env_vars_read: []
+env_vars_written: []
+dataframes:
+- id: clock_cpgs_df
+  site: 175
+  derived_from: null
+  transform:
+    op: chain_DataFrame
+    expr: 'pd.DataFrame({''cpg_locus_id'': mat.columns[coef_mask], ''coefficient'':
+      final_model.coef_[coef_mask]}).sort_values(''coefficient'', key=abs, ascending=False)'
+- id: sample_sheet
+  site: 357
+  origin: '{args.sample_sheet}'
+  origin_kind: file
+  transform:
+    op: read
+    fn: pd.read_csv
+- id: clinical
+  site: 360
+  origin: '{args.clinical_meta}'
+  origin_kind: file
+  transform:
+    op: read
+    fn: pd.read_csv
+- id: perf_df
+  site: 443
+  derived_from: null
+  transform:
+    op: chain_DataFrame
+    expr: pd.DataFrame(perf_records).sort_values('MAE')
+- id: eaa_df
+  site: 494
+  derived_from: null
+  transform:
+    op: chain_DataFrame
+    expr: 'pd.DataFrame({''sample'': all_in_matrix, ''predicted_age'': y_pred_all}).set_index(''sample'').join(meta)'
+- id: eaa_df
+  site: 500
+  derived_from:
+  - eaa_df
+  transform:
+    op: reset_index
+    expr: eaa_df.reset_index()
+transformations: []
+models:
+- id: final_model
+  site: 159
+  fn: ElasticNet
+  fit_site: 173
+  fit_args:
+  - X_scaled
+  - y
+  hyperparameters:
+    alpha: best_alpha
+    l1_ratio: best_l1_ratio
+    max_iter: 10000
+    random_state: seed
+- id: cv_model
+  site: 142
+  fn: ElasticNetCV
+  fit_site: 150
+  fit_args:
+  - X_scaled
+  - y
+  hyperparameters:
+    l1_ratio: l1_ratios
+    alphas: alphas
+    cv: loo
+    max_iter: 10000
+    random_state: seed
+    n_jobs: 1
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: null
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: null
+hardcoded_data: null
+external_binaries: []
+driver_pattern: null
+validation: null
+side_effects:
+- site: 60
+  kind: mkdir
+  paths:
+  - '?'
+- site: 64
+  kind: logging_config
+  detail: "logging.basicConfig(level=logging.INFO, format=fmt, handlers=[logging.FileHandler(log_file),\
+    \ logging.StreamHandler(sys.\u2026"
+- site: 336
+  kind: setwd
+  detail: os.chdir(args.project_root)
+- site: 354
+  kind: mkdir
+  paths:
+  - '?'
+environment:
+  python_packages:
+  - argparse
+  - logging
+  - os
+  - pickle
+  - sys
+  - time
+  - warnings
+  - datetime
+  - pathlib
+  - matplotlib
+  - numpy
+  - pandas
+  - scipy
+  - seaborn
+  - sklearn
+  container: null
+organism_inferred: null
+genome_build_declared: null
+compliance_checks:
+- rule: script-header-metadata
+  status: pass
+  evidence_sites:
+  - 1
+  note: null
+- rule: relative-paths-only
+  status: fail
+  evidence_sites: &id001
+  - 82
+  note: 1 CLI defaults are absolute paths
+- rule: forbidden-variable-names
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: seed-coverage
+  status: n/a
+  evidence_sites: []
+  note: no stochastic ops detected
+- rule: logging-dual-capture
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: raw-data-write
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: header-preserved
+  status: pass
+  evidence_sites: []
+  note: null
+- rule: hardcoded-contig
+  status: pass
+  evidence_sites: []
+  note: null
+audit_findings_preview:
+- severity: OK
+  rule: script-header-metadata
+  note: 'compliance check passed: script-header-metadata'
+- severity: WARNING
+  rule: relative-paths-only
+  sites: *id001
+  note: 1 CLI defaults are absolute paths
+- severity: OK
+  rule: forbidden-variable-names
+  note: 'compliance check passed: forbidden-variable-names'
+- severity: OK
+  rule: logging-dual-capture
+  note: 'compliance check passed: logging-dual-capture'
+- severity: OK
+  rule: raw-data-write
+  note: 'compliance check passed: raw-data-write'
+- severity: OK
+  rule: header-preserved
+  note: 'compliance check passed: header-preserved'
+- severity: OK
+  rule: hardcoded-contig
+  note: 'compliance check passed: hardcoded-contig'
+unresolved:
+- kind: round_1_python_scope
+  note: 'round 1 python: argparse, pandas I/O, side_effects, seed_policy, hardcoded_data,
+    five compliance checks (incl. 3 BLOCKERs). dataframes[]/transformations[]/models[]/figures[]/functions_defined[]
+    deferred.'

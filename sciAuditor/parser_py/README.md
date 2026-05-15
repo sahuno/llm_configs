@@ -71,35 +71,67 @@ Same surface as the R parser, language-adapted:
     docstring-aware (CLAUDE.md §2 says Python convention puts the
     `Author:` / `Date:` block in the module docstring; we accept that)
 
+## Round-2 additions
+
+- **`dataframes[]`** — every assignment whose RHS is a positive-listed
+  pandas op: `pd.read_*`, `pd.DataFrame`, `pd.Series`, `pd.merge`,
+  `pd.concat`, `pd.crosstab`, method calls in `DF_MUTATING_METHODS`
+  (`merge` / `join` / `drop` / `dropna` / `fillna` / `groupby` /
+  `agg` / `apply` / `assign` / `rename` / `reset_index` /
+  `set_index` / `sort_values` / `pivot*` / `melt` / `astype` /
+  `to_frame` / `select_dtypes` / `head` / `tail` / `sample` / …) on
+  a known frame, plus `df[mask]` / `df.loc[...]` / `df.iloc[...]`
+  subscripts. Walks method chains so
+  `pd.DataFrame({...}).sort_values(...)` and
+  `df.dropna().reset_index()` resolve to the right ancestor.
+  Scalar reductions (`sum` / `mean` / `len` / `shape` / `describe`)
+  short-circuit so plain summary statistics don't pollute the
+  lineage.
+
+- **`models[]`** — sklearn / statsmodels / scipy classes:
+  - 30+ sklearn classes (linear models / ensembles / trees / SVM /
+    NN / KNN / clustering / mixture / dim-reduction)
+  - statsmodels (`OLS` / `WLS` / `GLS` / `GLM` / `Logit` / `MNLogit` /
+    `Poisson` / `NegativeBinomial` / `MixedLM` / `PHReg` / `RLM`)
+  - `scipy.stats.linregress`
+
+  Captures the construction site and any subsequent `model.fit(X, y)`
+  call, plus an inline `random_state=` kwarg if present.
+  Hyperparameters extracted from constructor kwargs.
+
 ## What's deferred
 
-- `dataframes[]` and per-frame column lineage (§3.2) — pandas chains
-  are tractable statically but require deeper dataflow analysis
-- `transformations[]` predicate extraction
-- `models[]` (`sklearn.*().fit(X, y)`, `statsmodels.OLS(...)`,
-  `scipy.stats.linregress` etc.)
+- Predicate extraction for `transformations[]` with rows-before/after
+  counts (Layer B runtime trace work)
 - `figures[]` first-class enumeration (currently `savefig` lands in
   `outputs[]`)
 - `functions_defined[]`
-- `external_binaries[]` via `subprocess.run` — already a known idiom
-  in the lab; needs wiring
-- `pair_unit` from the launcher side — relies on
-  `parser_bash/sciauditor_bash.py` (Python-side analysis already
-  exposes its argparse signature, so a bash launcher can be paired
-  by re-using the same logic as the R pair composer; not yet wired)
+- `external_binaries[]` via `subprocess.run`
+- `pair_unit` from the launcher side
+- Heavily-nested chains like
+  `clinical.drop_duplicates(...).set_index(...)["dx_age"]` —
+  the outer Subscript whose base is a Call isn't yet walked through.
+  Round-1 misses about 2-3 such bindings per ~500-line script.
 
 ## Validated against
 
-`data/src/30_anchor_check_methylation.py` (231 lines): 5 argparse
-options (--bedmethyl-dir, --pattern, --anchors, --outdir, --log_dir)
-at lines 135-141, 1 pd.read_csv input at L72, 2 to_csv outputs at
-L201/214, 3 side_effects (mkdir + logging setLevel + mkdir). All 7
-compliance rules pass (the script implements the documented
-author/date/purpose block and uses CLAUDE.md-compliant
-FileHandler+StreamHandler logging).
+`data/src/30_anchor_check_methylation.py` (231 lines): A grade (7/7,
+100%). 5 argparse options at L135-141, 1 input, 2 outputs.
 
 `workflows/ont_modkit_pileup/scripts/aggregate_DNAme_across_regions.py`
-(268 lines): 2 inputs, 4 argparse options, **fires a real
-`forbidden-variable-names` WARNING at L146** for a top-level binding
-to `results` (one of CLAUDE.md's six banned names). Demonstrates that
-the parser catches an actual rule violation in a production script.
+(268 lines): C grade (5/7, 71%). Fires a real
+`forbidden-variable-names` finding at L146 for a `results = []`
+binding (function-local — still flagged per CLAUDE.md's any-scope
+rule).
+
+`scripts/AgingLINE1/src/04_clock_and_eaa.py` (539 lines): B grade
+(6/7, 86%). Catches:
+- **2 sklearn models** — `cv_model = ElasticNetCV(...)` at L142
+  with fit at L150 (hyperparameters: `l1_ratio`, `alphas`, `cv`,
+  `max_iter`, `random_state`, `n_jobs`); `final_model = ElasticNet(...)`
+  at L159 with fit at L173 (`alpha`, `l1_ratio`, `max_iter`,
+  `random_state`)
+- **6 dataframes** at L175/357/360/443/494/500 including chained
+  `pd.DataFrame({...}).sort_values(...)` constructions
+- 1 `relative-paths-only` WARNING for an absolute argparse default
+  at L82
