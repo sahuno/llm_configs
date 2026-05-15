@@ -1,0 +1,272 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 22_lm_meth_to_rna_apm
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/22_lm_meth_to_rna_apm.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:59-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --methylation_matrix
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/matrices/apm_primary.gene_primary.tsv
+      default_kind: absolute
+      help: 'Wide methylation matrix (rows=genes, cols=samples) [default: apm_primary]'
+      site: 22
+    - name: --tpm
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+      default_kind: absolute
+      help: TPM matrix (gene_id, gene_symbol, sample columns)
+      site: 25
+    - name: --definition
+      type: character
+      default: apm_primary
+      default_kind: relative
+      help: Tag used in output filenames
+      site: 28
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna
+      default_kind: absolute
+      help: Output directory
+      site: 30
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: Log directory
+      site: 33
+inputs:
+  - id: input_01
+    path_template: '{opt.methylation_matrix}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 57
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.tpm}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 60
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{out_tsv}'
+    write_call:
+      fn: fwrite
+      site: 153
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{out_pts}'
+    write_call:
+      fn: fwrite
+      site: 157
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: meth
+    site: 57
+    origin: '{opt.methylation_matrix}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tpm
+    site: 60
+    origin: '{opt.tpm}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tpm_rows
+    site: 87
+    derived_from:
+      - tpm
+    transform:
+      op: subset
+      expr: tpm[gene_symbol == g, ..tpm_samples]
+  - id: summary_dt
+    site: 138
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: points_dt
+    site: 139
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: label_dt
+    site: 168
+    derived_from:
+      - summary_dt
+    transform:
+      op: subset
+      expr: summary_dt[, .(gene, label = sprintf("R^2 == %.2f * ',' ~ italic(p) ==
+        %.2g * ',' ~ rho == %.2f", r2, slope_p, spearman))]
+transformations: []
+models:
+  - id: fit
+    site: 97
+    fn: lm
+    formula: log2_tpm ~ meth
+    count_data: d
+    col_data: ~
+    contrasts: []
+  - id: fi
+    site: 104
+    fn: lm
+    formula: log2_tpm ~ meth
+    count_data: ~
+    col_data: ~
+    contrasts: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 40
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+  - site: 41
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+  - site: 162
+    kind: mkdir
+    paths:
+      - '{fig_base}/{sub}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+    - ggplot2
+    - patchwork
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 22
+      - 25
+      - 30
+      - 33
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: fail
+    evidence_sites:
+      - .na.integer
+      - .na.integer
+    note: 'collisions: results'
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 45
+      - 46
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 22
+      - 25
+      - 30
+      - 33
+    note: 4 CLI defaults are absolute paths
+  - severity: WARNING
+    rule: forbidden-variable-names
+    sites:
+      - .na.integer
+      - .na.integer
+    note: 'collisions: results'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

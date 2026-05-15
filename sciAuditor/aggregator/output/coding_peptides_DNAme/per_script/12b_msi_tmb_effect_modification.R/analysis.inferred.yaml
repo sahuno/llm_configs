@@ -1,0 +1,316 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 12b_msi_tmb_effect_modification
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_12b_msi_tmb.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/12b_msi_tmb_effect_modification.R
+    language: R
+  binding:
+    - launcher_var: RESULTS_DIR
+      analysis_flag: --outdir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      site: launcher:15 → analysis:23
+    - launcher_var: LOG_DIR
+      analysis_flag: --log_dir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      site: launcher:16 → analysis:26
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/12b_msi_tmb_effect_modification.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:52-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --q9_merged
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q9_merged_predictors_clinical.tsv
+      default_kind: absolute
+      help: ~
+      site: 20
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      default_kind: absolute
+      help: ~
+      site: 23
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: ~
+      site: 26
+inputs:
+  - id: input_01
+    path_template: '{opt.q9_merged}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 66
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_cohort_availability.tsv'
+    write_call:
+      fn: fwrite
+      site: 84
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_cox_OS_by_tmb_tertile.tsv'
+    write_call:
+      fn: fwrite
+      site: 124
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_cox_interaction_tmb.tsv'
+    write_call:
+      fn: fwrite
+      site: 150
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_msi_descriptive.tsv'
+    write_call:
+      fn: fwrite
+      site: 162
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_cox_nlrc5_x_msi.tsv'
+    write_call:
+      fn: fwrite
+      site: 173
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_06
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12b_peptide_apm_tmb_interaction.tsv'
+    write_call:
+      fn: fwrite
+      site: 189
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: merged
+    site: 66
+    origin: '{opt.q9_merged}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: meth_set
+    site: 88
+    derived_from:
+      - merged
+    transform:
+      op: subset
+      expr: merged[!is.na(mean_apm_5mC) & !is.na(impact_tmb)]
+  - id: sub
+    site: 102
+    derived_from:
+      - meth_set
+    transform:
+      op: subset
+      expr: meth_set[tmb_tertile == tt & !is.na(get(pred)) & !is.na(os.month) & !is.na(os.event)
+        & os.month > 0]
+  - id: strat_res
+    site: 123
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sub
+    site: 131
+    derived_from:
+      - meth_set
+    transform:
+      op: subset
+      expr: meth_set[!is.na(get(pred)) & !is.na(impact_tmb) & !is.na(os.month) & !is.na(os.event)
+        & os.month > 0]
+  - id: int_res
+    site: 149
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: msi_desc
+    site: 155
+    derived_from:
+      - merged
+    transform:
+      op: subset
+      expr: merged[!is.na(mean_apm_5mC), .(n = .N, median_apm = median(mean_apm_5mC,
+        na.rm = TRUE), median_nlrc5 = median(nlrc5_pct_5mC, na.rm = TRUE), n_os_events
+        = sum(os.event > 0, na.rm = TRUE), median_os_mo...
+  - id: mss_h_sub
+    site: 166
+    derived_from:
+      - merged
+    transform:
+      op: subset
+      expr: merged[impact_msi %in% c("Stable", "Instable") & !is.na(nlrc5_pct_5mC)
+        & !is.na(os.month) & !is.na(os.event) & os.month > 0]
+  - id: pep_set
+    site: 182
+    derived_from:
+      - merged
+    transform:
+      op: subset
+      expr: merged[!is.na(mean_apm_5mC) & !is.na(impact_tmb) & !is.na(shannon_H)]
+  - id: fp
+    site: 197
+    derived_from:
+      - strat_res
+    transform:
+      op: subset
+      expr: strat_res[!is.na(HR) & is.finite(HR)]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 34
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}'
+  - site: 38
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+environment:
+  r_packages:
+    - optparse
+    - data.table
+    - ggplot2
+    - survival
+    - broom
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 20
+      - 23
+    note: 2 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 42
+      - 43
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 20
+      - 23
+    note: 2 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '1 analysis CLI option(s) not bound by launcher (will use defaults): --q9_merged'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

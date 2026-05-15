@@ -1,0 +1,8 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	14,16,19,21	4 CLI defaults are absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	raw-data-write		compliance check passed: raw-data-write
+OK	header-preserved		compliance check passed: header-preserved
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)

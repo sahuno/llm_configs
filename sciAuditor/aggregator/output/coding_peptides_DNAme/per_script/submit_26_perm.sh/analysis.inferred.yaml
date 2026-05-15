@@ -1,0 +1,115 @@
+analysis_unit:
+  id: submit_26_perm
+  kind: single
+audit_findings_preview:
+- note: missing Author/Date/Purpose in first 10 comments
+  rule: script-header-metadata
+  severity: NOTE
+  sites: &id001
+  - 1
+- note: 5 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id002
+  - 38
+  - 41
+  - 42
+  - 43
+  - 44
+compliance_checks:
+- evidence_sites: *id001
+  note: missing Author/Date/Purpose in first 10 comments
+  rule: script-header-metadata
+  status: fail
+- evidence_sites: *id002
+  note: 5 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+config_interface:
+  framework: shell_variables
+  options:
+  - default: $(echo "${SLURM_JOB_NAME}" | grep -oE '[0-9]+$' || true)
+    default_kind: relative
+    name: SUFFIX
+    site: 25
+  - default: $((1000 + 10#$(echo "${SLURM_JOB_NAME}" | grep -oE '[0-9]+$' || true)))
+    default_kind: relative
+    name: PERM_SEED
+    site: 27
+  - default: $(printf "%03d" "$((PERM_SEED - 1000))")
+    default_kind: relative
+    name: PERM_ID
+    site: 36
+  - default: perm_$(printf "%03d" "$((PERM_SEED - 1000))")_epdnew_genomewide
+    default_kind: relative
+    name: DEFINITION
+    site: 37
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/permutations
+    default_kind: absolute
+    name: OUTDIR
+    site: 38
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod
+    default_kind: absolute
+    name: BASE
+    site: 41
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme
+    default_kind: absolute
+    name: PROJECT_ROOT
+    site: 42
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts
+    default_kind: absolute
+    name: SCRIPTS
+    site: 43
+  - default: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+    default_kind: absolute
+    name: RSCRIPT
+    site: 44
+environment:
+  packages: null
+  shell: bash
+inputs: []
+invocation:
+  flags:
+  - flag: --ncores
+    value_resolved: ${SLURM_CPUS_PER_TASK}
+    value_var: SLURM_CPUS_PER_TASK
+  - flag: --permute_y_seed
+    value_resolved: $((1000 + 10#$(echo "${SLURM_JOB_NAME}" | grep -oE '[0-9]+$' ||
+      true)))
+    value_var: PERM_SEED
+  - flag: --definition
+    value_resolved: perm_$(printf "%03d" "$((PERM_SEED - 1000))")_epdnew_genomewide
+    value_var: DEFINITION
+  - flag: --outdir
+    value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/permutations
+    value_var: OUTDIR
+  invoker: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+  language: R
+  script: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/26_elasticnet_genomewide.R
+  site: 50
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-14T23:38:09-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_26_perm.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 18
+- kind: mkdir
+  paths:
+  - ${OUTDIR}
+  site: 39
+unresolved:
+- kind: round_1_bash_scope
+  note: 'round 1 bash: var assignments, mkdir/cd/export/set/source side_effects, single-shot
+    invocation detection, two compliance checks'

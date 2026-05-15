@@ -1,0 +1,368 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 17_epdnew_figures
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/17_epdnew_figures.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:56-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: none
+  options: []
+inputs:
+  - id: input_01
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/matrices/nlrc5_dual.region_wide.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 67
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_02
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results/merged_predictors.nlrc5_GENCODE_original.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 79
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_03
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results/merged_predictors.nlrc5_EPDnew_1.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 80
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_04
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results/merged_predictors.apm_primary.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 81
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_05
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results/merged_predictors.apm_primary_cgi.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 82
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_06
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/matrices/apm_primary.gene_primary.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 162
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_07
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/matrices/apm_primary_cgi.gene_primary.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 163
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 51
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 52
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 53
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: summ
+    site: 61
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: nlrc5_mat
+    site: 67
+    origin: '{OUT_BASE}/matrices/nlrc5_dual.region_wide.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: merged_gencode
+    site: 79
+    origin: '{OUT_BASE}/results/merged_predictors.nlrc5_GENCODE_original.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: merged_epd
+    site: 80
+    origin: '{OUT_BASE}/results/merged_predictors.nlrc5_EPDnew_1.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: merged_apm
+    site: 81
+    origin: '{OUT_BASE}/results/merged_predictors.apm_primary.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: merged_apm_cgi
+    site: 82
+    origin: '{OUT_BASE}/results/merged_predictors.apm_primary_cgi.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: forest_df
+    site: 89
+    derived_from:
+      - summ
+    transform:
+      op: subset
+      expr: summ[analysis == "Q9C_cox_OS" & predictor %in% c("NLRC5_5mC", "mean_pct_5mC"),
+        .(definition, gene_class, predictor, n, n_events, HR = estimate, lo = conf_low,
+        hi = conf_high, p_value)]
+  - id: forest_df
+    site: 110
+    derived_from:
+      - forest_df
+    transform:
+      op: subset
+      expr: forest_df[!is.na(pretty) & !is.na(HR)]
+  - id: forest_df
+    site: 112
+    derived_from:
+      - forest_df
+    transform:
+      op: subset
+      expr: forest_df[order(HR)]
+  - id: apm_primary
+    site: 162
+    origin: '{OUT_BASE}/matrices/apm_primary.gene_primary.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: apm_cgi
+    site: 163
+    origin: '{OUT_BASE}/matrices/apm_primary_cgi.gene_primary.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: ap_all
+    site: 172
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: ap_all
+    site: 173
+    derived_from:
+      - ap_all
+    transform:
+      op: subset
+      expr: ap_all[!is.na(pct_5mC)]
+  - id: sc_df
+    site: 211
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: km_all
+    site: 241
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sub
+    site: 261
+    derived_from:
+      - km_all
+    transform:
+      op: subset
+      expr: km_all[definition == dd]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: label_map
+    site: '97'
+    kind: string_list
+    count: 10
+    values:
+      nlrc5_GENCODE_original [NLRC5_5mC]: NLRC5 — GENCODE ±2kb (CGI)
+      nlrc5_GENCODE_original [mean_pct_5mC]: NLRC5 — GENCODE ±2kb (CGI) [mean]
+      nlrc5_EPDnew_1 [NLRC5_5mC]: NLRC5 — EPDnew ±500bp (non-CGI)
+      nlrc5_EPDnew_1 [mean_pct_5mC]: NLRC5 — EPDnew ±500bp (non-CGI) [mean]
+      apm_primary [NLRC5_5mC]: NLRC5 — EPDnew ±500bp (APM matrix)
+      apm_primary [mean_pct_5mC]: APM mean burden — EPDnew ±500bp
+      apm_primary_cgi [NLRC5_5mC]: NLRC5 — NA in CGI (dropped)
+      apm_primary_cgi [mean_pct_5mC]: APM mean burden — EPDnew ±500bp ∩ CGI
+      apm_all_mean_agg [NLRC5_5mC]: NLRC5 — EPDnew all-alt mean
+      apm_all_mean_agg [mean_pct_5mC]: APM mean burden — EPDnew all-alt mean
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 24
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}'
+  - site: 26
+    kind: mkdir
+    paths:
+      - '{LOG_DIR}'
+environment:
+  r_packages:
+    - data.table
+    - ggplot2
+    - ggrepel
+    - survival
+    - scales
+    - patchwork
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 31
+      - 32
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: OK
+    rule: relative-paths-only
+    note: 'compliance check passed: relative-paths-only'
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

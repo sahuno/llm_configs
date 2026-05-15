@@ -1,0 +1,444 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 29_fdr_genomewide
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/29_fdr_genomewide.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:38:05-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --obs
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/elasticnet_per_alpha.epdnew_genomewide.tsv
+      default_kind: absolute
+      help: ~
+      site: 29
+    - name: --perm_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/permutations
+      default_kind: absolute
+      help: ~
+      site: 31
+    - name: --perm_glob
+      type: character
+      default: elasticnet_per_alpha.perm_*_epdnew_genomewide.tsv
+      default_kind: relative
+      help: ~
+      site: 33
+    - name: --bed
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_genomewide/epdnew_genomewide_promoters.hg38.bed
+      default_kind: absolute
+      help: ~
+      site: 35
+    - name: --definition
+      type: character
+      default: epdnew_genomewide
+      default_kind: relative
+      help: ~
+      site: 37
+    - name: --m6_seedstab
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/seed_stability_agg.epdnew_genomewide_seed_stability_run2.tsv
+      default_kind: absolute
+      help: ~
+      site: 38
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna
+      default_kind: absolute
+      help: ~
+      site: 40
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: ~
+      site: 42
+inputs:
+  - id: input_01
+    path_template: '{opt.obs}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 58
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{fp}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 73
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_03
+    path_template: '{opt.bed}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 122
+    read_params:
+      header: no
+      col.names: c("chr", "start", "end", "name", "score", "strand")
+      skip: 1
+    header_dropped: yes
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{out_long}'
+    write_call:
+      fn: fwrite
+      site: 145
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{out_best}'
+    write_call:
+      fn: fwrite
+      site: 152
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: obs
+    site: 58
+    origin: '{opt.obs}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: obs
+    site: 59
+    derived_from:
+      - obs
+    transform:
+      op: subset
+      expr: obs[!is.na(q2_loocv) & alpha_name %in% c("ridge", "elastic_net", "lasso"),
+        .(gene, alpha_name, alpha, q2_loocv, pearson_r_loocv, spearman_r_loocv, n,
+        p, perm_seed = 0L)]
+  - id: d
+    site: 73
+    origin: '{fp}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: d
+    site: 74
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[!is.na(q2_loocv) & alpha_name %in% c("ridge", "elastic_net", "lasso"),
+        .(gene, alpha_name, q2_loocv, pearson_r_loocv, n, p, perm_seed)]
+  - id: perm
+    site: 78
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: obs_a
+    site: 98
+    derived_from:
+      - obs
+    transform:
+      op: subset
+      expr: obs[alpha_name == a]
+  - id: null_a
+    site: 99
+    derived_from:
+      - perm
+    transform:
+      op: subset
+      expr: perm[alpha_name == a, q2_loocv]
+  - id: fdr_dt
+    site: 115
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: best
+    site: 118
+    derived_from:
+      - fdr_dt
+    transform:
+      op: subset
+      expr: fdr_dt[, .SD[which.min(q_bh)], by = gene]
+  - id: bed
+    site: 122
+    origin: '{opt.bed}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: gene_pos
+    site: 129
+    derived_from:
+      - bed
+    transform:
+      op: subset
+      expr: bed[, .(chr = first(chr), pos = first(mid)), by = gene]
+  - id: gene_pos
+    site: 131
+    derived_from:
+      - gene_pos
+    transform:
+      op: subset
+      expr: gene_pos[chr %in% chrom_levels]
+  - id: chrom_size
+    site: 133
+    derived_from:
+      - gene_pos
+    transform:
+      op: subset
+      expr: gene_pos[, .(max_pos = max(pos)), by = chr]
+  - id: gene_pos
+    site: 135
+    derived_from:
+      - gene_pos
+      - chrom_size
+    transform:
+      op: merge
+      by:
+        - chr
+  - id: fdr_dt
+    site: 137
+    derived_from:
+      - fdr_dt
+      - gene_pos
+    transform:
+      op: merge
+      by:
+        - gene
+  - id: best
+    site: 138
+    derived_from:
+      - best
+      - gene_pos
+    transform:
+      op: merge
+      by:
+        - gene
+  - id: chrom_centers
+    site: 141
+    derived_from:
+      - gene_pos
+    transform:
+      op: subset
+      expr: gene_pos[, .(center = (min(x_cum) + max(x_cum))/2), by = chr]
+  - id: qq_dt
+    site: 201
+    derived_from:
+      - fdr_dt
+    transform:
+      op: subset
+      expr: fdr_dt[!is.na(p_emp)]
+  - id: lambda_gc
+    site: 206
+    derived_from:
+      - qq_dt
+    transform:
+      op: subset
+      expr: qq_dt[, .(lambda_gc = median(qchisq(1 - p_emp, df = 1), na.rm = TRUE)/qchisq(0.5,
+        1)), by = alpha_name]
+  - id: apm_sub
+    site: 282
+    derived_from:
+      - best
+    transform:
+      op: subset
+      expr: best[gene %in% apm_genes & !is.na(x_cum)]
+  - id: m6_sub
+    site: 283
+    derived_from:
+      - best
+    transform:
+      op: subset
+      expr: best[gene %in% m6_stable & !is.na(x_cum)]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: apm_genes
+    site: '158'
+    kind: curated_geneset
+    count: 13
+    values:
+      - NLRC5
+      - B2M
+      - PSMB8
+      - PSMB9
+      - HLA-A
+      - HLA-B
+      - HLA-C
+      - TAP1
+      - TAP2
+      - TAPBP
+      - CALR
+      - PDIA3
+      - ERAP1
+    citations: ~
+  - id: m6_stable
+    site: '160'
+    kind: curated_geneset
+    count: 11
+    values:
+      - CDH17
+      - CKMT2
+      - FRRS1L
+      - DPEP1
+      - GRAMD1B
+      - CCL24
+      - S100A5
+      - NFE4
+      - LILRA6
+      - ADGRG7
+      - FBXL22
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 47
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+  - site: 48
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+  - site: 165
+    kind: mkdir
+    paths:
+      - '{fig_base}/{sub}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+    - ggplot2
+    - scales
+    - ggrepel
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 29
+      - 31
+      - 35
+      - 38
+      - 40
+      - 42
+    note: 6 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: fail
+    evidence_sites:
+      - .na.integer
+    note: 'collisions: results'
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: fail
+    evidence_sites:
+      - 122
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 29
+      - 31
+      - 35
+      - 38
+      - 40
+      - 42
+    note: 6 CLI defaults are absolute paths
+  - severity: WARNING
+    rule: forbidden-variable-names
+    sites:
+      - .na.integer
+    note: 'collisions: results'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: BLOCKER
+    rule: header-preserved
+    sites:
+      - 122
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

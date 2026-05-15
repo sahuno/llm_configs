@@ -1,0 +1,9 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	11,15,19,23	4 CLI defaults are absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	raw-data-write		compliance check passed: raw-data-write
+OK	header-preserved		compliance check passed: header-preserved
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+OK	logging-dual-capture		compliance check passed: logging-dual-capture
+NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm

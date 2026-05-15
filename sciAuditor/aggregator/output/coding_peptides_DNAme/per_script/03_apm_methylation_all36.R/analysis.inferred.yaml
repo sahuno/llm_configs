@@ -1,0 +1,429 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 03_apm_methylation_all36
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_03_apm_all36.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/03_apm_methylation_all36.R
+    language: R
+  binding:
+    - launcher_var: RESULTS_DIR
+      analysis_flag: --outdir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      site: launcher:17 → analysis:20
+    - launcher_var: LOG_DIR
+      analysis_flag: --log_dir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      site: launcher:18 → analysis:24
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/03_apm_methylation_all36.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:43-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --methylation_wide
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/promoter_methylation_wide_up2kb_down200bp_minCov5.hg38.tsv
+      default_kind: absolute
+      help: 'Path to wide promoter methylation matrix [default: %default]'
+      site: 12
+    - name: --tpm
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+      default_kind: absolute
+      help: 'Path to RNA-seq TPM matrix [default: %default]'
+      site: 16
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      default_kind: absolute
+      help: 'Output directory [default: %default]'
+      site: 20
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: 'Log directory [default: %default]'
+      site: 24
+inputs:
+  - id: input_01
+    path_template: '{opt.methylation_wide}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 116
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.tpm}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 160
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 106
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 107
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 108
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q2exp_apm_burden_all36_tumors.tsv'
+    write_call:
+      fn: fwrite
+      site: 476
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q2exp_pergene_meth_vs_tpm_expanded.tsv'
+    write_call:
+      fn: fwrite
+      site: 480
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_06
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q2exp_apm_meth_tpm_persample.tsv'
+    write_call:
+      fn: fwrite
+      site: 484
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_07
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q2exp_tumor_vs_wholeblood_summary.tsv'
+    write_call:
+      fn: fwrite
+      site: 493
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: meth_wide
+    site: 116
+    origin: '{opt.methylation_wide}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: apm_meth
+    site: 126
+    derived_from:
+      - meth_wide
+    transform:
+      op: subset
+      expr: meth_wide[gene_symbol_meth %in% apm_genes$gene_symbol]
+  - id: apm_long_all
+    site: 152
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: tpm_dt
+    site: 160
+    origin: '{opt.tpm}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: apm_tpm
+    site: 166
+    derived_from:
+      - tpm_dt
+    transform:
+      op: subset
+      expr: tpm_dt[gene_symbol %in% apm_genes$gene_symbol]
+  - id: apm_meth_tpm
+    site: 208
+    derived_from: ~
+    transform:
+      op: merge
+      by: ~
+  - id: pergene_meth_tpm
+    site: 219
+    derived_from:
+      - apm_meth_tpm
+    transform:
+      op: subset
+      expr: apm_meth_tpm[, { complete <- !is.na(pct_5mC) & !is.na(tpm) n_complete
+        <- sum(complete) if (n_complete >= 5 & length(unique(pct_5mC[complete])) >
+        1 & length(unique(tpm[complete])) > 1) { ct <- cor.tes...
+  - id: pergene_meth_tpm
+    site: 229
+    derived_from:
+      - pergene_meth_tpm
+    transform:
+      op: merge
+      by: ~
+  - id: heatmap_mat
+    site: 240
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: hm
+    site: 246
+    derived_from:
+      - heatmap_mat
+    transform:
+      op: subset
+      expr: heatmap_mat[row_keep, col_keep, drop = FALSE]
+  - id: hm_ext
+    site: 276
+    derived_from:
+      - hm
+    transform:
+      op: rbind
+  - id: apm_long_plot
+    site: 310
+    derived_from: ~
+    transform:
+      op: merge
+      by: ~
+  - id: paired_dt
+    site: 347
+    derived_from:
+      - apm_long_all
+    transform:
+      op: subset
+      expr: apm_long_all[patient_id %in% paired_patients & !is.na(pct_5mC)]
+  - id: nlrc5_vs_targets
+    site: 374
+    derived_from: ~
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: nlrc5_corr
+    site: 381
+    derived_from:
+      - nlrc5_vs_targets
+    transform:
+      op: subset
+      expr: nlrc5_vs_targets[, { if (.N >= 5 & length(unique(nlrc5_5mC)) > 1 & length(unique(log2_tpm))
+        > 1) { ct <- cor.test(nlrc5_5mC, log2_tpm, method = "spearman", exact = FALSE)
+        list(rho = round(ct$estimate...
+  - id: nlrc5_vs_targets
+    site: 389
+    derived_from:
+      - nlrc5_vs_targets
+      - nlrc5_corr
+    transform:
+      op: merge
+      by:
+        - gene_symbol
+  - id: plot_dt
+    site: 447
+    derived_from:
+      - apm_meth_tpm
+    transform:
+      op: subset
+      expr: apm_meth_tpm[!is.na(pct_5mC) & !is.na(tpm)]
+  - id: plot_dt
+    site: 451
+    derived_from:
+      - plot_dt
+      - pergene_meth_tpm
+    transform:
+      op: merge
+      by:
+        - gene_symbol_meth
+  - id: paired_summary
+    site: 489
+    derived_from:
+      - apm_long_all
+    transform:
+      op: subset
+      expr: apm_long_all[patient_id %in% paired_patients & !is.na(pct_5mC), .(mean_5mC
+        = mean(pct_5mC), median_5mC = median(pct_5mC), n = .N), by = .(gene_symbol_meth,
+        sample_type)]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: nlrc5_targets
+    site: '371'
+    kind: curated_geneset
+    count: 9
+    values:
+      - HLA-A
+      - HLA-B
+      - HLA-C
+      - B2M
+      - TAP1
+      - TAP2
+      - TAPBP
+      - PSMB8
+      - PSMB9
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 40
+    kind: mkdir
+    paths:
+      - '{LOG_DIR}'
+  - site: 89
+    kind: mkdir
+    paths:
+      - '{d}'
+environment:
+  r_packages:
+    - optparse
+    - data.table
+    - ggplot2
+    - ggrepel
+    - pheatmap
+    - RColorBrewer
+    - stats
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 12
+      - 16
+      - 20
+    note: 3 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 43
+      - 44
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 12
+      - 16
+      - 20
+    note: 3 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '2 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide,
+      --tpm'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

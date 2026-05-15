@@ -1,0 +1,235 @@
+schema_version: '0.2'
+analysis_unit:
+  id: plot_sample_overlap_v2
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/plot_sample_overlap_v2.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:38:09-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: none
+  options: []
+inputs:
+  - id: input_01
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/promoter_methylation_wide_up2kb_down200bp_minCov5.hg38.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: read_tsv
+      site: 19
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_02
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: read_tsv
+      site: 30
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_03
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/gene_peptide_counts_annotated.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: read_tsv
+      site: 41
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 123
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: methyl_wide
+    site: 19
+    origin: '{outdir}/promoter_methylation_wide_up2kb_down200bp_minCov5.hg38.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: read_tsv
+  - id: rna_wide
+    site: 30
+    origin: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+    origin_kind: file
+    transform:
+      op: read
+      fn: read_tsv
+  - id: pep_wide
+    site: 41
+    origin: '{outdir}/gene_peptide_counts_annotated.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: read_tsv
+  - id: all_df
+    site: 52
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: available_df
+    site: 66
+    derived_from:
+      - all_df
+    transform:
+      op: pipe
+      expr: all_df %>% select(patient_id, modality, sample_type) %>% distinct() %>%
+        mutate(available = 1)
+  - id: grid_df
+    site: 71
+    derived_from:
+      - available_df
+    transform:
+      op: pipe
+      expr: grid_df %>% left_join(available_df, by = c("patient_id", "modality", "sample_type"))
+        %>% mutate(available = replace_na(available, 0), Status = factor(ifelse(available
+        == 1, "Available", "Missing"), l...
+  - id: patient_completeness
+    site: 85
+    derived_from:
+      - grid_df
+    transform:
+      op: pipe
+      expr: grid_df %>% group_by(patient_id) %>% summarise(n_available = sum(available),
+        .groups = "drop") %>% arrange(desc(n_available), patient_id)
+  - id: tumor_3way
+    site: 93
+    derived_from:
+      - grid_df
+    transform:
+      op: pipe
+      expr: grid_df %>% filter(sample_type == "Tumor", available == 1) %>% group_by(patient_id)
+        %>% summarise(n_tumor_modalities = n_distinct(modality), .groups = "drop")
+        %>% filter(n_tumor_modalities == 3) %>% ...
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: track_order
+    site: '78'
+    kind: string_list
+    count: 5
+    values:
+      - Methylation (Tumor)
+      - Methylation (Normal)
+      - RNA-seq (Tumor)
+      - RNA-seq (Normal)
+      - Peptides (Tumor)
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 11
+    kind: mkdir
+    paths:
+      - '{outdir}/figures/{fmt}'
+environment:
+  r_packages:
+    - tidyverse
+  container: ~
+organism_inferred: ~
+genome_build_declared: hg38
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: no log-capture setup detected
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: OK
+    rule: relative-paths-only
+    note: 'compliance check passed: relative-paths-only'
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: no log-capture setup detected
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

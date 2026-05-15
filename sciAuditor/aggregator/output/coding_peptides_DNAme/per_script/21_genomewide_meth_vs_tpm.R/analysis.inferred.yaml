@@ -1,0 +1,337 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 21_genomewide_meth_vs_tpm
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_genomewide_epdnew.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/21_genomewide_meth_vs_tpm.R
+    language: R
+  binding: []
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/21_genomewide_meth_vs_tpm.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:59-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: none
+  options: []
+inputs:
+  - id: input_01
+    path_template: '{BED_PATH}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 73
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "name", "score", "strand")
+      skip: 1.0
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_02
+    path_template: '{f}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 96
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "cov", "pct_mod", "promoter_id")
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_03
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 127
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 62
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 63
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: multi
+    path_template: '{p}'
+    write_call:
+      fn: ggsave
+      site: 64
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{long_out}'
+    write_call:
+      fn: fwrite
+      site: 120
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{joined_out}'
+    write_call:
+      fn: fwrite
+      site: 153
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_06
+    kind: tabular
+    format: tsv
+    path_template: '{RESULTS}/Q11gw_per_sample_spearman.tsv'
+    write_call:
+      fn: fwrite
+      site: 170
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: bed
+    site: 73
+    origin: '{BED_PATH}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: dt
+    site: 96
+    origin: '{f}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: agg
+    site: 104
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: agg
+    site: 110
+    derived_from:
+      - agg
+      - bed
+    transform:
+      op: merge
+      by:
+        - promoter_id
+  - id: tpm_raw
+    site: 127
+    origin: '{TPM_PATH}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tpm_sym
+    site: 132
+    derived_from:
+      - tpm_raw
+    transform:
+      op: subset
+      expr: tpm_raw[, lapply(.SD, function(x) sum(as.numeric(x), na.rm = TRUE)), by
+        = gene_symbol, .SDcols = tpm_cols]
+  - id: df
+    site: 142
+    derived_from:
+      - agg
+    transform:
+      op: merge
+      by:
+        - gene_symbol
+        - patient_id
+  - id: df
+    site: 149
+    derived_from:
+      - df
+    transform:
+      op: subset
+      expr: df[!is.na(weighted_mean_pct) & !is.na(log2_tpm)]
+  - id: per_sample
+    site: 160
+    derived_from:
+      - df
+    transform:
+      op: subset
+      expr: df[, { if (.N >= 10 && var(weighted_mean_pct) > 0 && var(log2_tpm) > 0)
+        { ct <- suppressWarnings(cor.test(weighted_mean_pct, log2_tpm, method = "spearman",
+        exact = FALSE)) .(n = .N, rho = unname(ct$e...
+  - id: d
+    site: 184
+    derived_from:
+      - df
+    transform:
+      op: subset
+      expr: df[patient_id == pt]
+  - id: st
+    site: 185
+    derived_from:
+      - per_sample
+    transform:
+      op: subset
+      expr: per_sample[patient_id == pt]
+  - id: df_plot
+    site: 232
+    derived_from:
+      - df
+      - per_sample
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: facet_levels
+    site: 237
+    derived_from:
+      - per_sample
+    transform:
+      op: subset
+      expr: per_sample[order(rho), patient_id]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 29
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}'
+  - site: 30
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}/per_sample'
+  - site: 32
+    kind: mkdir
+    paths:
+      - '{RESULTS}'
+  - site: 33
+    kind: mkdir
+    paths:
+      - '{LOG_DIR}'
+environment:
+  r_packages:
+    - data.table
+    - ggplot2
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 38
+      - 39
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: OK
+    rule: relative-paths-only
+    note: 'compliance check passed: relative-paths-only'
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

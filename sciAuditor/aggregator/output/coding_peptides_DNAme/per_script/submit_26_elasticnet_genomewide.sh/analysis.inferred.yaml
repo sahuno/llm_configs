@@ -1,0 +1,80 @@
+analysis_unit:
+  id: submit_26_elasticnet_genomewide
+  kind: single
+audit_findings_preview:
+- note: missing Author/Date/Purpose in first 10 comments
+  rule: script-header-metadata
+  severity: NOTE
+  sites: &id001
+  - 1
+- note: 4 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id002
+  - 19
+  - 20
+  - 21
+  - 22
+compliance_checks:
+- evidence_sites: *id001
+  note: missing Author/Date/Purpose in first 10 comments
+  rule: script-header-metadata
+  status: fail
+- evidence_sites: *id002
+  note: 4 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+config_interface:
+  framework: shell_variables
+  options:
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod
+    default_kind: absolute
+    name: BASE
+    site: 19
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme
+    default_kind: absolute
+    name: PROJECT_ROOT
+    site: 20
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts
+    default_kind: absolute
+    name: SCRIPTS
+    site: 21
+  - default: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+    default_kind: absolute
+    name: RSCRIPT
+    site: 22
+environment:
+  packages: null
+  shell: bash
+inputs: []
+invocation:
+  flags:
+  - flag: --ncores
+    value_resolved: ${SLURM_CPUS_PER_TASK}
+    value_var: SLURM_CPUS_PER_TASK
+  invoker: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+  language: R
+  script: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/26_elasticnet_genomewide.R
+  site: 27
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-14T23:38:09-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_26_elasticnet_genomewide.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 16
+unresolved:
+- kind: round_1_bash_scope
+  note: 'round 1 bash: var assignments, mkdir/cd/export/set/source side_effects, single-shot
+    invocation detection, two compliance checks'

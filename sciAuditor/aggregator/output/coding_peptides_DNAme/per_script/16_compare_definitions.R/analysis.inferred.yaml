@@ -1,0 +1,195 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 16_compare_definitions
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/16_compare_definitions.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:55-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --results_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results
+      default_kind: absolute
+      help: ~
+      site: 14
+    - name: --gencode_reference
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q9_cox_survival.tsv
+      default_kind: absolute
+      help: Existing Q9 Cox/KM results (GENCODE ±2kb) for appending reference rows
+      site: 16
+    - name: --out
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/results/comparison_across_definitions.tsv
+      default_kind: absolute
+      help: ~
+      site: 19
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: ~
+      site: 21
+inputs: []
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{opt.out}'
+    write_call:
+      fn: fwrite
+      site: 49
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{wide_path}'
+    write_call:
+      fn: fwrite
+      site: 51
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: all_rows
+    site: 40
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: key_dt
+    site: 60
+    derived_from:
+      - all_rows
+    transform:
+      op: subset
+      expr: all_rows[analysis %in% key, .(definition, analysis, predictor, n, estimate
+        = round(estimate, 3), p_value = signif(p_value, 3))]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: key
+    site: '58'
+    kind: sample_id_list
+    count: 5
+    values:
+      - Q9C_cox_OS
+      - Q9C_cox_OS_MSS_only
+      - Q9A_wilcoxon_response
+      - Q2A_spearman_burden_vs_pepN
+      - Q2C_spearman_NLRC5_vs_pepN
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 26
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 14
+      - 16
+      - 19
+      - 21
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 14
+      - 16
+      - 19
+      - 21
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

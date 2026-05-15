@@ -1,0 +1,8 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	32,34,36,38,45,47	6 CLI defaults are absolute paths
+WARNING	forbidden-variable-names	NA	collisions: results
+OK	raw-data-write		compliance check passed: raw-data-write
+BLOCKER	header-preserved	81	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)

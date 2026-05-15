@@ -1,0 +1,8 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	17,19,22,31,33	5 CLI defaults are absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	raw-data-write		compliance check passed: raw-data-write
+BLOCKER	header-preserved	93	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+OK	logging-dual-capture		compliance check passed: logging-dual-capture

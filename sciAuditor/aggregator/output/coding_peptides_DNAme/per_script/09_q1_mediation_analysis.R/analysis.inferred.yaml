@@ -1,0 +1,488 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 09_q1_mediation_analysis
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_09_q1_mediation.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/09_q1_mediation_analysis.R
+    language: R
+  binding:
+    - launcher_var: RESULTS_DIR
+      analysis_flag: --outdir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      site: launcher:17 → analysis:37
+    - launcher_var: LOG_DIR
+      analysis_flag: --log_dir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      site: launcher:18 → analysis:45
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/09_q1_mediation_analysis.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:48-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --methylation_wide
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/promoter_methylation_wide_up2kb_down200bp_minCov5.hg38.tsv
+      default_kind: absolute
+      help: 'Path to wide promoter methylation matrix [default: %default]'
+      site: 25
+    - name: --peptide_counts
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/gene_peptide_counts_annotated.tsv
+      default_kind: absolute
+      help: 'Path to gene_peptide_counts_annotated.tsv [default: %default]'
+      site: 29
+    - name: --tpm
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+      default_kind: absolute
+      help: 'Path to TPM matrix [default: %default]'
+      site: 33
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      default_kind: absolute
+      help: 'Output directory [default: %default]'
+      site: 37
+    - name: --n_boot
+      type: integer
+      default: 1000.0
+      default_kind: ~
+      help: 'Bootstrap iterations for mediation CIs [default: %default]'
+      site: 41
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: 'Log directory [default: %default]'
+      site: 45
+inputs:
+  - id: input_01
+    path_template: '{opt.methylation_wide}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 142
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.peptide_counts}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 156
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_03
+    path_template: '{opt.tpm}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 168
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: multi
+    path_template: .na.character
+    write_call:
+      fn: ggsave
+      site: 126
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_02
+    kind: tabular
+    format: multi
+    path_template: .na.character
+    write_call:
+      fn: ggsave
+      site: 128
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_03
+    kind: tabular
+    format: multi
+    path_template: .na.character
+    write_call:
+      fn: ggsave
+      site: 130
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q1_pergene_data_completeness.tsv'
+    write_call:
+      fn: fwrite
+      site: 206
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q1_mediation_pergene_results.tsv'
+    write_call:
+      fn: fwrite
+      site: 289
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_06
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q1_mediation_pooled_by_category.tsv'
+    write_call:
+      fn: fwrite
+      site: 347
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: meth_wide
+    site: 142
+    origin: '{opt.methylation_wide}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: cand_meth
+    site: 145
+    derived_from:
+      - meth_wide
+    transform:
+      op: subset
+      expr: meth_wide[gene_symbol_meth %in% candidate_genes$gene_symbol]
+  - id: pep_dt
+    site: 156
+    origin: '{opt.peptide_counts}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tpm_dt
+    site: 168
+    origin: '{opt.tpm}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: combined
+    site: 179
+    derived_from: ~
+    transform:
+      op: merge
+      by:
+        - patient_id
+        - gene_symbol
+  - id: combined
+    site: 184
+    derived_from:
+      - combined
+    transform:
+      op: merge
+      by:
+        - patient_id
+        - gene_symbol
+  - id: combined
+    site: 190
+    derived_from:
+      - combined
+    transform:
+      op: merge
+      by:
+        - gene_symbol
+  - id: per_gene_n
+    site: 196
+    derived_from:
+      - combined
+    transform:
+      op: subset
+      expr: combined[!is.na(pct_5mC) & !is.na(tpm), .(n_complete = .N, var_meth =
+        var(pct_5mC, na.rm = TRUE), var_tpm = var(log2_tpm, na.rm = TRUE), n_with_peptide
+        = sum(peptide_count > 0)), by = .(gene_symbol, ...
+  - id: per_gene_n
+    site: 202
+    derived_from:
+      - per_gene_n
+    transform:
+      op: subset
+      expr: per_gene_n[order(-n_complete)]
+  - id: eligible_genes
+    site: 214
+    derived_from:
+      - per_gene_n
+    transform:
+      op: subset
+      expr: per_gene_n[n_complete >= 5 & var_meth > 0 & var_tpm > 0, gene_symbol]
+  - id: pergene_results
+    site: 275
+    derived_from:
+      - eligible_genes
+      - combined
+    transform:
+      op: rbind
+  - id: d
+    site: 276
+    derived_from:
+      - combined
+    transform:
+      op: subset
+      expr: combined[gene_symbol == g]
+  - id: pergene_results
+    site: 282
+    derived_from:
+      - pergene_results
+    transform:
+      op: merge
+      by:
+        - gene_symbol
+  - id: pergene_results
+    site: 284
+    derived_from:
+      - pergene_results
+    transform:
+      op: subset
+      expr: pergene_results[order(indirect_p)]
+  - id: d
+    site: 300
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[!is.na(pct_5mC) & !is.na(tpm)]
+  - id: pooled_results
+    site: 339
+    derived_from:
+      - d
+      - combined
+    transform:
+      op: rbind
+  - id: d
+    site: 340
+    derived_from:
+      - combined
+    transform:
+      op: subset
+      expr: combined[category == cat]
+  - id: valid_results
+    site: 355
+    derived_from:
+      - pergene_results
+    transform:
+      op: subset
+      expr: pergene_results[is.na(error) & !is.na(indirect_effect)]
+  - id: forest_dt
+    site: 359
+    derived_from:
+      - valid_results
+    transform:
+      op: subset
+      expr: valid_results[, .(gene_symbol, category, indirect_effect, indirect_ci_lower,
+        indirect_ci_upper, indirect_p)]
+  - id: forest_dt
+    site: 362
+    derived_from:
+      - forest_dt
+    transform:
+      op: subset
+      expr: forest_dt[order(category, indirect_effect)]
+  - id: prop_dt
+    site: 383
+    derived_from:
+      - valid_results
+    transform:
+      op: subset
+      expr: valid_results[!is.na(proportion_mediated)]
+  - id: prop_dt
+    site: 384
+    derived_from:
+      - prop_dt
+    transform:
+      op: subset
+      expr: prop_dt[order(category, -proportion_mediated)]
+  - id: scatter_dt
+    site: 407
+    derived_from:
+      - combined
+    transform:
+      op: subset
+      expr: combined[gene_symbol %in% top_candidates & !is.na(pct_5mC) & !is.na(tpm)]
+  - id: pooled_valid
+    site: 490
+    derived_from:
+      - pooled_results
+    transform:
+      op: subset
+      expr: pooled_results[is.na(error)]
+transformations: []
+models:
+  - id: total_model
+    site: 251
+    fn: lm
+    formula: peptide_count ~ pct_5mC
+    count_data: d
+    col_data: ~
+    contrasts: []
+  - id: m_model
+    site: 308
+    fn: lm
+    formula: log2_tpm ~ pct_5mC + factor(gene_symbol)
+    count_data: d
+    col_data: ~
+    contrasts: []
+  - id: y_model
+    site: 309
+    fn: lm
+    formula: peptide_count ~ pct_5mC + log2_tpm + factor(gene_symbol)
+    count_data: d
+    col_data: ~
+    contrasts: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 61
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}'
+  - site: 65
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+environment:
+  r_packages:
+    - optparse
+    - data.table
+    - ggplot2
+    - ggrepel
+    - mediation
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 25
+      - 29
+      - 33
+      - 37
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 69
+      - 70
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 25
+      - 29
+      - 33
+      - 37
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '4 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide,
+      --peptide_counts, --tpm, --n_boot'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

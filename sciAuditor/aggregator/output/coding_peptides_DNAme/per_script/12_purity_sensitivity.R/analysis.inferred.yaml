@@ -1,0 +1,396 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 12_purity_sensitivity
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_12_purity_sensitivity.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/12_purity_sensitivity.R
+    language: R
+  binding:
+    - launcher_var: RESULTS_DIR
+      analysis_flag: --outdir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      site: launcher:15 → analysis:31
+    - launcher_var: LOG_DIR
+      analysis_flag: --log_dir
+      value_resolved: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      site: launcher:16 → analysis:34
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/12_purity_sensitivity.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:51-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --q9_merged
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q9_merged_predictors_clinical.tsv
+      default_kind: absolute
+      help: Q9 merged per-patient table with clinical + predictors + purity
+      site: 19
+    - name: --q1_pergene
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q2exp_apm_meth_tpm_persample.tsv
+      default_kind: absolute
+      help: Per-gene APM methylation + TPM for Q1 path A (n=36 tumors)
+      site: 23
+    - name: --q1_3way
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q2_apm_3way_meth_tpm_peptide.tsv
+      default_kind: absolute
+      help: Per-gene methylation × TPM × peptide for Q1 mediation (n=9 tumors)
+      site: 27
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      default_kind: absolute
+      help: ~
+      site: 31
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: ~
+      site: 34
+inputs:
+  - id: input_01
+    path_template: '{opt.q9_merged}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 75
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.q1_pergene}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 148
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_03
+    path_template: '{opt.q1_3way}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 192
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12_purity_adjusted_spearman.tsv'
+    write_call:
+      fn: fwrite
+      site: 143
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12_path_a_purity_adjusted.tsv'
+    write_call:
+      fn: fwrite
+      site: 187
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12_total_effect_purity_adjusted.tsv'
+    write_call:
+      fn: fwrite
+      site: 224
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{OUTDIR}/Q12_q9_cox_purity_adjusted.tsv'
+    write_call:
+      fn: fwrite
+      site: 273
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: merged
+    site: 75
+    origin: '{opt.q9_merged}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: q2q3_res
+    site: 142
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: pg
+    site: 148
+    origin: '{opt.q1_pergene}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: pg
+    site: 149
+    derived_from:
+      - pg
+      - merged
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: sub
+    site: 154
+    derived_from:
+      - pg
+    transform:
+      op: subset
+      expr: pg[gene_symbol_meth == g & !is.na(pct_5mC) & !is.na(log2_tpm)]
+  - id: sub_adj
+    site: 164
+    derived_from:
+      - sub
+    transform:
+      op: subset
+      expr: sub[!is.na(purity_composite)]
+  - id: path_a_res
+    site: 185
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: tw
+    site: 192
+    origin: '{opt.q1_3way}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tw
+    site: 194
+    derived_from:
+      - tw
+      - merged
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: sub
+    site: 198
+    derived_from:
+      - tw
+    transform:
+      op: subset
+      expr: tw[gene_symbol_meth == g & !is.na(pct_5mC) & !is.na(peptide_count)]
+  - id: sub_adj
+    site: 206
+    derived_from:
+      - sub
+    transform:
+      op: subset
+      expr: sub[!is.na(purity_composite)]
+  - id: total_res
+    site: 222
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sub
+    site: 236
+    derived_from:
+      - merged
+    transform:
+      op: subset
+      expr: merged[!is.na(get(pred)) & !is.na(get(tcol)) & !is.na(get(ecol)) & get(tcol)
+        > 0]
+  - id: sub_adj
+    site: 247
+    derived_from:
+      - sub
+    transform:
+      op: subset
+      expr: sub[!is.na(purity_composite)]
+  - id: cox_sens
+    site: 272
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: fdf
+    site: 294
+    derived_from:
+      - cox_sens
+    transform:
+      op: subset
+      expr: cox_sens[, .(predictor, outcome, HR_raw, HR_adj, ci_low_raw, ci_high_raw,
+        ci_low_adj, ci_high_adj)]
+  - id: long
+    site: 295
+    derived_from:
+      - fdf
+    transform:
+      op: rbind
+  - id: long
+    site: 300
+    derived_from:
+      - long
+    transform:
+      op: subset
+      expr: long[!is.na(HR) & is.finite(HR)]
+  - id: pad
+    site: 315
+    derived_from:
+      - path_a_res
+    transform:
+      op: subset
+      expr: path_a_res[!is.na(slope_adj)]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 42
+    kind: mkdir
+    paths:
+      - '{FIGDIR}/{ext}'
+  - site: 46
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+environment:
+  r_packages:
+    - optparse
+    - data.table
+    - ggplot2
+    - survival
+    - broom
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 19
+      - 23
+      - 27
+      - 31
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 50
+      - 51
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 19
+      - 23
+      - 27
+      - 31
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '3 analysis CLI option(s) not bound by launcher (will use defaults): --q9_merged,
+      --q1_pergene, --q1_3way'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

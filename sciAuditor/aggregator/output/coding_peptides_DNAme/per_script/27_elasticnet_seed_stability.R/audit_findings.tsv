@@ -1,0 +1,9 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	26,28,30,32,41,43	6 CLI defaults are absolute paths
+WARNING	forbidden-variable-names	NA	collisions: results
+OK	raw-data-write		compliance check passed: raw-data-write
+BLOCKER	header-preserved	83	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
+NOTE	pair-binding-coverage		11 analysis CLI option(s) not bound by launcher (will use defaults): --cpg_dir, --summary, --sample_sheet, --tpm, --top_n, --seeds, --min_cov_frac, --definition, --include_genes, --outdir, --log_dir

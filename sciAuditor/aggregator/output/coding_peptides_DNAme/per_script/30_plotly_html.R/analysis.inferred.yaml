@@ -1,0 +1,582 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 30_plotly_html
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/30_plotly_html.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:38:06-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: none
+  options: []
+inputs:
+  - id: input_01
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/fdr_best_per_gene.epdnew_genomewide.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 67
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_02
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/fdr_per_alpha.epdnew_genomewide.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 68
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_03
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/elasticnet_summary.epdnew_genomewide.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 283
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_04
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/elasticnet_per_alpha.epdnew_genomewide.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 284
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_05
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/lm_points.apm_primary.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 317
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_06
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/lm_summary.apm_primary.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 318
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_07
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/elasticnet_summary.apm_primary_per_cpg.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 354
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_08
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna/NLRC5_lasso_cpgs.alpha1.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 379
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_09
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_markdup_bams_pileup_batch1.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 390
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_10
+    path_template: '{fp}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 396
+    read_params:
+      header: no
+      col.names: c("chrom", "start", "end", "n_valid_cov", "pct", "region_id")
+      skip: ~
+    header_dropped: yes
+    resolution_confidence: medium
+  - id: input_11
+    path_template: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 405
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs: []
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: fdr_best
+    site: 67
+    origin: '{BASE}/fdr_best_per_gene.epdnew_genomewide.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: fdr_pa
+    site: 68
+    origin: '{BASE}/fdr_per_alpha.epdnew_genomewide.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: fdr_best
+    site: 72
+    derived_from:
+      - fdr_best
+    transform:
+      op: merge
+      by:
+        - gene
+  - id: chrom_centers
+    site: 92
+    derived_from:
+      - fdr_best
+    transform:
+      op: subset
+      expr: fdr_best[!is.na(x_cum), .(center = (min(x_cum) + max(x_cum))/2), by =
+        chr]
+  - id: chrom_centers
+    site: 94
+    derived_from:
+      - chrom_centers
+    transform:
+      op: subset
+      expr: chrom_centers[order(chr)]
+  - id: others
+    site: 114
+    derived_from:
+      - fdr_best
+    transform:
+      op: subset
+      expr: fdr_best[group == "other" & !is.na(x_cum)]
+  - id: pl
+    site: 115
+    derived_from:
+      - others
+    transform:
+      op: pipe
+      expr: pl %>% add_trace(data = others, x = ~x_cum, y = ~neg_log10_q, color =
+        ~chr_band, colors = c(`0` = "#54749b", `1` = "#a3b6c8"), type = "scattergl",
+        mode = "markers", marker = list(size = 4, opacity = ...
+  - id: apm
+    site: 124
+    derived_from:
+      - fdr_best
+    transform:
+      op: subset
+      expr: fdr_best[group == "APM" & !is.na(x_cum)]
+  - id: m6
+    site: 125
+    derived_from:
+      - fdr_best
+    transform:
+      op: subset
+      expr: fdr_best[group == "M6 stable" & !is.na(x_cum)]
+  - id: pl
+    site: 126
+    derived_from:
+      - pl
+      - m6
+      - apm
+    transform:
+      op: pipe
+      expr: pl %>% add_trace(data = m6, x = ~x_cum, y = ~neg_log10_q, type = "scatter",
+        mode = "markers", marker = list(size = 10, color = "yellow", line = list(color
+        = "black", width = 0.8)), text = ~hover, hov...
+  - id: d
+    site: 180
+    derived_from:
+      - fdr_pa
+    transform:
+      op: subset
+      expr: fdr_pa[alpha_name == a]
+  - id: d_other
+    site: 181
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[group == "other"]
+  - id: d_apm
+    site: 182
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[group == "APM"]
+  - id: d_m6
+    site: 183
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[group == "M6 stable"]
+  - id: pl
+    site: 184
+    derived_from:
+      - d_other
+      - d_m6
+      - d_apm
+    transform:
+      op: pipe
+      expr: plot_ly() %>% add_trace(data = d_other, x = ~q2_loocv, y = ~neg_log10_q,
+        type = "scattergl", mode = "markers", marker = list(size = 4, opacity = 0.45,
+        color = palette_alpha[a]), text = ~hover, hoveri...
+  - id: d
+    site: 244
+    derived_from:
+      - fdr_pa
+    transform:
+      op: subset
+      expr: fdr_pa[alpha_name == a]
+  - id: gw
+    site: 283
+    origin: '{BASE}/elasticnet_summary.epdnew_genomewide.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: gw_pa
+    site: 284
+    origin: '{BASE}/elasticnet_per_alpha.epdnew_genomewide.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: top_long
+    site: 288
+    derived_from:
+      - gw_pa
+    transform:
+      op: subset
+      expr: gw_pa[gene %in% top50, .(gene, alpha_name, q2_loocv, pearson_r_loocv,
+        n, p, lambda_min, n_nonzero)]
+  - id: p_top
+    site: 297
+    derived_from:
+      - top_long
+    transform:
+      op: pipe
+      expr: plot_ly(data = top_long, x = ~q2_loocv, y = ~gene, color = ~alpha_name,
+        colors = palette_alpha, type = "bar", orientation = "h", text = ~hover, hoverinfo
+        = "text", customdata = ~ncbi) %>% layout(titl...
+  - id: lm_pts
+    site: 317
+    origin: '{BASE}/lm_points.apm_primary.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: lm_smm
+    site: 318
+    origin: '{BASE}/lm_summary.apm_primary.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: lm_pts
+    site: 320
+    derived_from:
+      - lm_pts
+      - lm_smm
+    transform:
+      op: merge
+      by:
+        - gene
+  - id: en_apm
+    site: 354
+    origin: '{BASE}/elasticnet_summary.apm_primary_per_cpg.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: sel
+    site: 379
+    origin: '{BASE}/NLRC5_lasso_cpgs.alpha1.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: sel_cpg
+    site: 380
+    derived_from:
+      - sel
+    transform:
+      op: subset
+      expr: sel[selected == TRUE]
+  - id: ss
+    site: 390
+    origin: '{SS_FP}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: d
+    site: 396
+    origin: '{fp}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: d
+    site: 398
+    derived_from:
+      - d
+    transform:
+      op: subset
+      expr: d[chrom == "chr16" & start == sel_pos]
+  - id: rows
+    site: 402
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: rows
+    site: 403
+    derived_from:
+      - rows
+    transform:
+      op: merge
+      by:
+        - sample
+  - id: tpm
+    site: 405
+    origin: '{TPM_FP}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: nlrc5_tpm
+    site: 406
+    derived_from:
+      - tpm
+    transform:
+      op: subset
+      expr: tpm[gene_symbol == "NLRC5"]
+  - id: nlrc5_dt
+    site: 412
+    derived_from:
+      - rows
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: p_link_man
+    site: 446
+    derived_from:
+      - chrom_centers
+    transform:
+      op: pipe
+      expr: plot_ly(shared_best, x = ~x_cum, y = ~neg_log10_q, type = "scattergl",
+        mode = "markers", marker = list(size = 4, opacity = 0.55, color = "#54749b"),
+        text = ~hover, hoverinfo = "text", customdata = ~n...
+  - id: p_link_volc
+    site: 468
+    derived_from:
+      - fdr_pa
+    transform:
+      op: pipe
+      expr: plot_ly(shared_pa, x = ~q2_loocv, y = ~neg_log10_q, color = ~alpha_name,
+        colors = palette_alpha, type = "scattergl", mode = "markers", marker = list(size
+        = 4, opacity = 0.5), text = ~hover, hoverinfo...
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: apm_genes
+    site: '57'
+    kind: curated_geneset
+    count: 13
+    values:
+      - NLRC5
+      - B2M
+      - PSMB8
+      - PSMB9
+      - HLA-A
+      - HLA-B
+      - HLA-C
+      - TAP1
+      - TAP2
+      - TAPBP
+      - CALR
+      - PDIA3
+      - ERAP1
+    citations: ~
+  - id: m6_stable
+    site: '59'
+    kind: curated_geneset
+    count: 11
+    values:
+      - CDH17
+      - CKMT2
+      - FRRS1L
+      - DPEP1
+      - GRAMD1B
+      - CCL24
+      - S100A5
+      - NFE4
+      - LILRA6
+      - ADGRG7
+      - FBXL22
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 23
+    kind: mkdir
+    paths:
+      - '{HTML_DIR}'
+  - site: 26
+    kind: mkdir
+    paths:
+      - '{LOG_DIR}'
+environment:
+  r_packages:
+    - data.table
+    - plotly
+    - htmlwidgets
+    - htmltools
+    - crosstalk
+    - ggplot2
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: fail
+    evidence_sites:
+      - 396
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - rule: hardcoded-contig
+    status: fail
+    evidence_sites:
+      - 398
+    note: 1 line(s) contain hardcoded contig literals (chrN / chrXY / chrMT)
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: OK
+    rule: relative-paths-only
+    note: 'compliance check passed: relative-paths-only'
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: BLOCKER
+    rule: header-preserved
+    sites:
+      - 396
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - severity: BLOCKER
+    rule: hardcoded-contig
+    sites:
+      - 398
+    note: 1 line(s) contain hardcoded contig literals (chrN / chrXY / chrMT)
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

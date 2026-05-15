@@ -1,0 +1,461 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 26_elasticnet_genomewide
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_26_with_r.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/26_elasticnet_genomewide.R
+    language: R
+  binding:
+    - launcher_var: SLURM_CPUS_PER_TASK
+      analysis_flag: --ncores
+      value_resolved: ${SLURM_CPUS_PER_TASK}
+      site: launcher:NA → analysis:39
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/26_elasticnet_genomewide.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:38:03-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --cpg_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_genomewide/per_sample_cpg
+      default_kind: absolute
+      help: ~
+      site: 26
+    - name: --sample_sheet
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_markdup_bams_pileup_batch1.tsv
+      default_kind: absolute
+      help: ~
+      site: 28
+    - name: --tpm
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/tpm_all_samples.tsv
+      default_kind: absolute
+      help: ~
+      site: 30
+    - name: --definition
+      type: character
+      default: epdnew_genomewide
+      default_kind: relative
+      help: ~
+      site: 32
+    - name: --min_cov_frac
+      type: double
+      default: 0.8
+      default_kind: ~
+      help: ~
+      site: 33
+    - name: --min_cpgs
+      type: integer
+      default: 5.0
+      default_kind: ~
+      help: Minimum CpGs (after coverage filter) to fit a gene
+      site: 34
+    - name: --seed
+      type: integer
+      default: 42
+      default_kind: ~
+      help: ~
+      site: 36
+    - name: --permute_y_seed
+      type: integer
+      default: 0
+      default_kind: ~
+      help: If > 0, shuffle patient -> TPM mapping with this seed before fitting (for
+        permutation null). 0 means no shuffle (observed run).
+      site: 37
+    - name: --ncores
+      type: integer
+      default: .na.integer
+      default_kind: ~
+      help: ~
+      site: 39
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/lm_meth_to_rna
+      default_kind: absolute
+      help: ~
+      site: 40
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: ~
+      site: 42
+inputs:
+  - id: input_01
+    path_template: '{opt.sample_sheet}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 68
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.tpm}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 82
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_03
+    path_template: '{fp}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 116
+    read_params:
+      header: no
+      col.names: c("chrom", "start", "end", "n_valid_cov", "pct", "region_id")
+      skip: ~
+    header_dropped: yes
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{out_alpha}'
+    write_call:
+      fn: fwrite
+      site: 291
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{out_summary}'
+    write_call:
+      fn: fwrite
+      site: 333
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{out_alpha}'
+    write_call:
+      fn: fwrite
+      site: 337
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read:
+  - SLURM_CPUS_PER_TASK
+env_vars_written: []
+dataframes:
+  - id: ss
+    site: 68
+    origin: '{opt.sample_sheet}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: sm
+    site: 77
+    derived_from:
+      - ss
+    transform:
+      op: subset
+      expr: ss[sample_type == "Tumor", .(sample, patient_id)]
+  - id: tpm
+    site: 82
+    origin: '{opt.tpm}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: sm
+    site: 84
+    derived_from:
+      - sm
+    transform:
+      op: subset
+      expr: sm[patient_id %in% patients]
+  - id: shuffled
+    site: 100
+    derived_from:
+      - tpm
+    transform:
+      op: subset
+      expr: tpm[, ..patient_cols]
+  - id: shuffled
+    site: 101
+    derived_from:
+      - shuffled
+    transform:
+      op: subset
+      expr: shuffled[, perm_idx, with = FALSE]
+  - id: d
+    site: 116
+    origin: '{fp}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: all_cpg
+    site: 125
+    derived_from:
+      - sm
+    transform:
+      op: rbind
+  - id: all_cpg
+    site: 129
+    derived_from:
+      - all_cpg
+      - sm
+    transform:
+      op: merge
+      by:
+        - sample
+  - id: genes_all
+    site: 136
+    derived_from:
+      - all_cpg
+    transform:
+      op: subset
+      expr: all_cpg[, .N, by = gene]
+  - id: d
+    site: 149
+    derived_from:
+      - all_cpg
+    transform:
+      op: subset
+      expr: all_cpg[g, on = "gene", nomatch = NULL]
+  - id: X_mat
+    site: 157
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: X_mat
+    site: 160
+    derived_from:
+      - X_mat
+    transform:
+      op: subset
+      expr: X_mat[, cov_frac >= opt$min_cov_frac, drop = FALSE]
+  - id: X_mat
+    site: 173
+    derived_from:
+      - X_mat
+    transform:
+      op: subset
+      expr: X_mat[, keep, drop = FALSE]
+  - id: tpm_rows
+    site: 180
+    derived_from:
+      - tpm
+    transform:
+      op: subset
+      expr: tpm[gene_symbol == g]
+  - id: X_mat
+    site: 192
+    derived_from:
+      - X_mat
+    transform:
+      op: subset
+      expr: X_mat[tpm_cols, , drop = FALSE]
+  - id: res
+    site: 251
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: by_alpha_dt
+    site: 281
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: ok
+    site: 299
+    derived_from:
+      - by_alpha_dt
+    transform:
+      op: subset
+      expr: by_alpha_dt[!is.na(q2_loocv)]
+  - id: np
+    site: 312
+    derived_from:
+      - ok
+    transform:
+      op: subset
+      expr: ok[, .(n = first(n), p = first(p)), by = gene]
+  - id: summary_dt
+    site: 313
+    derived_from:
+      - np
+    transform:
+      op: merge
+      by:
+        - gene
+  - id: r_dt
+    site: 385
+    derived_from:
+      - by_alpha_dt
+    transform:
+      op: subset
+      expr: by_alpha_dt[!is.na(pearson_r_loocv)]
+transformations: []
+models: []
+figures: []
+stochastic_ops:
+  - site: 95
+    fn: sample
+    seed_set: yes
+    seed_set_evidence_site: 93
+    seed_value: .na.integer
+seed_policy:
+  declared_value: ~
+  multiple_values_observed: ~
+  coverage:
+    stochastic_ops: 1
+    seeded: 1
+    unseeded: 0
+  divergence_from_claude_default: no
+  severity: OK
+  note: ~
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 55
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+  - site: 56
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+  - site: 342
+    kind: mkdir
+    paths:
+      - '{fig_base}/{sub}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+    - glmnet
+    - parallel
+    - ggplot2
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 26
+      - 28
+      - 30
+      - 40
+      - 42
+    note: 5 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: pass
+    evidence_sites:
+      - 95
+    note: ~
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: fail
+    evidence_sites:
+      - 116
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 26
+      - 28
+      - 30
+      - 40
+      - 42
+    note: 5 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: seed-coverage
+    note: 'compliance check passed: seed-coverage'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: BLOCKER
+    rule: header-preserved
+    sites:
+      - 116
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: 'partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '10 analysis CLI option(s) not bound by launcher (will use defaults): --cpg_dir,
+      --sample_sheet, --tpm, --definition, --min_cov_frac, --min_cpgs, --seed, --permute_y_seed,
+      --outdir, --log_dir'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

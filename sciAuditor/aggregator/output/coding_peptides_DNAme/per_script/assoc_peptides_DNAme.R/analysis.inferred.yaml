@@ -1,0 +1,323 @@
+schema_version: '0.2'
+analysis_unit:
+  id: assoc_peptides_DNAme
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_assoc_peptides_DNAme.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/assoc_peptides_DNAme.R
+    language: R
+  binding: []
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/assoc_peptides_DNAme.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:38:07-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --peptide_counts
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/data/processed/gene_peptide_counts.csv
+      default_kind: absolute
+      help: 'Path to peptide counts CSV [default: %default]'
+      site: 14
+    - name: --gtf
+      type: character
+      default: /data1/greenbab/database/gencode_annotations/hg38/gencode.v47.annotation.gtf.gz
+      default_kind: absolute
+      help: 'Path to Gencode GTF annotation [default: %default]'
+      site: 18
+    - name: --bedmethyl_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/modkit_pileup_5mC/results/modkit_pileup_5mC
+      default_kind: absolute
+      help: 'Directory containing bedMethyl .bed.gz files [default: %default]'
+      site: 22
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme
+      default_kind: absolute
+      help: 'Output directory [default: %default]'
+      site: 26
+    - name: --min_coverage
+      type: integer
+      default: 5
+      default_kind: ~
+      help: 'Minimum valid_coverage to include a CpG site [default: %default]'
+      site: 30
+    - name: --upstream
+      type: integer
+      default: 2000
+      default_kind: ~
+      help: 'Promoter upstream distance from TSS in bp [default: %default]'
+      site: 34
+    - name: --downstream
+      type: integer
+      default: 200
+      default_kind: ~
+      help: 'Promoter downstream distance from TSS in bp [default: %default]'
+      site: 38
+inputs:
+  - id: input_01
+    path_template: '{opt.peptide_counts}'
+    kind: tabular
+    format: csv
+    read_call:
+      fn: read_csv
+      site: 85
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: .na.character
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 180
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "strand", "valid_coverage", "percent_modified")
+      skip: ~
+    header_dropped: no
+    resolution_confidence: low
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{out_path}'
+    write_call:
+      fn: write_tsv
+      site: 113
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{bed_path}'
+    write_call:
+      fn: write_tsv
+      site: 131
+    write_mode: append
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{promoter_bed_path}'
+    write_call:
+      fn: write_tsv
+      site: 159
+    write_mode: append
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{methyl_long_path}'
+    write_call:
+      fn: write_tsv
+      site: 268
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{methyl_wide_path}'
+    write_call:
+      fn: write_tsv
+      site: 279
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: peptides_df
+    site: 85
+    origin: '{opt.peptide_counts}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: read_csv
+  - id: peptides_df
+    site: 101
+    derived_from:
+      - peptides_df
+    transform:
+      op: pipe
+      expr: peptides_df %>% left_join(gene_annot %>% select(gene_id_noversion, gene_name,
+        gene_coords), by = c(gene_id = "gene_id_noversion")) %>% relocate(gene_name,
+        gene_coords, .after = gene_id)
+  - id: bed_df
+    site: 119
+    derived_from:
+      - peptides_df
+    transform:
+      op: pipe
+      expr: peptides_df %>% filter(!is.na(gene_name)) %>% left_join(gene_annot %>%
+        select(gene_id_noversion, seqnames, start, end, strand), by = c(gene_id =
+        "gene_id_noversion")) %>% mutate(bed_name = paste0(gen...
+  - id: matched_ids
+    site: 138
+    derived_from:
+      - peptides_df
+    transform:
+      op: pipe
+      expr: peptides_df %>% filter(!is.na(gene_name)) %>% pull(gene_id)
+  - id: methyl_dt
+    site: 180
+    origin: .na.character
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: methyl_dt
+    site: 189
+    derived_from:
+      - methyl_dt
+    transform:
+      op: subset
+      expr: methyl_dt[valid_coverage >= min_coverage]
+  - id: result_dt
+    site: 219
+    derived_from: ~
+    transform:
+      op: merge
+      by:
+        - promoter_name
+  - id: methyl_long
+    site: 258
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: methyl_wide
+    site: 272
+    derived_from:
+      - methyl_long
+    transform:
+      op: pipe
+      expr: methyl_long %>% select(promoter_name, sample_id, weighted_mean_pct_modified)
+        %>% pivot_wider(names_from = sample_id, values_from = weighted_mean_pct_modified)
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 66
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+environment:
+  r_packages:
+    - optparse
+    - tidyverse
+    - rtracklayer
+    - data.table
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 14
+      - 18
+      - 22
+      - 26
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: no log-capture setup detected
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 14
+      - 18
+      - 22
+      - 26
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: no log-capture setup detected
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '7 analysis CLI option(s) not bound by launcher (will use defaults): --peptide_counts,
+      --gtf, --bedmethyl_dir, --outdir, --min_coverage, --upstream, --downstream'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

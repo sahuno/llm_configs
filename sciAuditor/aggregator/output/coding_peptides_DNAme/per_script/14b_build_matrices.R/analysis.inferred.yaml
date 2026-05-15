@@ -1,0 +1,352 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 14b_build_matrices
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/submit_epdnew_analysis.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/14b_build_matrices.R
+    language: R
+  binding: []
+  effective_cwd_at_analysis: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/14b_build_matrices.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:54-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --sample_sheet
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_markdup_bams_pileup_batch1.tsv
+      default_kind: absolute
+      help: ~
+      site: 20
+    - name: --cpg_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/per_sample_cpg
+      default_kind: absolute
+      help: ~
+      site: 22
+    - name: --promoter_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_promoters
+      default_kind: absolute
+      help: ~
+      site: 24
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/matrices
+      default_kind: absolute
+      help: ~
+      site: 26
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: ~
+      site: 28
+inputs:
+  - id: input_01
+    path_template: '{opt.sample_sheet}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 46
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{bp}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 84
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "name", "score", "strand")
+      skip: 1.0
+    header_dropped: no
+    resolution_confidence: medium
+  - id: input_03
+    path_template: '{f}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 106
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "cov", "pct_mod", "region_id")
+      skip: ~
+    header_dropped: no
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{long_path}'
+    write_call:
+      fn: fwrite
+      site: 136
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{region_wide_path}'
+    write_call:
+      fn: fwrite
+      site: 143
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{gp_path}'
+    write_call:
+      fn: fwrite
+      site: 155
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{gm_path}'
+    write_call:
+      fn: fwrite
+      site: 164
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: ss
+    site: 46
+    origin: '{opt.sample_sheet}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: b
+    site: 84
+    origin: '{bp}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: all_cpg
+    site: 102
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: dt
+    site: 106
+    origin: '{f}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: agg
+    site: 122
+    derived_from:
+      - all_cpg
+    transform:
+      op: subset
+      expr: all_cpg[, .(weighted_mean_pct = sum(cov * pct_mod, na.rm = TRUE)/sum(cov,
+        na.rm = TRUE), n_cpgs = .N, total_cov = sum(cov, na.rm = TRUE)), by = .(sample,
+        region_id)]
+  - id: agg
+    site: 129
+    derived_from:
+      - agg
+    transform:
+      op: merge
+      by:
+        - region_id
+  - id: agg
+    site: 132
+    derived_from:
+      - agg
+      - ss
+    transform:
+      op: merge
+      by:
+        - sample
+  - id: gene_primary
+    site: 150
+    derived_from:
+      - agg
+    transform:
+      op: subset
+      expr: agg[source_tag == "EPDnew_1" | source_tag == "GENCODE_fallback"]
+  - id: gene_mean
+    site: 159
+    derived_from:
+      - agg
+    transform:
+      op: subset
+      expr: agg[, .(weighted_mean_pct = mean(weighted_mean_pct, na.rm = TRUE)), by
+        = .(gene_symbol, sample_label)]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: bed_sets
+    site: '67'
+    kind: sample_id_list
+    count: 8
+    values:
+      - apm_primary
+      - apm_primary_cgi
+      - apm_all
+      - cta_primary
+      - cta_primary_cgi
+      - cta_all
+      - nlrc5_dual
+      - nlrc5_dual_cgi
+    citations: ~
+  - id: bed_file_map
+    site: '73'
+    kind: sample_id_list
+    count: 8
+    values:
+      apm_primary: apm_promoters.epdnew_primary.hg38.bed
+      apm_primary_cgi: apm_promoters.epdnew_primary_cgi.hg38.bed
+      apm_all: apm_promoters.epdnew_all.hg38.bed
+      cta_primary: cta_promoters.epdnew_primary.hg38.bed
+      cta_primary_cgi: cta_promoters.epdnew_primary_cgi.hg38.bed
+      cta_all: cta_promoters.epdnew_all.hg38.bed
+      nlrc5_dual: nlrc5_dual_promoters.hg38.bed
+      nlrc5_dual_cgi: nlrc5_dual_promoters_cgi.hg38.bed
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 33
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+  - site: 34
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 20
+      - 22
+      - 24
+      - 26
+      - 28
+    note: 5 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 38
+      - 39
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 20
+      - 22
+      - 24
+      - 26
+      - 28
+    note: 5 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: NOTE
+    rule: pair-binding-coverage
+    note: '5 analysis CLI option(s) not bound by launcher (will use defaults): --sample_sheet,
+      --cpg_dir, --promoter_dir, --outdir, --log_dir'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

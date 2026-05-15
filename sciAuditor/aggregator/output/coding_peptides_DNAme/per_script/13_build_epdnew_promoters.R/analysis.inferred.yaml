@@ -1,0 +1,368 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 13_build_epdnew_promoters
+  kind: single
+pair_unit: ~
+script:
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/13_build_epdnew_promoters.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T23:37:53-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --epdnew
+      type: character
+      default: /data1/greenbab/database/EPDpromoters/data/processed/epdnew_human/2026-04-14/Hs_EPDnew.hg38.bed.gz
+      default_kind: absolute
+      help: ~
+      site: 17
+    - name: --gencode_bed
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/peptide_genes_promoters_up2kb_down200bp.hg38.bed
+      default_kind: absolute
+      help: GENCODE ±2kb promoter BED (fallback for genes missing from EPDnew)
+      site: 19
+    - name: --chrom_sizes
+      type: character
+      default: /data1/greenbab/database/sizes.Homo_sapiens_assembly38
+      default_kind: absolute
+      help: hg38 chrom sizes file (clip windows at chromosome ends)
+      site: 22
+    - name: --upstream
+      type: integer
+      default: 1000.0
+      default_kind: ~
+      help: bp upstream of TSS [default 1000; tighter than GENCODE's 2000]
+      site: 25
+    - name: --downstream
+      type: integer
+      default: 100.0
+      default_kind: ~
+      help: bp downstream of TSS [default 100]
+      site: 27
+    - name: --mode
+      type: character
+      default: primary
+      default_kind: relative
+      help: primary (only _1 promoter) | all (every alt promoter) [default primary]
+      site: 29
+    - name: --outdir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_promoters
+      default_kind: absolute
+      help: ~
+      site: 31
+    - name: --log_dir
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+      default_kind: absolute
+      help: ~
+      site: 33
+inputs:
+  - id: input_01
+    path_template: '{opt.epdnew}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 81
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "name", "score", "strand", "thickStart",
+        "thickEnd")
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.chrom_sizes}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 93
+    read_params:
+      header: no
+      col.names: c("chr", "size")
+      skip: ~
+    header_dropped: yes
+    resolution_confidence: high
+  - id: input_03
+    path_template: '{opt.gencode_bed}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 98
+    read_params:
+      header: ~
+      col.names: c("chr", "start", "end", "name", "score", "strand")
+      skip: ~
+    header_dropped: no
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{path}'
+    write_call:
+      fn: fwrite
+      site: 228
+    write_mode: append
+    write_params:
+      sep: "\t"
+      col.names: no
+    resolution_confidence: medium
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: '{path}'
+    write_call:
+      fn: fwrite
+      site: 233
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: '{apm_meta_path}'
+    write_call:
+      fn: write_tsv
+      site: 244
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: '{cta_meta_path}'
+    write_call:
+      fn: write_tsv
+      site: 245
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+  - id: output_05
+    kind: tabular
+    format: tsv
+    path_template: '{nlrc5_meta_path}'
+    write_call:
+      fn: write_tsv
+      site: 246
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: medium
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: epd
+    site: 81
+    origin: '{opt.epdnew}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: csz
+    site: 93
+    origin: '{opt.chrom_sizes}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: gc
+    site: 98
+    origin: '{opt.gencode_bed}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: hits
+    site: 131
+    derived_from:
+      - epd
+    transform:
+      op: subset
+      expr: epd[gene_symbol == g]
+  - id: hits
+    site: 134
+    derived_from:
+      - hits
+    transform:
+      op: subset
+      expr: hits[alt_index == min(alt_index)]
+  - id: fb
+    site: 148
+    derived_from:
+      - gc
+    transform:
+      op: subset
+      expr: gc[gene_symbol == g]
+  - id: bed
+    site: 166
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: bed
+    site: 167
+    derived_from:
+      - bed
+    transform:
+      op: subset
+      expr: bed[order(chr, start, end)]
+  - id: nlrc5_epd
+    site: 193
+    derived_from:
+      - epd
+    transform:
+      op: subset
+      expr: epd[gene_symbol == "NLRC5"]
+  - id: nlrc5_gc
+    site: 207
+    derived_from:
+      - gc
+    transform:
+      op: subset
+      expr: gc[gene_symbol == "NLRC5"]
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0
+    seeded: 0
+    unseeded: 0
+  severity: n/a
+functions_defined: ~
+hardcoded_data:
+  - id: apm_genes
+    site: '60'
+    kind: curated_geneset
+    count: 12
+    values:
+      - NLRC5
+      - HLA-A
+      - HLA-B
+      - HLA-C
+      - B2M
+      - TAP1
+      - TAP2
+      - TAPBP
+      - PSMB8
+      - PSMB9
+      - PDIA3
+      - CALR
+    citations: ~
+  - id: cta_genes
+    site: '64'
+    kind: curated_geneset
+    count: 51
+    values: ~
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 41
+    kind: mkdir
+    paths:
+      - '{opt.log_dir}'
+  - site: 57
+    kind: mkdir
+    paths:
+      - '{opt.outdir}'
+environment:
+  r_packages:
+    - data.table
+    - optparse
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 17
+      - 19
+      - 22
+      - 31
+      - 33
+    note: 5 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: fail
+    evidence_sites:
+      - 93
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 45
+      - 46
+    note: ~
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 17
+      - 19
+      - 22
+      - 31
+      - 33
+    note: 5 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: BLOCKER
+    rule: header-preserved
+    sites:
+      - 93
+    note: 1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+
