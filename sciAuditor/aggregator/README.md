@@ -12,7 +12,10 @@ per-script reports.
     --project-dir /path/to/project/scripts \
     --output-dir  /tmp/cohort_audit \
     --jobs 8 \
-    --fail-on BLOCKER
+    --fail-on BLOCKER \
+    --ignore 'submit_*.sh' \
+    --ignore '*/archived/*' \
+    --include '*.R'
 ```
 
 Defaults:
@@ -24,6 +27,29 @@ Defaults:
   the auditor exit 1 when the cohort has findings at or above that
   severity (CI gate). Inclusive: `--fail-on WARNING` counts BLOCKERs
   too. A single line `GATE: PASS|FAIL (reason)` is emitted to stderr.
+
+### `--include` / `--ignore` filters
+
+Both are repeatable. Patterns are fnmatch globs; each is tested
+against both the full relative path *and* every individual path
+segment. So `--ignore archived` drops anything under any
+`archived/` subdir, and `--ignore 'submit_*.sh'` drops every file
+matching that glob anywhere in the tree.
+
+Order of application: **include first** (if any patterns specified,
+a script must match at least one), **ignore second** (drop if any
+match). Filters apply *before* pair detection — so
+`--ignore 'submit_*.sh'` cleanly drops launchers and leaves the
+analyses to be audited standalone (no `pair_unit` composition).
+
+Examples validated on `coding_peptides_DNAme/scripts/`:
+
+| Flags | Filtered / total | Audited | Paired |
+|---|---|---|---|
+| (none) | 0/52 | 35 | 17 |
+| `--ignore 'submit_*.sh'` | 19/52 | 33 | 0 |
+| `--include '*.R'` | 21/52 | 31 | 0 |
+| `--ignore 'submit_*.sh' --ignore '*overlap*' --ignore '13_*'` | 22/52 | 30 | 0 |
 
 Benchmark (`coding_peptides_DNAme/scripts`, 35 audited scripts):
 
@@ -103,6 +129,6 @@ Runtime: ~2-3 min on a workstation login node for the 35-script run.
 - Workflow-DAG awareness (which script produces what input for which
   other script) — that's the "round 2 cross-script audit" deferred
   from `01_first_principles_brainstorm.md` §12.5
-- `--ignore` / `--include` glob filters
-- Bash audit_report.md (rolling into Python parser would let
-  standalone bash scripts get scored too)
+- Bash audit_report.md (currently bash standalones show "—" as grade
+  in the cohort table; planned port of emit_report into
+  parser_bash/sciauditor_bash.py)

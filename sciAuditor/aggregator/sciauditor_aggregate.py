@@ -18,6 +18,7 @@ Date:   2026-05-14
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import multiprocessing as mp
 import os
 import re
@@ -45,6 +46,39 @@ def discover_scripts(project_dir: Path) -> list[Path]:
     out = []
     for ext in ("*.R", "*.r", "*.py", "*.sh"):
         out.extend(sorted(project_dir.rglob(ext)))
+    return out
+
+
+def apply_filters(scripts: list[Path], project_dir: Path,
+                  include_globs: list[str],
+                  ignore_globs:  list[str]) -> list[Path]:
+    """Apply --include and --ignore glob filters against paths relative to
+    project_dir. Include-first (if any include patterns specified the script
+    must match at least one), then ignore (drop if it matches any).
+    Matches both the relative path AND every individual path segment so a
+    user can write `--ignore archived` to drop anything under archived/."""
+    def matches_any(rel_str: str, patterns: list[str]) -> bool:
+        if not patterns:
+            return False
+        segments = rel_str.split("/")
+        for p in patterns:
+            if fnmatch.fnmatch(rel_str, p):
+                return True
+            if any(fnmatch.fnmatch(seg, p) for seg in segments):
+                return True
+        return False
+
+    out = []
+    for s in scripts:
+        try:
+            rel = str(s.relative_to(project_dir))
+        except ValueError:
+            rel = str(s)
+        if include_globs and not matches_any(rel, include_globs):
+            continue
+        if matches_any(rel, ignore_globs):
+            continue
+        out.append(s)
     return out
 
 
@@ -210,12 +244,22 @@ def audit_one_script(work: dict) -> dict:
 def aggregate(project_dir: Path, output_dir: Path,
               rscript_bin: str, python_bin: str,
               skip_consumed_launchers: bool = True,
-              jobs: int = 1) -> dict:
+              jobs: int = 1,
+              include_globs: list[str] | None = None,
+              ignore_globs:  list[str] | None = None) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     per_dir = output_dir / "per_script"
     per_dir.mkdir(parents=True, exist_ok=True)
 
     scripts = discover_scripts(project_dir)
+    n_total = len(scripts)
+    if include_globs or ignore_globs:
+        scripts = apply_filters(scripts, project_dir,
+                                include_globs or [], ignore_globs or [])
+        n_filtered = n_total - len(scripts)
+        if n_filtered:
+            print(f"[sciauditor_aggregate] filtered out {n_filtered}/{n_total} "
+                  f"script(s) via --include/--ignore", flush=True)
     pairs   = detect_pairs(scripts, python_bin)
     consumed_launchers = set(pairs.values())
 
@@ -406,6 +450,13 @@ def main():
                     default=min(os.cpu_count() or 1, 8),
                     help="number of parallel worker processes "
                          "[default: min(cpu_count, 8)]; 1 disables parallelism")
+    ap.add_argument("--include", action="append", default=[], metavar="GLOB",
+                    help="audit only paths matching this glob (relative to "
+                         "--project-dir, or any path segment); repeatable")
+    ap.add_argument("--ignore",  action="append", default=[], metavar="GLOB",
+                    help="exclude paths matching this glob (relative to "
+                         "--project-dir, or any path segment); repeatable; "
+                         "applied after --include")
     args = ap.parse_args()
 
     pd  = Path(args.project_dir).resolve()
@@ -414,7 +465,10 @@ def main():
         sys.exit(f"project dir not found: {pd}")
 
     print(f"[sciauditor_aggregate] scanning {pd} (jobs={args.jobs}) ...")
-    res = aggregate(pd, out, args.rscript, args.python, jobs=args.jobs)
+    res = aggregate(pd, out, args.rscript, args.python,
+                    jobs=args.jobs,
+                    include_globs=args.include,
+                    ignore_globs=args.ignore)
     print(f"[sciauditor_aggregate] {res['n_scripts']} scripts audited "
           f"({res['n_pairs']} paired, {res['n_errors']} parser errors)")
     print(f"[sciauditor_aggregate]   totals: BLOCKER={res['totals']['BLOCKER']} "
