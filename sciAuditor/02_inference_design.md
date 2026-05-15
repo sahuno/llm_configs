@@ -414,48 +414,71 @@ needed.
 
 ## 7. Implementation phasing
 
-A reasonable ordering:
+Revised in round 3 after the language-agnostic decision (Q3 below).
+The core data model and the three front-end parsers are now built in
+parallel, not stacked.
 
-1. **Phase 0** — pick a single example script from a real project and
-   hand-construct the inferred-output YAML. Use it as the target test
-   fixture.
-2. **Phase 1** — Layer A for R only (R is where most of your tabular
-   stats lives). Static path + column + formula extraction. Emit the
-   YAML. No runtime trace yet.
-3. **Phase 2** — add Python support (Layer A).
-4. **Phase 3** — add the compliance checks from §6 as the first audit
-   rules; this is the moment the auditor becomes useful.
-5. **Phase 4** — Layer B runtime trace (R first, Python second).
+1. **Phase 0** — pick one example script per language (R, Python,
+   bash) from a real project; hand-construct the target inferred-
+   output YAML for each. These are the regression fixtures.
+2. **Phase 1** — Layer A in parallel for R, Python, bash. All three
+   front-ends emit the same language-neutral YAML schema. Bash has a
+   thinner surface (path-extraction, no rich column lineage).
+3. **Phase 2** — wire the compliance checks from §6; the auditor
+   becomes useful for the first time.
+4. **Phase 3** — implement the two-tier output (Q4 below): live
+   audit log + scored final report.
+5. **Phase 4** — Layer B runtime trace (R first, then Python; bash
+   trace via `set -x` post-processing or `strace -e openat`).
 6. **Phase 5** — Layer C LLM-assist for unresolved cases.
 7. **Phase 6** — wire to casetrack manifest schema; the manifest
    becomes the contract, inference becomes the enforcer.
 
 ---
 
-## 8. Open questions for round 3
+## 8. Open questions — decisions and remaining
 
-1. **Where does inferred output live?** Three choices:
-   - committed alongside the script (visible, but noisy in diffs);
-   - in `.audit/` and gitignored (clean, but invisible to reviewers);
-   - regenerated on demand and never stored (most reproducible, but
-     no caching).
-   My instinct: `.audit/` for inferred drafts; once promoted to a
-   manifest, that gets committed.
-2. **Runtime trace dataset**: synthetic, head-of-real, or
-   user-supplied? Each script may have different needs. Worth a
-   per-script `audit_fixture:` field in the manifest.
-3. **R vs Python first?** R covers your DE / methylation stats; Python
-   covers your scanpy / scikit / pytorch. Probably R first since the
-   pain (NSE, formula objects) is greater there and the value of
-   automation is higher.
-4. **How chatty should "unresolved" be?** A wall of "couldn't resolve
-   this path" entries trains people to ignore the auditor. Better: one
-   summary line per script ("3 dynamic paths unresolved") with details
-   on demand.
-5. **Cross-script inference**: do we extend inference to follow output
-   of script A into input of script B and validate schema continuity?
-   Or is that the workflow-DAG audit (round-2 candidate from §12 of
-   the first brainstorm)?
+### Decided in round 3
+
+- **Q3 — Language priority**: **language-agnostic from day 1**. The
+  auditor accepts R, Python, *and* bash. The core data model
+  (inferred YAML) is language-neutral; each language gets its own
+  front-end parser emitting the same shape. Bash gets a thinner
+  front-end (path-extraction only — `samtools view in.bam > out.sam`
+  is easy; rich column lineage isn't a meaningful concept in bash).
+  Phasing in §7 revised accordingly.
+
+- **Q4 — Output format**: **two-tier**.
+  - **Live audit log** during the run: verbose, timestamped, every
+    finding as it's discovered. Streams to stderr and to
+    `.audit/<run>/audit.log`.
+  - **Scored final report** at end of run:
+    `.audit/<run>/audit_report.md` with category scores (I/O,
+    columns, transforms, models, reproducibility — each scored A–F
+    or 0–100), findings grouped by severity (BLOCKER / WARNING /
+    NOTE), and a single headline score. Machine-readable companion
+    `.audit/<run>/audit_findings.tsv` for CI gating.
+
+### Recommended in round 3 (pending user override)
+
+- **Q1 — Where inferred output lives**: `.audit/` (gitignored) for
+  *drafts*; promote to a committed manifest (in or near the script)
+  only after human review. Two-stage prevents draft churn from
+  polluting git while keeping promoted contracts versioned.
+
+- **Q2 — Runtime-trace dataset**: **head-of-real by default** (first
+  N rows of the real input). Per-script `audit_fixture:` override in
+  the manifest for scripts that need balanced or stratified test
+  data (DE analysis, paired tests, multi-group comparisons).
+  Synthetic is a last-resort fallback when no real data is
+  available.
+
+- **Q5 — Cross-script inference**: **defer to the workflow-DAG
+  audit** (round-2 candidate in `01_first_principles_brainstorm.md`
+  §12.5). Per-script inference is already a large surface; cross-
+  script handoff validation is a natural fit for the
+  Snakemake/Nextflow-aware DAG layer, which already knows the rule
+  dependencies.
 
 ---
 
