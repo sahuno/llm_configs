@@ -2,11 +2,12 @@ schema_version: '0.2'
 analysis_unit:
   id: 00_build_cohort_wide
   kind: single
+pair_unit: ~
 script:
   path: /data1/greenbab/users/ahunos/projects/cohort_overview/scripts/00_build_cohort_wide.R
   language: R
   git_rev: <runtime>
-  inferred_at: 2026-05-14T21:46:02-0400
+  inferred_at: 2026-05-14T22:56:43-0400
   layers_used:
     - static
 runtime_context:
@@ -43,6 +44,11 @@ inputs:
     read_call:
       fn: fread
       site: 24
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: high
   - id: input_02
     path_template: '{opt.meth_cohort}'
@@ -51,6 +57,11 @@ inputs:
     read_call:
       fn: fread
       site: 27
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: high
 outputs:
   - id: output_01
@@ -253,6 +264,18 @@ compliance_checks:
     status: n/a
     evidence_sites: []
     note: no stochastic ops detected
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
   - rule: logging-dual-capture
     status: fail
     evidence_sites: []
@@ -271,6 +294,15 @@ audit_findings_preview:
   - severity: OK
     rule: forbidden-variable-names
     note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
   - severity: NOTE
     rule: logging-dual-capture
     sites: []

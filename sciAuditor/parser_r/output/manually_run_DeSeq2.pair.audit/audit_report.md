@@ -1,21 +1,21 @@
 # sciAuditor — Audit Report
 
 - **Analysis**: `/data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R`
-- **Inferred at**: 2026-05-14T22:32:24-0400
+- **Inferred at**: 2026-05-14T22:56:44-0400
 - **Schema**: v0.2 · Layer A (static)
 
 ## Headline
 
 | Score | Grade |
 |---|---|
-| 3 / 6 (50%) | **F** |
+| 6 / 9 (67%) | **D** |
 
 ## By category
 
 | Category | Pass | Fail | %  | Grade |
 |---|---:|---:|---:|---:|
-| genomics | 0 | 1 | 0% | F |
-| io | 0 | 1 | 0% | F |
+| genomics | 1 | 1 | 50% | F |
+| io | 2 | 1 | 67% | D |
 | reproducibility | 2 | 1 | 67% | D |
 | variables | 1 | 0 | 100% | A |
 
@@ -31,10 +31,13 @@
 - **script-header-metadata** (L1) — missing Date or Purpose
 - **seed-policy** — seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
 
-### OK (3)
+### OK (6)
 
 - **forbidden-variable-names** — compliance check passed: forbidden-variable-names
 - **seed-coverage** — compliance check passed: seed-coverage
+- **raw-data-write** — compliance check passed: raw-data-write
+- **header-preserved** — compliance check passed: header-preserved
+- **hardcoded-contig** — compliance check passed: hardcoded-contig
 - **logging-dual-capture** — compliance check passed: logging-dual-capture
 
 ## Inventory

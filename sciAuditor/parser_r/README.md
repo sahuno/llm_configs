@@ -46,14 +46,26 @@ Or `--output -` for stdout YAML. Requires R packages `yaml` and
 - `environment.r_packages` — every `library()` / `require()`
 - `organism_inferred` — from `org.*.eg.db` package allowlist
 - `genome_build_declared` — pattern-matched in any path template
-- `compliance_checks` (five rules wired):
-  - `script-header-metadata` — Author + Date / Purpose in header
-  - `relative-paths-only` — fails if any optparse default is absolute
-  - `forbidden-variable-names` — any top-level binding to one of
-    `[counts, results, mean, median, sum, conditions]`
-  - `seed-coverage` — every stochastic op has a reaching `set.seed`
-  - `logging-dual-capture` — `sink(split=TRUE)` AND
+- `compliance_checks` (eight rules wired, three with BLOCKER severity):
+  - **`raw-data-write`** *(BLOCKER)* — fails if any output path resolves
+    under `data/raw/`; the raw-data-immutability rule
+  - **`header-preserved`** *(BLOCKER)* — fails on any read call with an
+    explicit `header = FALSE` / `col.names = FALSE`. Round 1 doesn't
+    yet verify if a `colnames(x) <- ...` recovery follows
+  - **`hardcoded-contig`** *(BLOCKER)* — fails on any non-comment line
+    containing a literal `"chrN"` / `"chrXY"` / `"chrMT"`
+  - `relative-paths-only` *(WARNING)* — fails if any optparse default
+    is absolute
+  - `forbidden-variable-names` *(WARNING)* — any top-level binding to
+    one of `[counts, results, mean, median, sum, conditions]`
+  - `seed-coverage` *(WARNING)* — every stochastic op must have a
+    reaching `set.seed`
+  - `script-header-metadata` *(NOTE)* — Author/Name + Date/Purpose in
+    the first 10 comment lines
+  - `logging-dual-capture` *(NOTE)* — `sink(split=TRUE)` AND
     `globalCallingHandlers(message=…)` both present
+  - Plus the auto-emitted `genome-build-tag` *(WARNING)* when
+    `organism_inferred` is set but `genome_build_declared` is null
 - `audit_findings_preview` — derived from `compliance_checks`,
   including `OK` rows for passes (so the scored report has a
   positive baseline)

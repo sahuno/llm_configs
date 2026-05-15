@@ -63,7 +63,7 @@ script:
   path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
   language: R
   git_rev: <runtime>
-  inferred_at: 2026-05-14T22:32:24-0400
+  inferred_at: 2026-05-14T22:56:44-0400
   layers_used:
     - static
 runtime_context:
@@ -157,6 +157,11 @@ inputs:
     read_call:
       fn: fread
       site: 173
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: medium
   - id: input_02
     path_template: '{source_dir}/CT/counts_annot.tsv'
@@ -165,6 +170,11 @@ inputs:
     read_call:
       fn: fread
       site: 174
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: medium
   - id: input_03
     path_template: '{source_dir}/CT/counts.tsv'
@@ -173,6 +183,11 @@ inputs:
     read_call:
       fn: fread
       site: 175
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: medium
   - id: input_04
     path_template: '{opt.qc_metrics}'
@@ -181,6 +196,11 @@ inputs:
     read_call:
       fn: fread
       site: 176
+    read_params:
+      header: ~
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: high
   - id: input_05
     path_template: '{opt.metadata_File}'
@@ -189,6 +209,11 @@ inputs:
     read_call:
       fn: read.csv
       site: 370
+    read_params:
+      header: yes
+      col.names: ~
+      skip: ~
+    header_dropped: no
     resolution_confidence: medium
 outputs:
   - id: output_01
@@ -1388,6 +1413,18 @@ compliance_checks:
       - 2657
       - 2670
     note: ~
+  - rule: raw-data-write
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: header-preserved
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: hardcoded-contig
+    status: pass
+    evidence_sites: []
+    note: ~
   - rule: logging-dual-capture
     status: pass
     evidence_sites:
@@ -1419,6 +1456,15 @@ audit_findings_preview:
   - severity: OK
     rule: seed-coverage
     note: 'compliance check passed: seed-coverage'
+  - severity: OK
+    rule: raw-data-write
+    note: 'compliance check passed: raw-data-write'
+  - severity: OK
+    rule: header-preserved
+    note: 'compliance check passed: header-preserved'
+  - severity: OK
+    rule: hardcoded-contig
+    note: 'compliance check passed: hardcoded-contig'
   - severity: OK
     rule: logging-dual-capture
     note: 'compliance check passed: logging-dual-capture'

@@ -329,12 +329,32 @@ collect_inputs <- function(calls_all, assigns) {
              arg_by(item$call, name = "input") %||%
              arg_by(item$call, pos = 1)
     pr <- arg_to_path(p_arg, assigns)
+    # Capture header-handling args so the header-preserved BLOCKER can
+    # cite them at compliance time.
+    header_arg    <- arg_by(item$call, name = "header")
+    col_names_arg <- arg_by(item$call, name = "col.names")
+    skip_arg      <- arg_by(item$call, name = "skip")
+    header_dropped <- identical(header_arg, FALSE) ||
+                      identical(col_names_arg, FALSE)
+    # YAML can't serialise language objects; reduce each captured arg to
+    # either an atomic length-1 value or a deparsed text fragment.
+    yaml_safe <- function(a) {
+      if (is.null(a)) return(NULL)
+      if (is.atomic(a) && length(a) == 1) return(a)
+      expr_text(a, 80)
+    }
     out[[length(out) + 1]] <- list(
       id              = sprintf("input_%02d", length(out) + 1),
       path_template   = pr$template,
       kind            = "tabular",
       format          = guess_format_from_fn(nm, pr$template),
       read_call       = list(fn = nm, site = item$line_start),
+      read_params     = list(
+        header    = yaml_safe(header_arg),
+        col.names = yaml_safe(col_names_arg),
+        skip      = yaml_safe(skip_arg)
+      ),
+      header_dropped  = header_dropped,
       resolution_confidence = pr$confidence
     )
   }
@@ -799,7 +819,8 @@ collect_env_vars <- function(calls_all) {
 # ---------------------------------------------------------------------------
 # Compliance checks (Layer A — see 02_inference_design.md §3.6 + §6)
 # ---------------------------------------------------------------------------
-compliance_checks <- function(parse_tree, calls_all, raw_lines, config_iface, stoch_ops) {
+compliance_checks <- function(parse_tree, calls_all, raw_lines, config_iface,
+                              stoch_ops, inputs_l, outputs_l) {
   out <- list()
   push <- function(rule, status, evidence_sites = list(), note = NULL) {
     out[[length(out) + 1]] <<- list(rule = rule, status = status,
@@ -870,6 +891,54 @@ compliance_checks <- function(parse_tree, calls_all, raw_lines, config_iface, st
     }
   }
 
+  # ===== BLOCKERs =====
+
+  # raw-data-write: any output path under data/raw/ → BLOCKER
+  raw_writes <- Filter(function(o) {
+    p <- o$path_template %||% ""
+    grepl("(^|/)data/raw/|(^|/)raw/", p)
+  }, outputs_l)
+  if (length(raw_writes)) {
+    push("raw-data-write", "fail",
+         evidence_sites = lapply(raw_writes, function(o) o$write_call$site),
+         note = sprintf("%d output(s) resolve under data/raw/; raw data is immutable",
+                        length(raw_writes)))
+  } else {
+    push("raw-data-write", "pass")
+  }
+
+  # header-preserved: any read call with header=FALSE / col.names=FALSE
+  # (round 1: doesn't yet verify if a colnames(...)<- recovery follows;
+  # explicit drop is sufficient cause for BLOCKER per CLAUDE.md §2)
+  header_dropped <- Filter(function(x) isTRUE(x$header_dropped), inputs_l)
+  if (length(header_dropped)) {
+    push("header-preserved", "fail",
+         evidence_sites = lapply(header_dropped, function(x) x$read_call$site),
+         note = sprintf("%d read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)",
+                        length(header_dropped)))
+  } else {
+    push("header-preserved", "pass")
+  }
+
+  # hardcoded-contig: any "chrN" / "chrXY" / "chrMT" literal in non-comment
+  # code. Mirrors block-hardcoded-contigs.sh from CLAUDE.md hooks.
+  contig_re <- "[\"']chr([0-9]+|[XYM]|MT)[\"']"
+  contig_hits <- integer()
+  for (i in seq_along(raw_lines)) {
+    line <- raw_lines[i]
+    if (grepl("^\\s*#", line)) next
+    code <- sub("#[^\"']*$", "", line)
+    if (grepl(contig_re, code, perl = TRUE)) contig_hits <- c(contig_hits, i)
+  }
+  if (length(contig_hits)) {
+    push("hardcoded-contig", "fail",
+         evidence_sites = as.list(contig_hits),
+         note = sprintf("%d line(s) contain hardcoded contig literals (chrN / chrXY / chrMT)",
+                        length(contig_hits)))
+  } else {
+    push("hardcoded-contig", "pass")
+  }
+
   # logging-dual-capture: presence of sink(..., split=TRUE) and globalCallingHandlers
   has_sink_split <- FALSE; sink_site <- NA_integer_
   has_gch_msg    <- FALSE; gch_site  <- NA_integer_
@@ -900,17 +969,26 @@ compliance_checks <- function(parse_tree, calls_all, raw_lines, config_iface, st
 # ---------------------------------------------------------------------------
 # Audit findings preview — derived from compliance_checks + heuristics
 # ---------------------------------------------------------------------------
+SEVERITY_MAP <- c(
+  # BLOCKERs gate the audit (red rules from CLAUDE.md §6)
+  "raw-data-write"           = "BLOCKER",
+  "header-preserved"         = "BLOCKER",
+  "hardcoded-contig"         = "BLOCKER",
+  # WARNINGs require review
+  "relative-paths-only"      = "WARNING",
+  "forbidden-variable-names" = "WARNING",
+  "seed-coverage"            = "WARNING",
+  "genome-build-tag"         = "WARNING",
+  # NOTEs are advisory
+  "logging-dual-capture"     = "NOTE",
+  "script-header-metadata"   = "NOTE"
+)
+
 findings_from_compliance <- function(checks) {
   out <- list()
   for (c in checks) {
     if (identical(c$status, "fail")) {
-      sev <- switch(c$rule,
-                    "relative-paths-only"      = "WARNING",
-                    "forbidden-variable-names" = "WARNING",
-                    "seed-coverage"            = "WARNING",
-                    "logging-dual-capture"     = "NOTE",
-                    "script-header-metadata"   = "NOTE",
-                    "NOTE")
+      sev <- SEVERITY_MAP[[c$rule]] %||% "NOTE"
       out[[length(out) + 1]] <- list(severity = sev, rule = c$rule,
                                      sites = c$evidence_sites, note = c$note)
     } else if (identical(c$status, "pass")) {
@@ -940,7 +1018,8 @@ env_vars       <- collect_env_vars(calls_all)
 hardcoded_data <- collect_hardcoded_data(calls_all, raw_lines)
 dataframes_l   <- collect_dataframes(calls_all)
 models_l       <- collect_models(calls_all)
-checks         <- compliance_checks(parse_tree, calls_all, raw_lines, config_iface, stoch_ops)
+checks         <- compliance_checks(parse_tree, calls_all, raw_lines,
+                                    config_iface, stoch_ops, inputs, outputs)
 findings       <- findings_from_compliance(checks)
 
 # seed_policy summary
@@ -1144,8 +1223,11 @@ RULE_CATEGORIES <- list(
   "seed-coverage"            = "reproducibility",
   "seed-policy"              = "reproducibility",
   "relative-paths-only"      = "io",
+  "raw-data-write"           = "io",
+  "header-preserved"         = "io",
   "forbidden-variable-names" = "variables",
-  "genome-build-tag"         = "genomics"
+  "genome-build-tag"         = "genomics",
+  "hardcoded-contig"         = "genomics"
 )
 
 grade_pct <- function(p) {
