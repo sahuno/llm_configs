@@ -1,17 +1,24 @@
 # sciAuditor — Python front-end (Layer A static)
 
 Round-1 parser. Reads a Python analysis script, emits a v0.2 inferred
-YAML matching `sciAuditor/02_inference_design.md` §4. Mirrors the
-R parser's scope so the three language front-ends produce
-comparable output.
+YAML matching `sciAuditor/02_inference_design.md` §4, and (optionally)
+a scored markdown audit report identical in structure to the R parser.
 
 ## Run
 
 ```bash
-# Use any Python 3.7+ with the `yaml` module
+# YAML only
 /home/ahunos/miniforge3/envs/snakemake/bin/python3 sciauditor_py.py \
     --input  /path/to/script.py \
     --output output/script.inferred.yaml
+
+# YAML + scored audit report
+/home/ahunos/miniforge3/envs/snakemake/bin/python3 sciauditor_py.py \
+    --input       /path/to/script.py \
+    --output      output/script.inferred.yaml \
+    --report_dir  output/script.audit
+# → output/script.audit/audit_report.md
+# → output/script.audit/audit_findings.tsv
 ```
 
 System Python (3.6) is too old — `from __future__ import annotations`

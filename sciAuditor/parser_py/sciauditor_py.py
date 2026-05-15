@@ -547,6 +547,169 @@ SEVERITY_MAP = {
     "script-header-metadata":   "NOTE",
 }
 
+# Category assignment for the scored report (mirrors parser_r RULE_CATEGORIES)
+RULE_CATEGORIES = {
+    "script-header-metadata":   "reproducibility",
+    "logging-dual-capture":     "reproducibility",
+    "seed-coverage":            "reproducibility",
+    "seed-policy":              "reproducibility",
+    "relative-paths-only":      "io",
+    "raw-data-write":           "io",
+    "header-preserved":         "io",
+    "forbidden-variable-names": "variables",
+    "genome-build-tag":         "genomics",
+    "hardcoded-contig":         "genomics",
+}
+
+
+def grade_pct(p):
+    if p is None:
+        return "N/A"
+    if p >= 0.90: return "A"
+    if p >= 0.80: return "B"
+    if p >= 0.70: return "C"
+    if p >= 0.60: return "D"
+    return "F"
+
+
+def emit_report(root, report_dir):
+    """Emit audit_report.md + audit_findings.tsv. Mirrors parser_r's
+    emit_report() byte-for-byte where possible so multi-language audits
+    look identical."""
+    os.makedirs(report_dir, exist_ok=True)
+
+    # Per-category pass/fail counts (compliance_checks)
+    cat_pass, cat_fail = {}, {}
+    for chk in root["compliance_checks"]:
+        cat = RULE_CATEGORIES.get(chk["rule"], "misc")
+        if chk["status"] == "pass":
+            cat_pass[cat] = cat_pass.get(cat, 0) + 1
+        elif chk["status"] == "fail":
+            cat_fail[cat] = cat_fail.get(cat, 0) + 1
+    cats = sorted(set(cat_pass) | set(cat_fail))
+    total_pass = sum(cat_pass.values())
+    total_fail = sum(cat_fail.values())
+    denom = total_pass + total_fail
+    headline_pct = (total_pass / denom) if denom else None
+    headline_grade = grade_pct(headline_pct)
+
+    L = []
+    L.append("# sciAuditor — Audit Report")
+    L.append("")
+    L.append("- **Analysis**: `{}`".format(root["script"]["path"]))
+    L.append("- **Inferred at**: {}".format(root["script"]["inferred_at"]))
+    L.append("- **Schema**: v{} · Layer A (static)".format(root["schema_version"]))
+    L.append("")
+    L.append("## Headline")
+    L.append("")
+    L.append("| Score | Grade |")
+    L.append("|---|---|")
+    if denom:
+        L.append("| {} / {} ({:.0f}%) | **{}** |".format(
+            total_pass, denom, headline_pct * 100, headline_grade))
+    else:
+        L.append("| 0 / 0 (—) | **N/A** |")
+    L.append("")
+    L.append("## By category")
+    L.append("")
+    L.append("| Category | Pass | Fail | %  | Grade |")
+    L.append("|---|---:|---:|---:|---:|")
+    for cat in cats:
+        p = cat_pass.get(cat, 0); f_ = cat_fail.get(cat, 0)
+        pct = (p / (p + f_)) if (p + f_) else None
+        pct_str = "{:.0f}%".format(pct * 100) if pct is not None else "—"
+        L.append("| {} | {} | {} | {} | {} |".format(
+            cat, p, f_, pct_str, grade_pct(pct)))
+
+    # Findings grouped by severity
+    L.append(""); L.append("## Findings"); L.append("")
+    for sev in ("BLOCKER", "WARNING", "NOTE", "OK"):
+        hits = [x for x in root["audit_findings_preview"]
+                if x["severity"] == sev]
+        if not hits:
+            continue
+        L.append("### {} ({})".format(sev, len(hits)))
+        L.append("")
+        for h in hits:
+            sites = h.get("sites") or h.get("evidence_sites") or []
+            sites_str = " (L" + ", L".join(str(s) for s in sites) + ")" if sites else ""
+            note = h.get("note") or ""
+            L.append("- **{}**{} — {}".format(h["rule"], sites_str, note))
+        L.append("")
+
+    # Inventory
+    sp  = root.get("seed_policy") or {}
+    cov = sp.get("coverage") or {}
+    hc  = root.get("hardcoded_data") or []
+    L.append("## Inventory")
+    L.append("")
+    L.append("- Inputs: **{}**".format(len(root["inputs"])))
+    L.append("- Outputs: **{}**".format(len(root["outputs"])))
+    L.append("- Models: **{}**".format(len(root.get("models") or [])))
+    L.append("- Dataframes: **{}**".format(len(root.get("dataframes") or [])))
+    L.append("- Stochastic ops: **{}** ({} seeded, {} unseeded)".format(
+        len(root.get("stochastic_ops") or []),
+        cov.get("seeded", 0), cov.get("unseeded", 0)))
+    L.append("- Hardcoded blocks: **{}**".format(len(hc)))
+    L.append("- Organism inferred: **{}**".format(
+        root.get("organism_inferred") or "not detected"))
+    L.append("- Genome build declared: **{}**".format(
+        root.get("genome_build_declared") or "_not declared_"))
+
+    # Models section
+    if root.get("models"):
+        L.append(""); L.append("## Models"); L.append("")
+        for m in root["models"]:
+            L.append("- `{}` (L{}) — `{}` design `{}`".format(
+                m.get("id"), m.get("site") or "?",
+                m.get("fn"), m.get("formula") or "?"))
+            if m.get("contrasts"):
+                cn = ", ".join("`{}`".format(c["id"]) for c in m["contrasts"])
+                L.append("  - contrasts: " + cn)
+
+    # Pair binding section
+    pu = root.get("pair_unit")
+    if pu:
+        bindings = pu.get("binding") or []
+        L.append(""); L.append("## Pair binding"); L.append("")
+        L.append("- **Launcher**: `{}`".format(pu["launcher"]["path"]))
+        L.append("- **Analysis**: `{}`".format(pu["analysis"]["path"]))
+        L.append("- **Effective cwd at analysis**: `{}`".format(
+            pu.get("effective_cwd_at_analysis") or "_not detected_"))
+        L.append("")
+        L.append("**Bindings ({}):**".format(len(bindings)))
+        L.append("")
+        L.append("| Launcher var | Analysis flag | Resolved value | Sites |")
+        L.append("|---|---|---|---|")
+        for b in bindings:
+            val = str(b.get("value_resolved", ""))
+            if len(val) > 60:
+                val = val[:57] + "..."
+            L.append("| `{}` | `{}` | `{}` | {} |".format(
+                b.get("launcher_var", "?"), b.get("analysis_flag", "?"),
+                val, b.get("site", "?")))
+
+    report_path = os.path.join(report_dir, "audit_report.md")
+    with open(report_path, "w") as f:
+        f.write("\n".join(L) + "\n")
+
+    # findings.tsv for CI
+    tsv_path = os.path.join(report_dir, "audit_findings.tsv")
+    with open(tsv_path, "w") as f:
+        f.write("severity\trule\tsites\tnote\n")
+        for fin in root["audit_findings_preview"]:
+            sites = fin.get("sites") or fin.get("evidence_sites") or []
+            sites_str = ",".join(str(s) for s in sites)
+            note = (fin.get("note") or "").replace("\t", " ")
+            f.write("{}\t{}\t{}\t{}\n".format(
+                fin["severity"], fin["rule"], sites_str, note))
+
+    return {
+        "report":         report_path,
+        "findings_tsv":   tsv_path,
+        "headline_score": "{}/{} {}".format(total_pass, denom, headline_grade),
+    }
+
 
 def findings_from_compliance(checks):
     out = []
@@ -687,6 +850,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", "-i", required=True)
     ap.add_argument("--output", "-o", default="-")
+    ap.add_argument("--report_dir", default=None,
+                    help="emit audit_report.md + audit_findings.tsv into this dir")
     args = ap.parse_args()
 
     with open(args.input) as f:
@@ -706,6 +871,12 @@ def main():
             "[sciauditor_py] wrote {} ({} inputs, {} outputs, {} findings)\n".format(
                 args.output, len(root["inputs"]), len(root["outputs"]),
                 len(root["audit_findings_preview"])))
+
+    if args.report_dir:
+        res = emit_report(root, args.report_dir)
+        sys.stderr.write(
+            "[sciauditor_py] report: {}  findings_tsv: {}  headline: {}\n".format(
+                res["report"], res["findings_tsv"], res["headline_score"]))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+OK	relative-paths-only		compliance check passed: relative-paths-only
+WARNING	forbidden-variable-names	146	collisions: results
+NOTE	logging-dual-capture		no FileHandler+StreamHandler logging detected
+OK	raw-data-write		compliance check passed: raw-data-write
+OK	header-preserved		compliance check passed: header-preserved
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
