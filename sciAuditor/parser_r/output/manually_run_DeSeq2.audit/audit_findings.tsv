@@ -1,0 +1,8 @@
+severity	rule	sites	note
+NOTE	script-header-metadata	1	missing Date or Purpose
+WARNING	relative-paths-only	62,65,81,84	4 CLI defaults are absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	seed-coverage		compliance check passed: seed-coverage
+OK	logging-dual-capture		compliance check passed: logging-dual-capture
+WARNING	genome-build-tag		organism inferred=mouse; no genome build token in inputs/outputs
+NOTE	seed-policy		seed=1 used across 12 stochastic ops; CLAUDE.md default is 42

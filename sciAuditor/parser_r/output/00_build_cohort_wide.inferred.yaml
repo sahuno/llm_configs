@@ -6,7 +6,7 @@ script:
   path: /data1/greenbab/users/ahunos/projects/cohort_overview/scripts/00_build_cohort_wide.R
   language: R
   git_rev: <runtime>
-  inferred_at: 2026-05-14T21:26:35-0400
+  inferred_at: 2026-05-14T21:46:02-0400
   layers_used:
     - static
 runtime_context:
@@ -67,7 +67,109 @@ outputs:
 package_resources: ~
 env_vars_read: []
 env_vars_written: []
-dataframes: []
+dataframes:
+  - id: meta
+    site: 24
+    origin: '{opt.metadata}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: meth
+    site: 27
+    origin: '{opt.meth_cohort}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: tumor_rows
+    site: 33
+    derived_from:
+      - meta
+    transform:
+      op: subset
+      expr: meta[sample_type == "tumor"]
+  - id: tumor_rows
+    site: 34
+    derived_from:
+      - tumor_rows
+    transform:
+      op: subset
+      expr: tumor_rows[!duplicated(patient_id)]
+  - id: patient_level
+    site: 40
+    derived_from:
+      - tumor_rows
+    transform:
+      op: subset
+      expr: tumor_rows[, .(patient_id, primary_site = primary_site_tri, molecular_subtype
+        = molecular_subtype, MSI = impact_msi, TP53 = tp53_mutated, HER2 = her2_overall,
+        Response = responder_status)]
+  - id: tumor_flags
+    site: 51
+    derived_from:
+      - tumor_rows
+    transform:
+      op: subset
+      expr: tumor_rows[, .(patient_id, ONT_WGS_T = fifelse(!is.na(purity.facets) |
+        !is.na(purity.savana), "Yes", "No"), ONT_DNAme_T = fifelse(patient_id %in%
+        meth_pts, "Yes", "No"), RNA_seq_T = fifelse(!is.na(li...
+  - id: normal_rows
+    site: 69
+    derived_from:
+      - meta
+    transform:
+      op: subset
+      expr: meta[sample_type == "normal"]
+  - id: normal_rows
+    site: 70
+    derived_from:
+      - normal_rows
+    transform:
+      op: subset
+      expr: normal_rows[!duplicated(patient_id)]
+  - id: wb_measured
+    site: 71
+    derived_from:
+      - normal_rows
+    transform:
+      op: subset
+      expr: normal_rows[, .(patient_id, ONT_WGS_N = fifelse(!is.na(purity.facets)
+        | !is.na(purity.savana), "Yes", "No"), RNA_seq_N = fifelse(!is.na(line1_tpm),
+        "Yes", "No"), IMPACT_N = fifelse(!is.na(dmp_sample_...
+  - id: normal_flags
+    site: 81
+    derived_from:
+      - wb_measured
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: tumor_out
+    site: 93
+    derived_from:
+      - patient_level
+      - tumor_flags
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: wb_out
+    site: 102
+    derived_from:
+      - patient_level
+      - normal_flags
+    transform:
+      op: merge
+      by:
+        - patient_id
+  - id: out
+    site: 116
+    derived_from:
+      - tumor_out
+      - wb_out
+    transform:
+      op: rbind
 transformations: []
 models: []
 figures: []
@@ -80,7 +182,41 @@ seed_policy:
     unseeded: 0
   severity: n/a
 functions_defined: ~
-hardcoded_data: ~
+hardcoded_data:
+  - id: wb_meth_pts
+    site: '66'
+    kind: sample_id_list
+    count: 6
+    values:
+      - SU2C-264
+      - SU2C-289
+      - SU2C-320
+      - SU2C-324
+      - SU2C-342
+      - SU2C-353
+    citations: ~
+  - id: keep_cols
+    site: '111'
+    kind: string_list
+    count: 16
+    values:
+      - patient_id
+      - sample_id
+      - site
+      - primary_site
+      - molecular_subtype
+      - MSI
+      - TP53
+      - HER2
+      - Response
+      - ONT_WGS
+      - ONT_DNAme
+      - RNA_seq
+      - Immunopeptidomics
+      - IMPACT
+      - cGAS_mIF
+      - ORF1_mIF
+    citations: ~
 external_binaries: []
 driver_pattern: ~
 validation: ~
@@ -141,6 +277,6 @@ audit_findings_preview:
     note: no log-capture setup detected
 unresolved:
   - kind: not_yet_implemented
-    note: 'round-1 parser scope: dataframes/transformations/models/figures/functions_defined/hardcoded_data
-      not yet populated'
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
 

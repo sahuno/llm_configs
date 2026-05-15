@@ -1,18 +1,28 @@
 # sciAuditor — R front-end (Layer A static)
 
-Round-1 parser. Reads an R analysis script, emits a v0.2 inferred YAML
-matching `sciAuditor/02_inference_design.md` §4.
+Round-1.5 parser. Reads an R analysis script, emits a v0.2 inferred
+YAML matching `sciAuditor/02_inference_design.md` §4, and (optionally)
+a scored audit report in markdown + a machine-readable findings TSV.
 
 ## Run
 
 ```bash
+# YAML only
 /home/ahunos/miniforge3/envs/r-env/bin/Rscript sciauditor_r.R \
     --input  /path/to/script.R \
     --output output/script.inferred.yaml
+
+# YAML + scored audit report
+/home/ahunos/miniforge3/envs/r-env/bin/Rscript sciauditor_r.R \
+    --input      /path/to/script.R \
+    --output     output/script.inferred.yaml \
+    --report_dir output/script.audit
+# → output/script.audit/audit_report.md
+# → output/script.audit/audit_findings.tsv
 ```
 
-Or `--output -` for stdout. Requires R packages `yaml` and `optparse`
-(both present in the lab `r-env`).
+Or `--output -` for stdout YAML. Requires R packages `yaml` and
+`optparse` (both present in the lab `r-env`).
 
 ## What's implemented (round 1)
 
@@ -50,21 +60,48 @@ Or `--output -` for stdout. Requires R packages `yaml` and `optparse`
 
 ## What's deferred (declared in `unresolved`)
 
-- `dataframes[]` and the per-frame column-lineage graph (§3.2)
-- `transformations[]` predicate extraction (filter / merge / mutate /
-  aggregate with rows-before/after counts — needs runtime trace for
-  the counts)
-- `models[]` extraction (formula / design subset / contrasts) — §3.3
-- `figures[]` first-class enumeration
-- `functions_defined[]` and helper-I/O propagation
-- `hardcoded_data[]` with `kind:` taxonomy and PMID extraction
-- `package_resources[]` allowlist (org.*.eg.db, msigdbr, BSgenome.*,
-  TxDb.*) — only `organism_inferred` is wired so far
+- `transformations[]` predicate extraction with rows-before/after
+  counts (needs runtime trace; current parser puts the predicate text
+  inside `dataframes[].transform.expr` instead)
+- `figures[]` first-class enumeration (ggsave calls land in
+  `outputs[]` only; grouping by `derived_from` contrast isn't wired)
+- `functions_defined[]` with helper-I/O propagation upward to the
+  call site (currently each `ggsave` inside `save_figure_3fmt` shows
+  as a single output entry per call, not per logical figure)
+- `package_resources[]` (only `organism_inferred` derives from this)
 - `external_binaries[]` for `system()`/`system2()` calls
 - `driver_pattern` detection for R-emits-bash scripts
 - `pair_unit` (round 1 is single-script only; pair detection is a
   follow-up where bash launcher metadata is parsed first)
 - Runtime trace (Layer B) and LLM assist (Layer C)
+
+## What's wired since round 1
+
+Round 1.5 (this version) added three collectors and the report:
+
+- **`models[]`** — every `DESeqDataSetFromMatrix` / `lm` / `glm` /
+  `lmer` / `lmFit` / `glmFit` / `glmQLFit` call, with `formula`,
+  `count_data`, `col_data`, `reference_levels` (extracted from any
+  `factor(x, levels=…)` call earlier in the file), and a
+  `contrasts[]` sub-array from subsequent `results()` / `topTable()` /
+  `topTags()` extractions.
+- **`dataframes[]`** — every `<-` whose RHS is a positive-list
+  dataframe-producing call: any of `READ_FNS`, `merge` / `*_join`,
+  `filter` / `subset`, `rbind` / `bind_rows`, `data.frame` /
+  `data.table` / `as.data.frame` / `as_tibble`, tidyverse verbs by
+  name, `%>%` / `|>` pipes, or `[` subset on a known frame. The
+  positive list keeps the count tractable (DESeq2 script: 72 frames
+  instead of 343).
+- **`hardcoded_data[]`** — every `<-` whose RHS is `c(...)` with ≥5
+  literal strings or `list(name=c(...), …)` with ≥5 literals across
+  ≥2 sub-vectors. Classified by content into `contig_list` /
+  `sample_id_list` / `curated_geneset` / `curated_geneset_structured`
+  / `string_list`. PMID/DOI citations harvested from comments in the
+  ≤10 lines preceding the binding.
+- **`emit_report()`** — when `--report_dir` is set, emits
+  `audit_report.md` (headline score, per-category grades A–F,
+  findings grouped by severity, inventory) and `audit_findings.tsv`
+  for CI.
 
 ## Regression fixture
 

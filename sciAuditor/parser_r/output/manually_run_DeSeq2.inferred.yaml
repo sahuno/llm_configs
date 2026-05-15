@@ -6,7 +6,7 @@ script:
   path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
   language: R
   git_rev: <runtime>
-  inferred_at: 2026-05-14T21:26:35-0400
+  inferred_at: 2026-05-14T21:46:03-0400
   layers_used:
     - static
 runtime_context:
@@ -453,9 +453,582 @@ outputs:
 package_resources: ~
 env_vars_read: []
 env_vars_written: []
-dataframes: []
+dataframes:
+  - id: annot
+    site: 173
+    origin: '{source_dir}/annot.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: counts_annot
+    site: 174
+    origin: '{source_dir}/CT/counts_annot.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: cts
+    site: 175
+    origin: '{source_dir}/CT/counts.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: qc_metrics
+    site: 176
+    origin: '{opt.qc_metrics}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: annot_abridge
+    site: 179
+    derived_from:
+      - annot
+    transform:
+      op: pipe
+      expr: annot %>% dplyr::select(c(gene.id, gene.symbol, description, entrez.gene.id))
+  - id: gs.coding_ids
+    site: 191
+    derived_from:
+      - annot
+    transform:
+      op: subset
+      expr: annot[gene.type == "protein_coding", .(gene.id)]
+  - id: cts_coding_df
+    site: 192
+    derived_from:
+      - cts
+      - gs.coding_ids
+    transform:
+      op: pipe
+      expr: cts[gs.coding_ids, on = "gene.id"] %>% as.data.frame()
+  - id: cts_coding
+    site: 193
+    derived_from:
+      - cts_coding_df
+    transform:
+      op: pipe
+      expr: cts_coding_df %>% column_to_rownames(var = "gene.id")
+  - id: gs.rep
+    site: 197
+    derived_from:
+      - annot
+    transform:
+      op: pipe
+      expr: annot %>% dplyr::filter(chr == "REP") %>% dplyr::select(c(gene.id, gene.type))
+        %>% mutate(tp = case_when(str_detect(gene.type, "^(Endogenous|ERV|LTR|Lomg_terminal_repeat|Endogenous_Retrovirus)")
+        ~ "L...
+  - id: target_genes_df
+    site: 354
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: metadata_df
+    site: 370
+    origin: '{opt.metadata_File}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: read.csv
+  - id: metadata_df
+    site: 395
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% dplyr::filter(!samples %in% drop_samples)
+  - id: cts_coding
+    site: 400
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, samples_to_keep, drop = FALSE]
+  - id: metadata_rown_df
+    site: 432
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% column_to_rownames("new_samples_name")
+  - id: metadata_rown_df
+    site: 443
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% column_to_rownames("samples")
+  - id: cts_coding
+    site: 465
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, rownames(metadata_rown_df), drop = FALSE]
+  - id: cts_coding_export
+    site: 477
+    derived_from:
+      - cts_coding
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: cts_coding_export
+    site: 479
+    derived_from:
+      - cts_coding_export
+    transform:
+      op: subset
+      expr: cts_coding_export[, c("gene.id", setdiff(names(cts_coding_export), "gene.id"))]
+  - id: qstat_cki_vs_dmso_metadata
+    site: 500
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, qstatCKI_samples), ]
+  - id: cki_vs_dmso_metadata
+    site: 501
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, CKI_samples), ]
+  - id: qstat_vs_dmso_metadata
+    site: 502
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, qstat_samples), ]
+  - id: qstat_cki_vs_dmso_df
+    site: 511
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, qstatCKI_samples)]
+  - id: cki_vs_dmso_df
+    site: 512
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, CKI_samples)]
+  - id: qstat_vs_dmso_df
+    site: 513
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, qstat_samples)]
+  - id: annot_for_dds
+    site: 633
+    derived_from: ~
+    transform:
+      op: merge
+      by:
+        - gene.id
+  - id: annot_for_dds
+    site: 635
+    derived_from:
+      - annot_for_dds
+    transform:
+      op: subset
+      expr: annot_for_dds[match(rownames(dds_in), annot_for_dds$gene.id), ]
+  - id: count_df
+    site: 689
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_long
+    site: 692
+    derived_from:
+      - count_df
+    transform:
+      op: pipe
+      expr: count_df %>% dplyr::left_join(gene_map, by = "gene.id") %>% tidyr::pivot_longer(cols
+        = -c(gene.id, gene.symbol), names_to = "sample", values_to = "normalized_count")
+  - id: sample_info
+    site: 701
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_df
+    site: 800
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_long
+    site: 803
+    derived_from:
+      - count_df
+    transform:
+      op: pipe
+      expr: count_df %>% dplyr::left_join(gene_map, by = "gene.id") %>% tidyr::pivot_longer(cols
+        = -c(gene.id, gene.symbol), names_to = "sample", values_to = "normalized_count")
+  - id: sample_info
+    site: 812
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order
+    site: 837
+    derived_from:
+      - count_long
+    transform:
+      op: pipe
+      expr: count_long %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(condition,
+        sample) %>% dplyr::pull(sample)
+  - id: qstat_cki_vs_dmso_deresults_df
+    site: 1214
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: qstat_cki_vs_dmso_deresults_lfc_groups
+    site: 1221
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by
+        = "gene.id")
+  - id: qstat_cki_vs_dmso_results_4_volcano_plot
+    site: 1225
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% filter(gene.symbol %in% CKi27_and_QSTAT_combination)
+        %>% arrange(padj) %>% dplyr::select(gene.id, gene.symbol, log2FoldChange,
+        padj, groups) %>% filter(str_...
+  - id: qstat_cki_res2
+    site: 1285
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .group...
+  - id: cki_vs_dmso_deresults_df
+    site: 1337
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: cki_vs_dmso_deresults_lfc_groups
+    site: 1341
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by = "gene.id")
+  - id: cki_vs_dmso_res2
+    site: 1347
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id), !is.na(log2FoldChange))
+        %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange = max(log2FoldChange,
+        na.rm = TRUE), .groups = "d...
+  - id: qstat_vs_dmso_deresults_df
+    site: 1386
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: qstat_vs_dmso_deresults_lfc_groups
+    site: 1390
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by = "gene.id")
+  - id: qstat_vs_dmso_res2
+    site: 1396
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .groups = ...
+  - id: res2_cki
+    site: 2410
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id), !is.na(log2FoldChange))
+        %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange = max(log2FoldChange,
+        na.rm = TRUE), .groups = "d...
+  - id: res2_qstat
+    site: 2432
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .groups = ...
+  - id: antigen_nes_matrix
+    site: 2576
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: antigen_qval_matrix
+    site: 2579
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: m5_nes_matrix
+    site: 2852
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: norm_df
+    site: 3108
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: norm_df
+    site: 3110
+    derived_from:
+      - norm_df
+    transform:
+      op: pipe
+      expr: norm_df %>% left_join(annot_df %>% dplyr::select(gene.id, gene.symbol,
+        entrez.gene.id), by = "gene.id") %>% dplyr::select(gene.id, gene.symbol, entrez.gene.id,
+        everything())
+  - id: qstat_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3148
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>% mutate(pvalue
+        = padj) %>% filter(gene.symbol %in% all_quisinostat_genes) %>% filter(str_detect(groups,
+        pattern = "sigLFC_"))
+  - id: cki_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3177
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>% mutate(pvalue
+        = padj) %>% filter(gene.symbol %in% all_CKi27_genes) %>% filter(str_detect(groups,
+        pattern = "sigLFC_"))
+  - id: qstat_cki_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3206
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>%
+        mutate(pvalue = padj) %>% filter(gene.symbol %in% CKi27_and_QSTAT_combination)
+        %>% filter(str_detect(groups, pattern = "sigLFC_"))
+  - id: pathway_symbols
+    site: 3765
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: annot_abridge %>% dplyr::filter(entrez.gene.id %in% pathway_entrez) %>%
+        dplyr::pull(gene.symbol) %>% unique()
+  - id: df
+    site: 4046
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: long
+    site: 4048
+    derived_from:
+      - df
+    transform:
+      op: tidyr::pivot_longer
+      expr: tidyr::pivot_longer(df, cols = -gene, names_to = "sample", values_to =
+        "value")
+  - id: dist_long
+    site: 4053
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sample_info
+    site: 4067
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order
+    site: 4071
+    derived_from:
+      - dist_long
+    transform:
+      op: pipe
+      expr: dist_long %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(condition,
+        sample) %>% dplyr::pull(sample)
+  - id: all_metadata
+    site: 4547
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[all_samples, , drop = FALSE]
+  - id: all_counts
+    site: 4548
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, all_samples]
+  - id: df
+    site: 4574
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: long
+    site: 4576
+    derived_from:
+      - df
+    transform:
+      op: tidyr::pivot_longer
+      expr: tidyr::pivot_longer(df, cols = -gene, names_to = "sample", values_to =
+        "value")
+  - id: dist_long_all
+    site: 4581
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sample_info_all
+    site: 4592
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order_all
+    site: 4596
+    derived_from:
+      - dist_long_all
+    transform:
+      op: pipe
+      expr: dist_long_all %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(factor(condition,
+        levels = c("DMSO", "CKi", "QSTAT", "QSTAT-CKi")), sample) %>% dplyr::pull(sample)
+  - id: all_metadata
+    site: 4770
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[metadata_rown_df$condition %in% target_conditions, ,
+        drop = FALSE]
+  - id: cts_coding_all
+    site: 4779
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, relevant_samples, drop = FALSE]
+  - id: all_metadata
+    site: 4780
+    derived_from:
+      - all_metadata
+    transform:
+      op: subset
+      expr: all_metadata[relevant_samples, , drop = FALSE]
+  - id: id_to_symbol_all
+    site: 4824
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: annot_abridge %>% filter(gene.id %in% gene_ids_in_vst) %>% dplyr::select(gene.id,
+        gene.symbol) %>% distinct()
+  - id: target_gene_ids
+    site: 4839
+    derived_from:
+      - id_to_symbol_all
+    transform:
+      op: pipe
+      expr: id_to_symbol_all %>% filter(gene.symbol %in% available_target_symbols)
+        %>% pull(gene.id)
+  - id: sample_conditions_all
+    site: 4857
+    derived_from:
+      - all_metadata
+    transform:
+      op: subset
+      expr: all_metadata[colnames(vst_targets_all_scaled), "condition", drop = TRUE]
 transformations: []
-models: []
+models:
+  - id: qstat_cki_vs_dmso_dds
+    site: 517
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: qstat_cki_vs_dmso_df
+    col_data: qstat_cki_vs_dmso_metadata
+    contrasts:
+      - id: qstat_cki_vs_dmso_res
+        site: 540
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: cki_vs_dmso_dds
+    site: 521
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: cki_vs_dmso_df
+    col_data: cki_vs_dmso_metadata
+    contrasts:
+      - id: cki_vs_dmso_res
+        site: 1334
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: qstat_vs_dmso_dds
+    site: 525
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: qstat_vs_dmso_df
+    col_data: qstat_vs_dmso_metadata
+    contrasts:
+      - id: qstat_vs_dmso_res
+        site: 1383
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: dds_all_conditions
+    site: 4550
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: all_counts
+    col_data: all_metadata
+    contrasts: []
+    reference_levels:
+      condition: DMSO
+  - id: all_samples_dds
+    site: 4801
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: cts_coding_all
+    col_data: all_metadata
+    contrasts: []
+    reference_levels:
+      condition: DMSO
 figures: []
 stochastic_ops:
   - site: 1299
@@ -529,7 +1102,139 @@ seed_policy:
   severity: NOTE
   note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
 functions_defined: ~
-hardcoded_data: ~
+hardcoded_data:
+  - id: hdac_targets
+    site: '218'
+    kind: curated_geneset
+    count: 11
+    values:
+      - Hdac1
+      - Hdac2
+      - Hdac3
+      - Hdac8
+      - Hdac4
+      - Hdac5
+      - Hdac6
+      - Hdac7
+      - Hdac9
+      - Hdac10
+      - Hdac11
+    citations: ~
+  - id: downstream_effectors
+    site: '226'
+    kind: curated_geneset
+    count: 7
+    values:
+      - H1f0
+      - Klf15
+      - Trim21
+      - Tnnt1
+      - Col20a1
+      - Bmi1
+      - Nanog
+    citations: ~
+  - id: cell_cycle_apoptosis
+    site: '237'
+    kind: curated_geneset
+    count: 13
+    values:
+      - Cdkn1a
+      - Cdkn1b
+      - Cdkn2a
+      - Gadd45a
+      - Bax
+      - Bcl2l11
+      - Bbc3
+      - Pmaip1
+      - Bcl2
+      - Mcl1
+      - Trp53
+      - E2f1
+      - Myc
+    citations: ~
+  - id: ferroptosis
+    site: '249'
+    kind: curated_geneset
+    count: 8
+    values:
+      - Gpx4
+      - Slc7a11
+      - Acsl4
+      - Tfrc
+      - Fth1
+      - Ftl1
+      - Hmox1
+      - Nfe2l2
+    citations: ~
+  - id: stemness
+    site: '255'
+    kind: curated_geneset
+    count: 5
+    values:
+      - Sox2
+      - Pou5f1
+      - Klf4
+      - Cd44
+      - Aldh1a1
+    citations: ~
+  - id: CKi27_genes
+    site: '278'
+    kind: curated_geneset_structured
+    count: 36
+    sub_categories: 13
+    sub_category_names:
+      - cell_cycle_arrest
+      - pro_apoptotic
+      - tumor_suppressor
+      - mhc_antigen
+      - differentiation
+      - cell_cycle_promoters
+      - anti_apoptotic
+      - immediate_early
+      - immune_checkpoint
+      - mapk_feedback
+      - pi3k_akt_feedback
+      - variable
+      - mapk_core
+    citations:
+      - PMID:25422890
+      - PMID:40439998
+      - PMID:34288272
+      - PMID:40020669
+      - PMID:41109929
+      - PMID:29731968
+  - id: antigen_pathways
+    site: '2370'
+    kind: string_list
+    count: 10
+    values:
+      - GOLDRATH_ANTIGEN_RESPONSE
+      - REACTOME_ANTIGEN_ACTIVATES_B_CELL_RECEPTOR_BCR_LEADING_TO_GENERATION_OF_SECOND_MESSENGERS
+      - REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC
+      - REACTOME_ANTIGEN_PROCESSING_CROSS_PRESENTATION
+      - REACTOME_ANTIGEN_PROCESSING_UBIQUITINATION_PROTEASOME_DEGRADATION
+      - REACTOME_ANTIGEN_PROCESSING_UB_ATP_INDEPENDENT_PROTEASOMAL_DEGRADATION
+      - REACTOME_CLASS_I_MHC_MEDIATED_ANTIGEN_PROCESSING_PRESENTATION
+      - REACTOME_CROSS_PRESENTATION_OF_PARTICULATE_EXOGENOUS_ANTIGENS_PHAGOSOMES
+      - REACTOME_CROSS_PRESENTATION_OF_SOLUBLE_EXOGENOUS_ANTIGENS_ENDOSOMES
+      - REACTOME_MHC_CLASS_II_ANTIGEN_PRESENTATION
+    citations: ~
+  - id: antigen_colors
+    site: '2393'
+    kind: string_list
+    count: 10
+    values:
+      GOLDRATH_ANTIGEN_RESPONSE: '#E41A1C'
+      REACTOME_ANTIGEN_ACTIVATES_B_CELL_RECEPTOR_BCR_LEADING_TO_GENERATION_OF_SECOND_MESSENGERS: '#377EB8'
+      REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC: '#4DAF4A'
+      REACTOME_ANTIGEN_PROCESSING_CROSS_PRESENTATION: '#984EA3'
+      REACTOME_ANTIGEN_PROCESSING_UBIQUITINATION_PROTEASOME_DEGRADATION: '#FF7F00'
+      REACTOME_ANTIGEN_PROCESSING_UB_ATP_INDEPENDENT_PROTEASOMAL_DEGRADATION: '#FFFF33'
+      REACTOME_CLASS_I_MHC_MEDIATED_ANTIGEN_PROCESSING_PRESENTATION: '#A65628'
+      REACTOME_CROSS_PRESENTATION_OF_PARTICULATE_EXOGENOUS_ANTIGENS_PHAGOSOMES: '#F781BF'
+      REACTOME_CROSS_PRESENTATION_OF_SOLUBLE_EXOGENOUS_ANTIGENS_ENDOSOMES: '#999999'
+      REACTOME_MHC_CLASS_II_ANTIGEN_PRESENTATION: '#66C2A5'
+    citations: ~
 external_binaries: []
 driver_pattern: ~
 validation: ~
@@ -669,6 +1374,6 @@ audit_findings_preview:
     note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
 unresolved:
   - kind: not_yet_implemented
-    note: 'round-1 parser scope: dataframes/transformations/models/figures/functions_defined/hardcoded_data
-      not yet populated'
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
 

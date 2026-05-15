@@ -26,6 +26,8 @@ option_list <- list(
               help = "R script to analyse [required]"),
   make_option(c("-o", "--output"), type = "character", default = "-",
               help = "output YAML path, '-' for stdout [default %default]"),
+  make_option(c("--report_dir"), type = "character", default = NULL,
+              help = "emit audit_report.md + audit_findings.tsv into this dir"),
   make_option(c("--analysis_unit_id"), type = "character", default = NULL,
               help = "override analysis_unit.id; defaults to basename of input"),
   make_option(c("--schema_version"), type = "character", default = "0.2",
@@ -63,14 +65,18 @@ srcref_lines <- function(e) {
   c(NA_integer_, NA_integer_)
 }
 
-# Build a per-function-name FIFO of call-site line numbers from getParseData.
-# This sidesteps the srcref-on-nested-call problem: the parse-data table is
-# flat and lists every `SYMBOL_FUNCTION_CALL` token with its line number.
+# Build a per-call-name FIFO of call-site line numbers from getParseData.
+# Indexes both `SYMBOL_FUNCTION_CALL` (regular calls) and assignment
+# operators (LEFT_ASSIGN, EQ_ASSIGN, RIGHT_ASSIGN), so assignments —
+# which `walk_collect` encounters as calls to "<-" / "=" / "->" —
+# also get line numbers when their srcref attribute is dropped.
 build_call_line_map <- function(parse_tree) {
   pd <- utils::getParseData(parse_tree)
   out <- new.env(parent = emptyenv())
   if (is.null(pd) || nrow(pd) == 0) return(out)
-  rows <- pd[pd$token == "SYMBOL_FUNCTION_CALL", c("line1","text"), drop = FALSE]
+  rows <- pd[pd$token %in% c("SYMBOL_FUNCTION_CALL", "LEFT_ASSIGN",
+                             "EQ_ASSIGN", "RIGHT_ASSIGN"),
+             c("line1","text"), drop = FALSE]
   rows <- rows[order(rows$line1), ]
   for (i in seq_len(nrow(rows))) {
     nm <- rows$text[i]
@@ -422,6 +428,341 @@ collect_stochastic_ops <- function(calls_all) {
   out
 }
 
+# ---------------------------------------------------------------------------
+# Phase 1.5 collectors: hardcoded_data, dataframes, models
+# ---------------------------------------------------------------------------
+HARDCODED_MIN_LITERALS <- 5L
+
+site_str <- function(start, end) {
+  if (is.na(start)) return(NA_character_)
+  if (is.na(end) || identical(start, end)) return(as.character(start))
+  sprintf("%d-%d", start, end)
+}
+
+# Extract every Name node inside an expression (recursive). Used to find which
+# previously-seen dataframe ids are referenced as inputs to a call.
+extract_name_refs <- function(e) {
+  if (is.name(e)) return(as.character(e))
+  if (is.call(e)) {
+    refs <- character()
+    for (i in seq_along(e)) refs <- c(refs, extract_name_refs(e[[i]]))
+    return(refs)
+  }
+  character()
+}
+
+# Scan ~10 lines before `line_start` for PMID / DOI citations.
+# Two-pass per line: (1) any line mentioning PMID / PMIDs / PubMed contributes
+# every ≥6-digit integer as a PMID; (2) DOI patterns extracted directly.
+# Catches comma-separated PMID lists like "PMIDs 25422890, 40439998, ...".
+extract_citations_near <- function(line_start, raw_lines, lookback = 10L) {
+  if (is.na(line_start) || line_start <= 1) return(character())
+  s <- max(1L, line_start - lookback)
+  block <- raw_lines[s:(line_start - 1)]
+  hits <- character()
+  for (line in block) {
+    if (grepl("\\bPMID|pubmed", line, ignore.case = TRUE, perl = TRUE)) {
+      ids <- unlist(regmatches(line, gregexpr("\\d{6,}", line)))
+      if (length(ids)) hits <- c(hits, paste0("PMID:", ids))
+    }
+    dois <- unlist(regmatches(line, gregexpr("10\\.\\d+/[^\\s,;]+", line)))
+    if (length(dois)) hits <- c(hits, paste0("DOI:", dois))
+  }
+  unique(hits)
+}
+
+classify_string_set <- function(values) {
+  # Order matters: most specific first.
+  # 1) Contig names
+  if (all(grepl("^chr[0-9XYM]+$|^[1-9][0-9]*$|^[XYMT]+$", values))) return("contig_list")
+  # 2) Sample IDs: separator-bearing (hyphen or dot), typical of cohort IDs
+  #    (e.g. SU2C-264, p17424_3, R.S.2). Must beat gene-symbol classifier.
+  if (mean(grepl("[.-]|_", values)) >= 0.6 && any(grepl("[0-9]", values))) {
+    return("sample_id_list")
+  }
+  # 3) Gene symbols: 2-12 chars, letter-start, alphanum + . / -
+  gene_like <- grepl("^[A-Za-z][A-Za-z0-9.-]{1,11}$", values)
+  if (mean(gene_like) >= 0.85) return("curated_geneset")
+  "string_list"
+}
+
+classify_hardcoded <- function(name, rhs, line_start, line_end, raw_lines) {
+  # `c("a","b",...)` with ≥5 char literals
+  if (is.call(rhs) && identical(rhs[[1]], as.name("c"))) {
+    args <- as.list(rhs)[-1]
+    char_args <- Filter(function(x) is.character(x) && length(x) == 1 && !is.na(x), args)
+    if (length(char_args) >= HARDCODED_MIN_LITERALS) {
+      values <- unlist(char_args)
+      cits <- extract_citations_near(line_start, raw_lines)
+      return(list(
+        id        = name,
+        site      = site_str(line_start, line_end),
+        kind      = classify_string_set(values),
+        count     = as.integer(length(values)),
+        values    = if (length(values) <= 20L) as.list(values) else NULL,
+        citations = if (length(cits)) as.list(cits) else NULL
+      ))
+    }
+  }
+  # `list(name=c(...), name=c(...), ...)` — structured curated set
+  if (is.call(rhs) && identical(rhs[[1]], as.name("list"))) {
+    sub_lists <- as.list(rhs)[-1]
+    nms <- names(sub_lists) %||% rep("", length(sub_lists))
+    sub_counts <- vapply(sub_lists, function(s) {
+      if (is.call(s) && identical(s[[1]], as.name("c"))) {
+        sum(vapply(as.list(s)[-1], function(x) is.character(x) && length(x) == 1, logical(1)))
+      } else 0L
+    }, integer(1))
+    total <- as.integer(sum(sub_counts))
+    nonempty <- as.integer(sum(sub_counts > 0))
+    if (total >= HARDCODED_MIN_LITERALS && nonempty >= 2L) {
+      cits <- extract_citations_near(line_start, raw_lines)
+      return(list(
+        id              = name,
+        site            = site_str(line_start, line_end),
+        kind            = "curated_geneset_structured",
+        count           = total,
+        sub_categories  = nonempty,
+        sub_category_names = as.list(nms[nzchar(nms)]),
+        citations       = if (length(cits)) as.list(cits) else NULL
+      ))
+    }
+  }
+  NULL
+}
+
+# Walk every <- / = binding via the pre-resolved calls_all list (which has
+# stable line numbers from the parse-data map). Filtering inside calls_all
+# is cleaner than re-recursing the parse tree and re-handling srcrefs.
+collect_hardcoded_data <- function(calls_all, raw_lines) {
+  out <- list()
+  for (item in calls_all) {
+    e <- item$call
+    if (!(is.call(e) && length(e) == 3 &&
+          (identical(e[[1]], as.name("<-")) || identical(e[[1]], as.name("="))))) next
+    lhs <- e[[2]]; rhs <- e[[3]]
+    if (!is.name(lhs)) next
+    entry <- classify_hardcoded(as.character(lhs), rhs,
+                                item$line_start, item$line_end, raw_lines)
+    if (!is.null(entry)) out[[length(out) + 1]] <- entry
+  }
+  out
+}
+
+# Classify the RHS of a binding as a dataframe operation.
+df_classify <- function(rhs, known_frames) {
+  if (!is.call(rhs)) return(NULL)
+  fn <- call_name(rhs)
+  # Pipe expression: a %>% b %>% c
+  if (length(rhs) == 3 &&
+      (identical(rhs[[1]], as.name("%>%")) || identical(rhs[[1]], as.name("|>")))) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    if (length(refs)) {
+      return(list(derived_from = as.list(unique(refs)),
+                  transform = list(op = "pipe", expr = expr_text(rhs, 200))))
+    }
+  }
+  # `df[predicate, ]` or `df[, cols]` — both base R and data.table subset
+  if (length(rhs) >= 2 && identical(rhs[[1]], as.name("["))) {
+    base <- rhs[[2]]
+    if (is.name(base) && as.character(base) %in% known_frames) {
+      return(list(derived_from = list(as.character(base)),
+                  transform = list(op = "subset", expr = expr_text(rhs, 200))))
+    }
+  }
+  if (is.na(fn)) return(NULL)
+  # Known read functions → origin frame
+  if (fn %in% READ_FNS) {
+    p <- arg_by(rhs, name = "file") %||% arg_by(rhs, name = "input") %||% arg_by(rhs, pos = 1)
+    pr <- arg_to_path(p, list())
+    return(list(origin = pr$template,
+                origin_kind = "file",
+                transform = list(op = "read", fn = fn)))
+  }
+  # merge / *_join
+  if (fn %in% c("merge","left_join","inner_join","right_join","full_join","anti_join",
+                "dplyr::left_join","dplyr::inner_join","dplyr::right_join",
+                "dplyr::full_join","dplyr::anti_join")) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    by_arg <- arg_by(rhs, name = "by")
+    by_val <- if (is.character(by_arg)) as.list(by_arg)
+              else if (is.call(by_arg) && identical(by_arg[[1]], as.name("c"))) {
+                as.list(unlist(lapply(as.list(by_arg)[-1],
+                                      function(x) if (is.character(x)) x else NA)))
+              } else NULL
+    return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
+                transform = list(op = "merge", by = by_val)))
+  }
+  # filter / subset
+  if (fn %in% c("filter","subset","dplyr::filter")) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    args <- as.list(rhs)[-1]
+    pred <- if (length(args) >= 2) expr_text(args[[2]], 200) else NULL
+    return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
+                transform = list(op = "filter", predicate = pred)))
+  }
+  # rbind / bind_rows
+  if (fn %in% c("rbind","rbindlist","bind_rows","dplyr::bind_rows")) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
+                transform = list(op = "rbind")))
+  }
+  # Typecasts
+  if (fn %in% c("as.data.frame","as_tibble","tibble::as_tibble","as.matrix",
+                "column_to_rownames","rownames_to_column","tibble::column_to_rownames",
+                "tibble::rownames_to_column")) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
+                transform = list(op = "typecast", fn = fn)))
+  }
+  # No generic fallback. Round-1 dataframes[] uses a positive allowlist of
+  # dataframe-producing functions (READ_FNS, merge/joins, filter/subset,
+  # rbind, typecasts, `[`, `%>%`). Anything else — model fits, ggplot
+  # construction, scalar reductions, plot+geom chains — would create huge
+  # noise. Surface as a "derived_unknown" finding only when there's clear
+  # data manipulation: dplyr verbs by name.
+  if (fn %in% c("mutate","transmute","summarise","summarize","arrange",
+                "select","rename","group_by","ungroup",
+                "pivot_longer","pivot_wider",
+                "dplyr::mutate","dplyr::transmute","dplyr::summarise",
+                "dplyr::arrange","dplyr::select","dplyr::rename",
+                "tidyr::pivot_longer","tidyr::pivot_wider")) {
+    refs <- intersect(extract_name_refs(rhs), known_frames)
+    return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
+                transform = list(op = fn, expr = expr_text(rhs, 200))))
+  }
+  NULL
+}
+
+# Functions whose RHS is *never* a dataframe — used to filter out
+# false positives like `t_yes <- sum(out[[a]] == "Yes")` from the
+# generic "any call referencing a known frame" fallback.
+SCALAR_FNS <- c("sum","mean","median","min","max","length","nrow","ncol",
+                "any","all","sd","var","quantile","range","prod",
+                "as.integer","as.numeric","as.double","as.logical",
+                "is.na","is.null","is.character","is.numeric",
+                "paste","paste0","sprintf","cat","print","message","stop",
+                "warning")
+
+collect_dataframes <- function(calls_all) {
+  out <- list()
+  known <- character()
+  for (item in calls_all) {
+    e <- item$call
+    if (!(is.call(e) && length(e) == 3 &&
+          (identical(e[[1]], as.name("<-")) || identical(e[[1]], as.name("="))))) next
+    lhs <- e[[2]]; rhs <- e[[3]]
+    if (!is.name(lhs)) next
+    # Skip if RHS is a scalar-returning call
+    fn <- if (is.call(rhs)) call_name(rhs) else NA_character_
+    if (!is.na(fn) && fn %in% SCALAR_FNS) next
+    cls <- df_classify(rhs, known)
+    if (is.null(cls)) next
+    entry <- list(id = as.character(lhs), site = item$line_start)
+    entry[names(cls)] <- cls
+    out[[length(out) + 1]] <- entry
+    known <- unique(c(known, as.character(lhs)))
+  }
+  out
+}
+
+# Models
+MODEL_FNS <- c(
+  "DESeqDataSetFromMatrix", "DESeq2::DESeqDataSetFromMatrix",
+  "lm", "stats::lm", "glm", "stats::glm",
+  "lmer", "lme4::lmer",
+  "lmFit", "limma::lmFit",
+  "glmFit", "edgeR::glmFit",
+  "glmQLFit", "edgeR::glmQLFit"
+)
+CONTRAST_FNS <- c("results", "DESeq2::results", "topTable", "limma::topTable",
+                  "topTags", "edgeR::topTags", "glmLRT", "glmQLFTest")
+
+# Find every `factor(<col>, levels = c(...))` call. Returns a named list
+# `column_name -> first_level (= reference)`. Used by collect_models to
+# attach reference_levels per term.
+find_reference_levels <- function(calls_all, terms_universe) {
+  if (!length(terms_universe)) return(NULL)
+  out <- list()
+  for (item in calls_all) {
+    e <- item$call
+    if (!identical(call_name(e), "factor")) next
+    x_arg <- arg_by(e, pos = 1)
+    lvl_arg <- arg_by(e, name = "levels")
+    col_name <- NULL
+    if (is.name(x_arg)) col_name <- as.character(x_arg)
+    else if (is.call(x_arg) && length(x_arg) == 3 &&
+             identical(x_arg[[1]], as.name("$"))) {
+      col_name <- as.character(x_arg[[3]])
+    }
+    if (!is.null(col_name) && col_name %in% terms_universe &&
+        is.call(lvl_arg) && identical(lvl_arg[[1]], as.name("c"))) {
+      vals <- unlist(lapply(as.list(lvl_arg)[-1],
+                            function(x) if (is.character(x)) x else NA))
+      vals <- vals[!is.na(vals)]
+      if (length(vals) && is.null(out[[col_name]])) out[[col_name]] <- vals[1]
+    }
+  }
+  if (length(out)) out else NULL
+}
+
+collect_models <- function(calls_all) {
+  models <- list(); contrasts <- list()
+  for (item in calls_all) {
+    e <- item$call
+    if (!(is.call(e) && length(e) == 3 &&
+          (identical(e[[1]], as.name("<-")) || identical(e[[1]], as.name("="))))) next
+    lhs <- e[[2]]; rhs <- e[[3]]
+    if (!(is.name(lhs) && is.call(rhs))) next
+    fn <- call_name(rhs)
+    if (is.na(fn)) next
+    if (fn %in% MODEL_FNS) {
+      design <- arg_by(rhs, name = "design") %||%
+                arg_by(rhs, name = "formula") %||% arg_by(rhs, pos = 1)
+      design_text <- if (!is.null(design)) expr_text(design, 100) else NULL
+      countData <- arg_by(rhs, name = "countData") %||% arg_by(rhs, name = "data")
+      colData   <- arg_by(rhs, name = "colData")
+      models[[length(models) + 1]] <- list(
+        id      = as.character(lhs),
+        site    = item$line_start,
+        fn      = fn,
+        formula = design_text,
+        count_data = if (is.name(countData)) as.character(countData) else NULL,
+        col_data   = if (is.name(colData))   as.character(colData)   else NULL
+      )
+    } else if (fn %in% CONTRAST_FNS) {
+      dds_ref <- arg_by(rhs, pos = 1)
+      dds_name <- if (is.name(dds_ref)) as.character(dds_ref) else NULL
+      contrasts[[length(contrasts) + 1]] <- list(
+        id   = as.character(lhs),
+        site = item$line_start,
+        fn   = fn,
+        model_id = dds_name
+      )
+    }
+  }
+  # Universe of formula terms (for reference-level lookup)
+  all_terms <- unique(unlist(lapply(models, function(m) {
+    if (is.null(m$formula)) return(character())
+    setdiff(regmatches(m$formula,
+                       gregexpr("[A-Za-z_][A-Za-z0-9_.]*", m$formula))[[1]],
+            c("", "~"))
+  })))
+  ref_levels <- find_reference_levels(calls_all, all_terms)
+  # Attach contrasts + best-effort reference_levels to each model
+  for (i in seq_along(models)) {
+    mid <- models[[i]]$id
+    mc <- Filter(function(c) identical(c$model_id, mid), contrasts)
+    models[[i]]$contrasts <- if (length(mc))
+      lapply(mc, function(c) list(id = c$id, site = c$site, fn = c$fn))
+      else list()
+    if (!is.null(ref_levels) && length(ref_levels)) {
+      models[[i]]$reference_levels <- ref_levels
+    }
+  }
+  models
+}
+
 collect_env_vars <- function(calls_all) {
   read_out <- character(); written_out <- character()
   for (item in calls_all) {
@@ -580,6 +921,9 @@ outputs        <- collect_outputs(calls_all, assigns)
 side_effects   <- collect_side_effects(calls_all)
 stoch_ops      <- collect_stochastic_ops(calls_all)
 env_vars       <- collect_env_vars(calls_all)
+hardcoded_data <- collect_hardcoded_data(calls_all, raw_lines)
+dataframes_l   <- collect_dataframes(calls_all)
+models_l       <- collect_models(calls_all)
 checks         <- compliance_checks(parse_tree, calls_all, raw_lines, config_iface, stoch_ops)
 findings       <- findings_from_compliance(checks)
 
@@ -673,14 +1017,14 @@ root <- list(
   package_resources = NULL,   # not yet implemented
   env_vars_read    = as.list(env_vars$env_vars_read),
   env_vars_written = as.list(env_vars$env_vars_written),
-  dataframes       = list(),  # not yet implemented (needs §3.2 column lineage)
-  transformations  = list(),  # not yet implemented (needs predicate extraction)
-  models           = list(),
+  dataframes       = dataframes_l,
+  transformations  = list(),  # still deferred — predicate-extraction is partial in dataframes[]
+  models           = models_l,
   figures          = list(),
   stochastic_ops   = stoch_ops,
   seed_policy      = seed_policy,
   functions_defined = NULL,
-  hardcoded_data   = NULL,
+  hardcoded_data   = if (length(hardcoded_data)) hardcoded_data else NULL,
   external_binaries = list(),
   driver_pattern   = NULL,
   validation       = NULL,
@@ -692,9 +1036,145 @@ root <- list(
   audit_findings_preview = findings,
   unresolved = list(
     list(kind = "not_yet_implemented",
-         note = "round-1 parser scope: dataframes/transformations/models/figures/functions_defined/hardcoded_data not yet populated")
+         note = "round 1.5: transformations[] / figures[] / functions_defined / pair_unit / runtime trace still deferred")
   )
 )
+
+# ---------------------------------------------------------------------------
+# Scored audit report (Option C)
+# ---------------------------------------------------------------------------
+# Map each compliance rule to a category for per-axis scoring. Rules not
+# listed here fall into "misc".
+RULE_CATEGORIES <- list(
+  "script-header-metadata"   = "reproducibility",
+  "logging-dual-capture"     = "reproducibility",
+  "seed-coverage"            = "reproducibility",
+  "seed-policy"              = "reproducibility",
+  "relative-paths-only"      = "io",
+  "forbidden-variable-names" = "variables",
+  "genome-build-tag"         = "genomics"
+)
+
+grade_pct <- function(p) {
+  if (is.na(p)) return("N/A")
+  if (p >= 0.90) "A" else if (p >= 0.80) "B" else if (p >= 0.70) "C"
+  else if (p >= 0.60) "D" else "F"
+}
+
+emit_report <- function(root, report_dir) {
+  dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # Pass/fail counts by category (from compliance_checks)
+  cat_pass <- list(); cat_fail <- list()
+  for (chk in root$compliance_checks) {
+    cat_name <- RULE_CATEGORIES[[chk$rule]] %||% "misc"
+    if (identical(chk$status, "pass")) cat_pass[[cat_name]] <- (cat_pass[[cat_name]] %||% 0L) + 1L
+    if (identical(chk$status, "fail")) cat_fail[[cat_name]] <- (cat_fail[[cat_name]] %||% 0L) + 1L
+  }
+  cats <- sort(unique(c(names(cat_pass), names(cat_fail))))
+  total_pass <- sum(unlist(cat_pass) %||% 0L)
+  total_fail <- sum(unlist(cat_fail) %||% 0L)
+  headline_pct <- if (total_pass + total_fail == 0) NA_real_
+                  else total_pass / (total_pass + total_fail)
+
+  lines <- c(
+    "# sciAuditor — Audit Report",
+    "",
+    sprintf("- **Analysis**: `%s`", root$script$path),
+    sprintf("- **Inferred at**: %s", root$script$inferred_at),
+    sprintf("- **Schema**: v%s · Layer A (static)", root$schema_version),
+    "",
+    "## Headline",
+    "",
+    "| Score | Grade |",
+    "|---|---|",
+    sprintf("| %d / %d (%s) | **%s** |",
+            total_pass, total_pass + total_fail,
+            if (is.na(headline_pct)) "—" else sprintf("%.0f%%", 100 * headline_pct),
+            grade_pct(headline_pct)),
+    "",
+    "## By category",
+    "",
+    "| Category | Pass | Fail | %  | Grade |",
+    "|---|---:|---:|---:|---:|"
+  )
+  for (cat_name in cats) {
+    p <- cat_pass[[cat_name]] %||% 0L; f <- cat_fail[[cat_name]] %||% 0L
+    pct <- if (p + f == 0) NA_real_ else p / (p + f)
+    lines <- c(lines, sprintf("| %s | %d | %d | %s | %s |",
+                              cat_name, p, f,
+                              if (is.na(pct)) "—" else sprintf("%.0f%%", 100 * pct),
+                              grade_pct(pct)))
+  }
+
+  # Findings grouped by severity
+  lines <- c(lines, "", "## Findings", "")
+  for (sev in c("BLOCKER", "WARNING", "NOTE", "OK")) {
+    hits <- Filter(function(f) identical(f$severity, sev), root$audit_findings_preview)
+    if (!length(hits)) next
+    lines <- c(lines, sprintf("### %s (%d)", sev, length(hits)), "")
+    for (h in hits) {
+      sites <- h$sites %||% h$evidence_sites %||% list()
+      sites_text <- if (length(sites)) sprintf(" (L%s)", paste(unlist(sites), collapse = ", L")) else ""
+      lines <- c(lines, sprintf("- **%s**%s — %s",
+                                h$rule, sites_text, h$note %||% ""))
+    }
+    lines <- c(lines, "")
+  }
+
+  # Inventory
+  sp_seeded   <- root$seed_policy$coverage$seeded   %||% 0L
+  sp_unseeded <- root$seed_policy$coverage$unseeded %||% 0L
+  lines <- c(lines, "## Inventory", "",
+             sprintf("- Inputs: **%d**", length(root$inputs)),
+             sprintf("- Outputs: **%d**", length(root$outputs)),
+             sprintf("- Models: **%d**", length(root$models)),
+             sprintf("- Dataframes: **%d**", length(root$dataframes)),
+             sprintf("- Stochastic ops: **%d** (%d seeded, %d unseeded)",
+                     length(root$stochastic_ops), sp_seeded, sp_unseeded),
+             sprintf("- Hardcoded blocks: **%d**",
+                     length(root$hardcoded_data %||% list())),
+             sprintf("- Organism inferred: **%s**",
+                     root$organism_inferred %||% "not detected"),
+             sprintf("- Genome build declared: **%s**",
+                     root$genome_build_declared %||% "_not declared_")
+  )
+
+  if (length(root$models)) {
+    lines <- c(lines, "", "## Models", "")
+    for (m in root$models) {
+      lines <- c(lines, sprintf("- `%s` (L%s) — `%s` design `%s`",
+                                m$id, m$site %||% "?",
+                                m$fn, m$formula %||% "?"))
+      if (length(m$contrasts)) {
+        contrast_names <- vapply(m$contrasts, function(c) c$id, character(1))
+        lines <- c(lines, sprintf("  - contrasts: %s",
+                                  paste(paste0("`", contrast_names, "`"), collapse = ", ")))
+      }
+    }
+  }
+
+  report_path <- file.path(report_dir, "audit_report.md")
+  writeLines(lines, report_path)
+
+  # Machine-readable findings TSV for CI
+  tsv_path <- file.path(report_dir, "audit_findings.tsv")
+  tsv_lines <- c("severity\trule\tsites\tnote")
+  for (f in root$audit_findings_preview) {
+    sites <- f$sites %||% f$evidence_sites %||% list()
+    sites_text <- paste(unlist(sites), collapse = ",")
+    note <- gsub("\t", " ", f$note %||% "")
+    tsv_lines <- c(tsv_lines, sprintf("%s\t%s\t%s\t%s",
+                                      f$severity, f$rule, sites_text, note))
+  }
+  writeLines(tsv_lines, tsv_path)
+
+  list(report = report_path,
+       findings_tsv = tsv_path,
+       headline_score = sprintf("%d/%d %s",
+                                total_pass, total_pass + total_fail,
+                                grade_pct(headline_pct)))
+}
 
 # Emit YAML
 yaml_str <- as.yaml(root, indent = 2, indent.mapping.sequence = TRUE)
@@ -705,4 +1185,11 @@ if (identical(opt$output, "-")) {
   writeLines(yaml_str, opt$output)
   message(sprintf("[sciauditor_r] wrote %s (%d inputs, %d outputs, %d findings)",
                   opt$output, length(inputs), length(outputs), length(findings)))
+}
+
+# Emit report if requested
+if (!is.null(opt$report_dir)) {
+  res <- emit_report(root, opt$report_dir)
+  message(sprintf("[sciauditor_r] report: %s  findings_tsv: %s  headline: %s",
+                  res$report, res$findings_tsv, res$headline_score))
 }
