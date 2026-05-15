@@ -1,0 +1,1436 @@
+schema_version: '0.2'
+analysis_unit:
+  id: manually_run_DeSeq2
+  kind: pair
+pair_unit:
+  launcher:
+    path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/run_manually_run_DeSeq2.sh
+    language: bash
+  analysis:
+    path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
+    language: R
+  binding:
+    - launcher_var: SOURCE_DIR
+      analysis_flag: --source_dir
+      value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025
+      site: launcher:18 → analysis:62
+    - launcher_var: WORKFLOW_DIR
+      analysis_flag: --workflow_dir
+      value_resolved: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr
+      site: launcher:17 → analysis:65
+    - launcher_var: METADATA
+      analysis_flag: --metadata_File
+      value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/configs/metadata_triplicates_recoded.csv
+      site: launcher:19 → analysis:84
+    - launcher_var: QC_METRICS
+      analysis_flag: --qc_metrics
+      value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/qc.tsv
+      site: launcher:20 → analysis:81
+    - launcher_var: REF_VARIABLE
+      analysis_flag: --ref_variable
+      value_resolved: DMSO
+      site: launcher:27 → analysis:75
+    - launcher_var: DROP_SAMPLES
+      analysis_flag: --drop_samples
+      value_resolved: R.S.2,R.C.3
+      site: launcher:28 → analysis:73
+    - launcher_var: MIN_READ_COUNTS
+      analysis_flag: --min_read_counts
+      value_resolved: '50'
+      site: launcher:29 → analysis:77
+    - launcher_var: SMALLEST_GROUP_SIZE
+      analysis_flag: --smallest_group_size
+      value_resolved: '3'
+      site: launcher:30 → analysis:79
+    - launcher_var: BLIND_TRANSFORM
+      analysis_flag: --blind_transform
+      value_resolved: 'True'
+      site: launcher:31 → analysis:71
+    - launcher_var: PNG_DPI
+      analysis_flag: --png_dpi
+      value_resolved: '150'
+      site: launcher:34 → analysis:91
+    - launcher_var: RASTERISE_DPI
+      analysis_flag: --rasterise_dpi
+      value_resolved: '100'
+      site: launcher:35 → analysis:93
+    - launcher_var: LOG_DIR
+      analysis_flag: --log_dir
+      value_resolved: logs
+      site: launcher:40 → analysis:88
+  effective_cwd_at_analysis: ${OUTPUT_DIR}
+script:
+  path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T22:32:24-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --source_dir
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/
+      default_kind: absolute
+      help: parent directory to RNA-seq count data
+      site: 62
+    - name: --workflow_dir
+      type: character
+      default: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/
+      default_kind: absolute
+      help: Path to workflow directory
+      site: 65
+    - name: --blind_transform
+      type: logical
+      default: yes
+      default_kind: ~
+      help: Perform blind rlog transformation
+      site: 71
+    - name: --drop_samples
+      type: character
+      default: R.S.2,R.C.3
+      default_kind: relative
+      help: Comma-separated samples to drop
+      site: 73
+    - name: --ref_variable
+      type: character
+      default: DMSO
+      default_kind: relative
+      help: Reference condition variable
+      site: 75
+    - name: --min_read_counts
+      type: integer
+      default: 50.0
+      default_kind: ~
+      help: Minimum read count threshold
+      site: 77
+    - name: --smallest_group_size
+      type: integer
+      default: 3.0
+      default_kind: ~
+      help: Smallest group size for filtering
+      site: 79
+    - name: --qc_metrics
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/qc.tsv
+      default_kind: absolute
+      help: Path to QC metrics TSV file
+      site: 81
+    - name: --metadata_File
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/configs/metadata_triplicates_recoded.csv
+      default_kind: absolute
+      help: Path metadata file
+      site: 84
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: 'Directory for log files [default: logs]'
+      site: 88
+    - name: --png_dpi
+      type: integer
+      default: 150.0
+      default_kind: ~
+      help: 'DPI for PNG figures. Use 150 for fast/small, 300 for publication [default:
+        150]'
+      site: 91
+    - name: --rasterise_dpi
+      type: integer
+      default: 100.0
+      default_kind: ~
+      help: 'DPI for ggrastr rasterisation of PDF/SVG geom layers. Rasterises data
+        layers (points, violins) while keeping text/axes as vector. 0 = pure vector
+        (no rasterisation). [default: 100]'
+      site: 93
+inputs:
+  - id: input_01
+    path_template: '{source_dir}/annot.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 173
+    resolution_confidence: medium
+  - id: input_02
+    path_template: '{source_dir}/CT/counts_annot.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 174
+    resolution_confidence: medium
+  - id: input_03
+    path_template: '{source_dir}/CT/counts.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 175
+    resolution_confidence: medium
+  - id: input_04
+    path_template: '{opt.qc_metrics}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 176
+    resolution_confidence: high
+  - id: input_05
+    path_template: '{opt.metadata_File}'
+    kind: tabular
+    format: csv
+    read_call:
+      fn: read.csv
+      site: 370
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_gene_lists.tsv
+    write_call:
+      fn: fwrite
+      site: 355
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_gene_lists_long.tsv
+    write_call:
+      fn: fwrite
+      site: 363
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/cts_coding_raw_counts.tsv
+    write_call:
+      fn: fwrite
+      site: 480
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/metadata_samples.tsv
+    write_call:
+      fn: fwrite
+      site: 481
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_05
+    kind: tabular
+    format: multi
+    path_template: filepath("pdf")
+    write_call:
+      fn: ggsave
+      site: 586
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_06
+    kind: tabular
+    format: multi
+    path_template: filepath("png")
+    write_call:
+      fn: ggsave
+      site: 587
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_07
+    kind: tabular
+    format: multi
+    path_template: filepath("svg")
+    write_call:
+      fn: ggsave
+      site: 589
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_08
+    kind: tabular
+    format: tsv
+    path_template: '{out_file}'
+    write_call:
+      fn: fwrite
+      site: 1569
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_09
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/barplot_chisq_test_results.tsv
+    write_call:
+      fn: fwrite
+      site: 1738
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_10
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/barplot_pairwise_proportion_tests.tsv
+    write_call:
+      fn: fwrite
+      site: 1739
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_11
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2214
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_12
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2215
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_13
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2216
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_14
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/Antigen_Presentation_NES_all_contrasts.tsv
+    write_call:
+      fn: fwrite
+      site: 2627
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_15
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2682
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_16
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2683
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_17
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2684
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_18
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/GSEA_running_score_IFNgamma_CKi_vs_DMSO.tsv
+    write_call:
+      fn: fwrite
+      site: 3089
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_19
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3099
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_20
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3100
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_21
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3101
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_22
+    kind: tabular
+    format: tsv
+    path_template: '{out_path}'
+    write_call:
+      fn: fwrite
+      site: 3114
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_23
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3123
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_24
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3124
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_25
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3125
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_26
+    kind: tabular
+    format: tsv
+    path_template: '{tsv_path}'
+    write_call:
+      fn: fwrite
+      site: 4462
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_27
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_availability_per_contrast.tsv
+    write_call:
+      fn: fwrite
+      site: 4530
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_28
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_VST_all_conditions.tsv
+    write_call:
+      fn: fwrite
+      site: 4953
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_29
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_VST_all_conditions_scaled.tsv
+    write_call:
+      fn: fwrite
+      site: 4958
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes:
+  - id: annot
+    site: 173
+    origin: '{source_dir}/annot.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: counts_annot
+    site: 174
+    origin: '{source_dir}/CT/counts_annot.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: cts
+    site: 175
+    origin: '{source_dir}/CT/counts.tsv'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: qc_metrics
+    site: 176
+    origin: '{opt.qc_metrics}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: fread
+  - id: annot_abridge
+    site: 179
+    derived_from:
+      - annot
+    transform:
+      op: pipe
+      expr: annot %>% dplyr::select(c(gene.id, gene.symbol, description, entrez.gene.id))
+  - id: gs.coding_ids
+    site: 191
+    derived_from:
+      - annot
+    transform:
+      op: subset
+      expr: annot[gene.type == "protein_coding", .(gene.id)]
+  - id: cts_coding_df
+    site: 192
+    derived_from:
+      - cts
+      - gs.coding_ids
+    transform:
+      op: pipe
+      expr: cts[gs.coding_ids, on = "gene.id"] %>% as.data.frame()
+  - id: cts_coding
+    site: 193
+    derived_from:
+      - cts_coding_df
+    transform:
+      op: pipe
+      expr: cts_coding_df %>% column_to_rownames(var = "gene.id")
+  - id: gs.rep
+    site: 197
+    derived_from:
+      - annot
+    transform:
+      op: pipe
+      expr: annot %>% dplyr::filter(chr == "REP") %>% dplyr::select(c(gene.id, gene.type))
+        %>% mutate(tp = case_when(str_detect(gene.type, "^(Endogenous|ERV|LTR|Lomg_terminal_repeat|Endogenous_Retrovirus)")
+        ~ "L...
+  - id: target_genes_df
+    site: 354
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: metadata_df
+    site: 370
+    origin: '{opt.metadata_File}'
+    origin_kind: file
+    transform:
+      op: read
+      fn: read.csv
+  - id: metadata_df
+    site: 395
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% dplyr::filter(!samples %in% drop_samples)
+  - id: cts_coding
+    site: 400
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, samples_to_keep, drop = FALSE]
+  - id: metadata_rown_df
+    site: 432
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% column_to_rownames("new_samples_name")
+  - id: metadata_rown_df
+    site: 443
+    derived_from:
+      - metadata_df
+    transform:
+      op: pipe
+      expr: metadata_df %>% column_to_rownames("samples")
+  - id: cts_coding
+    site: 465
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, rownames(metadata_rown_df), drop = FALSE]
+  - id: cts_coding_export
+    site: 477
+    derived_from:
+      - cts_coding
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: cts_coding_export
+    site: 479
+    derived_from:
+      - cts_coding_export
+    transform:
+      op: subset
+      expr: cts_coding_export[, c("gene.id", setdiff(names(cts_coding_export), "gene.id"))]
+  - id: qstat_cki_vs_dmso_metadata
+    site: 500
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, qstatCKI_samples), ]
+  - id: cki_vs_dmso_metadata
+    site: 501
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, CKI_samples), ]
+  - id: qstat_vs_dmso_metadata
+    site: 502
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[c(dmso_samples, qstat_samples), ]
+  - id: qstat_cki_vs_dmso_df
+    site: 511
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, qstatCKI_samples)]
+  - id: cki_vs_dmso_df
+    site: 512
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, CKI_samples)]
+  - id: qstat_vs_dmso_df
+    site: 513
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, c(dmso_samples, qstat_samples)]
+  - id: annot_for_dds
+    site: 633
+    derived_from: ~
+    transform:
+      op: merge
+      by:
+        - gene.id
+  - id: annot_for_dds
+    site: 635
+    derived_from:
+      - annot_for_dds
+    transform:
+      op: subset
+      expr: annot_for_dds[match(rownames(dds_in), annot_for_dds$gene.id), ]
+  - id: count_df
+    site: 689
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_long
+    site: 692
+    derived_from:
+      - count_df
+    transform:
+      op: pipe
+      expr: count_df %>% dplyr::left_join(gene_map, by = "gene.id") %>% tidyr::pivot_longer(cols
+        = -c(gene.id, gene.symbol), names_to = "sample", values_to = "normalized_count")
+  - id: sample_info
+    site: 701
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_df
+    site: 800
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: count_long
+    site: 803
+    derived_from:
+      - count_df
+    transform:
+      op: pipe
+      expr: count_df %>% dplyr::left_join(gene_map, by = "gene.id") %>% tidyr::pivot_longer(cols
+        = -c(gene.id, gene.symbol), names_to = "sample", values_to = "normalized_count")
+  - id: sample_info
+    site: 812
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order
+    site: 837
+    derived_from:
+      - count_long
+    transform:
+      op: pipe
+      expr: count_long %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(condition,
+        sample) %>% dplyr::pull(sample)
+  - id: qstat_cki_vs_dmso_deresults_df
+    site: 1214
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: qstat_cki_vs_dmso_deresults_lfc_groups
+    site: 1221
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by
+        = "gene.id")
+  - id: qstat_cki_vs_dmso_results_4_volcano_plot
+    site: 1225
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% filter(gene.symbol %in% CKi27_and_QSTAT_combination)
+        %>% arrange(padj) %>% dplyr::select(gene.id, gene.symbol, log2FoldChange,
+        padj, groups) %>% filter(str_...
+  - id: qstat_cki_res2
+    site: 1285
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .group...
+  - id: cki_vs_dmso_deresults_df
+    site: 1337
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: cki_vs_dmso_deresults_lfc_groups
+    site: 1341
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by = "gene.id")
+  - id: cki_vs_dmso_res2
+    site: 1347
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id), !is.na(log2FoldChange))
+        %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange = max(log2FoldChange,
+        na.rm = TRUE), .groups = "d...
+  - id: qstat_vs_dmso_deresults_df
+    site: 1386
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: qstat_vs_dmso_deresults_lfc_groups
+    site: 1390
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% left_join(annot_abridge, by = "gene.id")
+  - id: qstat_vs_dmso_res2
+    site: 1396
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .groups = ...
+  - id: res2_cki
+    site: 2410
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id), !is.na(log2FoldChange))
+        %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange = max(log2FoldChange,
+        na.rm = TRUE), .groups = "d...
+  - id: res2_qstat
+    site: 2432
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% filter(!is.na(entrez.gene.id),
+        !is.na(log2FoldChange)) %>% group_by(entrez.gene.id) %>% summarise(log2FoldChange
+        = max(log2FoldChange, na.rm = TRUE), .groups = ...
+  - id: antigen_nes_matrix
+    site: 2576
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: antigen_qval_matrix
+    site: 2579
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: m5_nes_matrix
+    site: 2852
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.matrix
+  - id: norm_df
+    site: 3108
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: norm_df
+    site: 3110
+    derived_from:
+      - norm_df
+    transform:
+      op: pipe
+      expr: norm_df %>% left_join(annot_df %>% dplyr::select(gene.id, gene.symbol,
+        entrez.gene.id), by = "gene.id") %>% dplyr::select(gene.id, gene.symbol, entrez.gene.id,
+        everything())
+  - id: qstat_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3148
+    derived_from:
+      - qstat_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>% mutate(pvalue
+        = padj) %>% filter(gene.symbol %in% all_quisinostat_genes) %>% filter(str_detect(groups,
+        pattern = "sigLFC_"))
+  - id: cki_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3177
+    derived_from:
+      - cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: cki_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>% mutate(pvalue
+        = padj) %>% filter(gene.symbol %in% all_CKi27_genes) %>% filter(str_detect(groups,
+        pattern = "sigLFC_"))
+  - id: qstat_cki_vs_dmso_deresults_lfc_groups_padjustOnly
+    site: 3206
+    derived_from:
+      - qstat_cki_vs_dmso_deresults_lfc_groups
+    transform:
+      op: pipe
+      expr: qstat_cki_vs_dmso_deresults_lfc_groups %>% dplyr::select(!pvalue) %>%
+        mutate(pvalue = padj) %>% filter(gene.symbol %in% CKi27_and_QSTAT_combination)
+        %>% filter(str_detect(groups, pattern = "sigLFC_"))
+  - id: pathway_symbols
+    site: 3765
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: annot_abridge %>% dplyr::filter(entrez.gene.id %in% pathway_entrez) %>%
+        dplyr::pull(gene.symbol) %>% unique()
+  - id: df
+    site: 4046
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: long
+    site: 4048
+    derived_from:
+      - df
+    transform:
+      op: tidyr::pivot_longer
+      expr: tidyr::pivot_longer(df, cols = -gene, names_to = "sample", values_to =
+        "value")
+  - id: dist_long
+    site: 4053
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sample_info
+    site: 4067
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order
+    site: 4071
+    derived_from:
+      - dist_long
+    transform:
+      op: pipe
+      expr: dist_long %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(condition,
+        sample) %>% dplyr::pull(sample)
+  - id: all_metadata
+    site: 4547
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[all_samples, , drop = FALSE]
+  - id: all_counts
+    site: 4548
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, all_samples]
+  - id: df
+    site: 4574
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: long
+    site: 4576
+    derived_from:
+      - df
+    transform:
+      op: tidyr::pivot_longer
+      expr: tidyr::pivot_longer(df, cols = -gene, names_to = "sample", values_to =
+        "value")
+  - id: dist_long_all
+    site: 4581
+    derived_from: ~
+    transform:
+      op: rbind
+  - id: sample_info_all
+    site: 4592
+    derived_from: ~
+    transform:
+      op: typecast
+      fn: as.data.frame
+  - id: sample_order_all
+    site: 4596
+    derived_from:
+      - dist_long_all
+    transform:
+      op: pipe
+      expr: dist_long_all %>% dplyr::distinct(sample, condition) %>% dplyr::arrange(factor(condition,
+        levels = c("DMSO", "CKi", "QSTAT", "QSTAT-CKi")), sample) %>% dplyr::pull(sample)
+  - id: all_metadata
+    site: 4770
+    derived_from:
+      - metadata_rown_df
+    transform:
+      op: subset
+      expr: metadata_rown_df[metadata_rown_df$condition %in% target_conditions, ,
+        drop = FALSE]
+  - id: cts_coding_all
+    site: 4779
+    derived_from:
+      - cts_coding
+    transform:
+      op: subset
+      expr: cts_coding[, relevant_samples, drop = FALSE]
+  - id: all_metadata
+    site: 4780
+    derived_from:
+      - all_metadata
+    transform:
+      op: subset
+      expr: all_metadata[relevant_samples, , drop = FALSE]
+  - id: id_to_symbol_all
+    site: 4824
+    derived_from:
+      - annot_abridge
+    transform:
+      op: pipe
+      expr: annot_abridge %>% filter(gene.id %in% gene_ids_in_vst) %>% dplyr::select(gene.id,
+        gene.symbol) %>% distinct()
+  - id: target_gene_ids
+    site: 4839
+    derived_from:
+      - id_to_symbol_all
+    transform:
+      op: pipe
+      expr: id_to_symbol_all %>% filter(gene.symbol %in% available_target_symbols)
+        %>% pull(gene.id)
+  - id: sample_conditions_all
+    site: 4857
+    derived_from:
+      - all_metadata
+    transform:
+      op: subset
+      expr: all_metadata[colnames(vst_targets_all_scaled), "condition", drop = TRUE]
+transformations: []
+models:
+  - id: qstat_cki_vs_dmso_dds
+    site: 517
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: qstat_cki_vs_dmso_df
+    col_data: qstat_cki_vs_dmso_metadata
+    contrasts:
+      - id: qstat_cki_vs_dmso_res
+        site: 540
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: cki_vs_dmso_dds
+    site: 521
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: cki_vs_dmso_df
+    col_data: cki_vs_dmso_metadata
+    contrasts:
+      - id: cki_vs_dmso_res
+        site: 1334
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: qstat_vs_dmso_dds
+    site: 525
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: qstat_vs_dmso_df
+    col_data: qstat_vs_dmso_metadata
+    contrasts:
+      - id: qstat_vs_dmso_res
+        site: 1383
+        fn: results
+    reference_levels:
+      condition: DMSO
+  - id: dds_all_conditions
+    site: 4550
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: all_counts
+    col_data: all_metadata
+    contrasts: []
+    reference_levels:
+      condition: DMSO
+  - id: all_samples_dds
+    site: 4801
+    fn: DESeqDataSetFromMatrix
+    formula: ~condition
+    count_data: cts_coding_all
+    col_data: all_metadata
+    contrasts: []
+    reference_levels:
+      condition: DMSO
+figures: []
+stochastic_ops:
+  - site: 1299
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1298
+    seed_value: 1
+  - site: 1358
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1357
+    seed_value: 1
+  - site: 1407
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1406
+    seed_value: 1
+  - site: 2179
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2178
+    seed_value: 1
+  - site: 2191
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2190
+    seed_value: 1
+  - site: 2203
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2202
+    seed_value: 1
+  - site: 2420
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2419
+    seed_value: 1
+  - site: 2442
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2441
+    seed_value: 1
+  - site: 2455
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2454
+    seed_value: 1
+  - site: 2644
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2643
+    seed_value: 1
+  - site: 2657
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2656
+    seed_value: 1
+  - site: 2670
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2669
+    seed_value: 1
+seed_policy:
+  declared_value: 1
+  multiple_values_observed: ~
+  coverage:
+    stochastic_ops: 12
+    seeded: 12
+    unseeded: 0
+  divergence_from_claude_default: yes
+  severity: NOTE
+  note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
+functions_defined: ~
+hardcoded_data:
+  - id: hdac_targets
+    site: '218'
+    kind: curated_geneset
+    count: 11
+    values:
+      - Hdac1
+      - Hdac2
+      - Hdac3
+      - Hdac8
+      - Hdac4
+      - Hdac5
+      - Hdac6
+      - Hdac7
+      - Hdac9
+      - Hdac10
+      - Hdac11
+    citations: ~
+  - id: downstream_effectors
+    site: '226'
+    kind: curated_geneset
+    count: 7
+    values:
+      - H1f0
+      - Klf15
+      - Trim21
+      - Tnnt1
+      - Col20a1
+      - Bmi1
+      - Nanog
+    citations: ~
+  - id: cell_cycle_apoptosis
+    site: '237'
+    kind: curated_geneset
+    count: 13
+    values:
+      - Cdkn1a
+      - Cdkn1b
+      - Cdkn2a
+      - Gadd45a
+      - Bax
+      - Bcl2l11
+      - Bbc3
+      - Pmaip1
+      - Bcl2
+      - Mcl1
+      - Trp53
+      - E2f1
+      - Myc
+    citations: ~
+  - id: ferroptosis
+    site: '249'
+    kind: curated_geneset
+    count: 8
+    values:
+      - Gpx4
+      - Slc7a11
+      - Acsl4
+      - Tfrc
+      - Fth1
+      - Ftl1
+      - Hmox1
+      - Nfe2l2
+    citations: ~
+  - id: stemness
+    site: '255'
+    kind: curated_geneset
+    count: 5
+    values:
+      - Sox2
+      - Pou5f1
+      - Klf4
+      - Cd44
+      - Aldh1a1
+    citations: ~
+  - id: CKi27_genes
+    site: '278'
+    kind: curated_geneset_structured
+    count: 36
+    sub_categories: 13
+    sub_category_names:
+      - cell_cycle_arrest
+      - pro_apoptotic
+      - tumor_suppressor
+      - mhc_antigen
+      - differentiation
+      - cell_cycle_promoters
+      - anti_apoptotic
+      - immediate_early
+      - immune_checkpoint
+      - mapk_feedback
+      - pi3k_akt_feedback
+      - variable
+      - mapk_core
+    citations:
+      - PMID:25422890
+      - PMID:40439998
+      - PMID:34288272
+      - PMID:40020669
+      - PMID:41109929
+      - PMID:29731968
+  - id: antigen_pathways
+    site: '2370'
+    kind: string_list
+    count: 10
+    values:
+      - GOLDRATH_ANTIGEN_RESPONSE
+      - REACTOME_ANTIGEN_ACTIVATES_B_CELL_RECEPTOR_BCR_LEADING_TO_GENERATION_OF_SECOND_MESSENGERS
+      - REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC
+      - REACTOME_ANTIGEN_PROCESSING_CROSS_PRESENTATION
+      - REACTOME_ANTIGEN_PROCESSING_UBIQUITINATION_PROTEASOME_DEGRADATION
+      - REACTOME_ANTIGEN_PROCESSING_UB_ATP_INDEPENDENT_PROTEASOMAL_DEGRADATION
+      - REACTOME_CLASS_I_MHC_MEDIATED_ANTIGEN_PROCESSING_PRESENTATION
+      - REACTOME_CROSS_PRESENTATION_OF_PARTICULATE_EXOGENOUS_ANTIGENS_PHAGOSOMES
+      - REACTOME_CROSS_PRESENTATION_OF_SOLUBLE_EXOGENOUS_ANTIGENS_ENDOSOMES
+      - REACTOME_MHC_CLASS_II_ANTIGEN_PRESENTATION
+    citations: ~
+  - id: antigen_colors
+    site: '2393'
+    kind: string_list
+    count: 10
+    values:
+      GOLDRATH_ANTIGEN_RESPONSE: '#E41A1C'
+      REACTOME_ANTIGEN_ACTIVATES_B_CELL_RECEPTOR_BCR_LEADING_TO_GENERATION_OF_SECOND_MESSENGERS: '#377EB8'
+      REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC: '#4DAF4A'
+      REACTOME_ANTIGEN_PROCESSING_CROSS_PRESENTATION: '#984EA3'
+      REACTOME_ANTIGEN_PROCESSING_UBIQUITINATION_PROTEASOME_DEGRADATION: '#FF7F00'
+      REACTOME_ANTIGEN_PROCESSING_UB_ATP_INDEPENDENT_PROTEASOMAL_DEGRADATION: '#FFFF33'
+      REACTOME_CLASS_I_MHC_MEDIATED_ANTIGEN_PROCESSING_PRESENTATION: '#A65628'
+      REACTOME_CROSS_PRESENTATION_OF_PARTICULATE_EXOGENOUS_ANTIGENS_PHAGOSOMES: '#F781BF'
+      REACTOME_CROSS_PRESENTATION_OF_SOLUBLE_EXOGENOUS_ANTIGENS_ENDOSOMES: '#999999'
+      REACTOME_MHC_CLASS_II_ANTIGEN_PRESENTATION: '#66C2A5'
+    citations: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 25
+    kind: r_option
+    detail: options(width = 200)
+  - site: 107
+    kind: mkdir
+    paths:
+      - figures/manual_DeSeq2
+  - site: 108
+    kind: mkdir
+    paths:
+      - data/manual_DeSeq2
+  - site: 114
+    kind: mkdir
+    paths:
+      - '{log_dir}'
+  - site: 575
+    kind: mkdir
+    paths:
+      - dirname(filepath(ext))
+  - site: 1568
+    kind: mkdir
+    paths:
+      - dirname(out_file)
+  - site: 3507
+    kind: mkdir
+    paths:
+      - '{output_dir}/{subdir}'
+environment:
+  r_packages:
+    - DESeq2
+    - tidyverse
+    - EnhancedVolcano
+    - viridis
+    - magrittr
+    - pheatmap
+    - data.table
+    - ggrepel
+    - ggfortify
+    - clusterProfiler
+    - org.Mm.eg.db
+    - ggnewscale
+    - cowplot
+    - RColorBrewer
+    - NbClust
+    - msigdbr
+    - enrichplot
+    - ggpubr
+    - ggVennDiagram
+    - ggrastr
+    - optparse
+    - ComplexHeatmap
+    - grid
+    - ggplotify
+    - circlize
+    - patchwork
+  container: ~
+organism_inferred: mouse
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: fail
+    evidence_sites:
+      - 1
+    note: missing Date or Purpose
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 62
+      - 65
+      - 81
+      - 84
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: pass
+    evidence_sites:
+      - 1299
+      - 1358
+      - 1407
+      - 2179
+      - 2191
+      - 2203
+      - 2420
+      - 2442
+      - 2455
+      - 2644
+      - 2657
+      - 2670
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 122
+      - 135
+    note: ~
+  - rule: genome-build-tag
+    status: fail
+    evidence_sites: []
+    note: organism inferred=mouse but no genome build (mm10/mm39/GRCm39/hg38/...)
+      declared in any path
+audit_findings_preview:
+  - severity: NOTE
+    rule: script-header-metadata
+    sites:
+      - 1
+    note: missing Date or Purpose
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 62
+      - 65
+      - 81
+      - 84
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: seed-coverage
+    note: 'compliance check passed: seed-coverage'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: WARNING
+    rule: genome-build-tag
+    sites: []
+    note: organism inferred=mouse; no genome build token in inputs/outputs
+  - severity: NOTE
+    rule: seed-policy
+    note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round 1.5: transformations[] / figures[] / functions_defined / pair_unit
+      / runtime trace still deferred'
+

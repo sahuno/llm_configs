@@ -28,6 +28,10 @@ option_list <- list(
               help = "output YAML path, '-' for stdout [default %default]"),
   make_option(c("--report_dir"), type = "character", default = NULL,
               help = "emit audit_report.md + audit_findings.tsv into this dir"),
+  make_option(c("--pair_launcher"), type = "character", default = NULL,
+              help = "bash launcher that invokes this R script; auditor will compose a pair_unit block by shelling out to parser_bash/sciauditor_bash.py"),
+  make_option(c("--bash_parser"), type = "character", default = NULL,
+              help = "path to sciauditor_bash.py [default: ../parser_bash/sciauditor_bash.py relative to this script]"),
   make_option(c("--analysis_unit_id"), type = "character", default = NULL,
               help = "override analysis_unit.id; defaults to basename of input"),
   make_option(c("--schema_version"), type = "character", default = "0.2",
@@ -36,6 +40,18 @@ option_list <- list(
 opt <- parse_args(OptionParser(option_list = option_list))
 if (is.null(opt$input)) stop("must pass --input")
 if (!file.exists(opt$input)) stop("input not found: ", opt$input)
+
+# Resolve --bash_parser default relative to this script's location
+resolve_bash_parser <- function(user_value) {
+  if (!is.null(user_value)) return(normalizePath(user_value, mustWork = FALSE))
+  # Find our own location via commandArgs
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- args[grep("^--file=", args)]
+  script_path <- if (length(file_arg)) sub("^--file=", "", file_arg[1]) else NULL
+  if (is.null(script_path)) return(NULL)
+  script_dir <- dirname(normalizePath(script_path, mustWork = FALSE))
+  file.path(script_dir, "..", "parser_bash", "sciauditor_bash.py")
+}
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -993,11 +1009,88 @@ if (!is.null(seed_policy$severity) && seed_policy$severity %in% c("NOTE", "WARNI
   )
 }
 
+# ---------------------------------------------------------------------------
+# Optional: parse launcher and compose pair_unit
+# ---------------------------------------------------------------------------
+pair_unit <- NULL
+analysis_kind <- "single"
+if (!is.null(opt$pair_launcher)) {
+  if (!file.exists(opt$pair_launcher)) {
+    stop("pair_launcher not found: ", opt$pair_launcher)
+  }
+  bash_parser <- resolve_bash_parser(opt$bash_parser)
+  if (is.null(bash_parser) || !file.exists(bash_parser)) {
+    stop("could not locate sciauditor_bash.py; pass --bash_parser <path>")
+  }
+  tmp_yaml <- tempfile(fileext = ".yaml")
+  on.exit(unlink(tmp_yaml), add = TRUE)
+  rc <- system2("python3", c(shQuote(bash_parser),
+                             "--input",  shQuote(opt$pair_launcher),
+                             "--output", shQuote(tmp_yaml)),
+                stderr = FALSE)
+  if (rc != 0) stop("sciauditor_bash.py failed on ", opt$pair_launcher)
+  launcher <- yaml::read_yaml(tmp_yaml)
+
+  # Effective cwd: first `cd` side_effect in the launcher
+  cd_se <- Filter(function(s) identical(s$kind, "cd"), launcher$side_effects)
+  eff_cwd <- if (length(cd_se)) cd_se[[1]]$detail else NULL
+
+  # Build binding[]: launcher_var ↔ analysis_flag whose names match the
+  # analysis-side config_interface.options
+  analysis_flags <- vapply(config_iface$options,
+                           function(o) o$name %||% NA_character_,
+                           character(1))
+  binding <- list()
+  if (!is.null(launcher$invocation) &&
+      !is.null(launcher$invocation$flags)) {
+    for (f in launcher$invocation$flags) {
+      if (is.null(f$value_var)) next
+      match_idx <- which(analysis_flags == f$flag)
+      analysis_site <- if (length(match_idx))
+        config_iface$options[[match_idx[1]]]$site else NA_integer_
+      # Find the launcher-side site by var name
+      launcher_site <- NA_integer_
+      for (o in launcher$config_interface$options) {
+        if (identical(o$name, f$value_var)) { launcher_site <- o$site; break }
+      }
+      binding[[length(binding) + 1]] <- list(
+        launcher_var   = f$value_var,
+        analysis_flag  = f$flag,
+        value_resolved = f$value_resolved,
+        site = sprintf("launcher:%s → analysis:%s",
+                       as.character(launcher_site),
+                       as.character(analysis_site))
+      )
+    }
+  }
+  pair_unit <- list(
+    launcher = list(path = opt$pair_launcher, language = "bash"),
+    analysis = list(path = opt$input,          language = "R"),
+    binding  = binding,
+    effective_cwd_at_analysis = eff_cwd
+  )
+  analysis_kind <- "pair"
+
+  # Cross-pair finding: any analysis flag with no launcher binding → WARNING
+  unbound <- setdiff(analysis_flags,
+                     vapply(binding, function(b) b$analysis_flag, character(1)))
+  unbound <- unbound[!is.na(unbound)]
+  if (length(unbound)) {
+    findings[[length(findings) + 1]] <- list(
+      severity = "NOTE",
+      rule = "pair-binding-coverage",
+      note = sprintf("%d analysis CLI option(s) not bound by launcher (will use defaults): %s",
+                     length(unbound), paste(unbound, collapse = ", "))
+    )
+  }
+}
+
 # Assemble the v0.2 YAML root
 analysis_id <- opt$analysis_unit_id %||% tools::file_path_sans_ext(basename(opt$input))
 root <- list(
   schema_version = opt$schema_version,
-  analysis_unit = list(id = analysis_id, kind = "single"),
+  analysis_unit = list(id = analysis_id, kind = analysis_kind),
+  pair_unit = pair_unit,
   script = list(
     path        = opt$input,
     language    = "R",
@@ -1151,6 +1244,28 @@ emit_report <- function(root, report_dir) {
         lines <- c(lines, sprintf("  - contrasts: %s",
                                   paste(paste0("`", contrast_names, "`"), collapse = ", ")))
       }
+    }
+  }
+
+  if (!is.null(root$pair_unit)) {
+    pu <- root$pair_unit
+    lines <- c(lines, "", "## Pair binding", "",
+               sprintf("- **Launcher**: `%s`", pu$launcher$path),
+               sprintf("- **Analysis**: `%s`", pu$analysis$path),
+               sprintf("- **Effective cwd at analysis**: `%s`",
+                       pu$effective_cwd_at_analysis %||% "_not detected_"),
+               "",
+               sprintf("**Bindings (%d):**", length(pu$binding)),
+               "",
+               "| Launcher var | Analysis flag | Resolved value | Sites |",
+               "|---|---|---|---|")
+    for (b in pu$binding) {
+      val <- as.character(b$value_resolved %||% "")
+      if (nchar(val) > 60) val <- paste0(substr(val, 1, 57), "...")
+      lines <- c(lines, sprintf("| `%s` | `%s` | `%s` | %s |",
+                                b$launcher_var %||% "?",
+                                b$analysis_flag %||% "?",
+                                val, b$site %||% "?"))
     }
   }
 

@@ -1,0 +1,161 @@
+analysis_unit:
+  id: run_manually_run_DeSeq2
+  kind: single
+audit_findings_preview:
+- note: 'compliance check passed: script-header-metadata'
+  rule: script-header-metadata
+  severity: OK
+- note: 6 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id001
+  - 14
+  - 17
+  - 18
+  - 19
+  - 20
+  - 24
+compliance_checks:
+- evidence_sites:
+  - 1
+  note: null
+  rule: script-header-metadata
+  status: pass
+- evidence_sites: *id001
+  note: 6 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+config_interface:
+  framework: shell_variables
+  options:
+  - default: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+    default_kind: absolute
+    name: RSCRIPT
+    site: 14
+  - default: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr
+    default_kind: absolute
+    name: WORKFLOW_DIR
+    site: 17
+  - default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025
+    default_kind: absolute
+    name: SOURCE_DIR
+    site: 18
+  - default: /data1/greenbab/projects/triplicates_epigenetics_diyva/configs/metadata_triplicates_recoded.csv
+    default_kind: absolute
+    name: METADATA
+    site: 19
+  - default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/qc.tsv
+    default_kind: absolute
+    name: QC_METRICS
+    site: 20
+  - default: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/results
+    default_kind: absolute
+    name: OUTPUT_DIR
+    site: 24
+  - default: DMSO
+    default_kind: relative
+    name: REF_VARIABLE
+    site: 27
+  - default: R.S.2,R.C.3
+    default_kind: relative
+    name: DROP_SAMPLES
+    site: 28
+  - default: 50
+    default_kind: relative
+    name: MIN_READ_COUNTS
+    site: 29
+  - default: 3
+    default_kind: relative
+    name: SMALLEST_GROUP_SIZE
+    site: 30
+  - default: true
+    default_kind: relative
+    name: BLIND_TRANSFORM
+    site: 31
+  - default: 150
+    default_kind: relative
+    name: PNG_DPI
+    site: 34
+  - default: 100
+    default_kind: relative
+    name: RASTERISE_DPI
+    site: 35
+  - default: logs
+    default_kind: relative
+    name: LOG_DIR
+    site: 40
+environment:
+  packages: null
+  shell: bash
+inputs: []
+invocation:
+  flags:
+  - flag: --source_dir
+    value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025
+    value_var: SOURCE_DIR
+  - flag: --workflow_dir
+    value_resolved: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr
+    value_var: WORKFLOW_DIR
+  - flag: --metadata_File
+    value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/configs/metadata_triplicates_recoded.csv
+    value_var: METADATA
+  - flag: --qc_metrics
+    value_resolved: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/qc.tsv
+    value_var: QC_METRICS
+  - flag: --ref_variable
+    value_resolved: DMSO
+    value_var: REF_VARIABLE
+  - flag: --drop_samples
+    value_resolved: R.S.2,R.C.3
+    value_var: DROP_SAMPLES
+  - flag: --min_read_counts
+    value_resolved: '50'
+    value_var: MIN_READ_COUNTS
+  - flag: --smallest_group_size
+    value_resolved: '3'
+    value_var: SMALLEST_GROUP_SIZE
+  - flag: --blind_transform
+    value_resolved: 'True'
+    value_var: BLIND_TRANSFORM
+  - flag: --png_dpi
+    value_resolved: '150'
+    value_var: PNG_DPI
+  - flag: --rasterise_dpi
+    value_resolved: '100'
+    value_var: RASTERISE_DPI
+  - flag: --log_dir
+    value_resolved: logs
+    value_var: LOG_DIR
+  invoker: /home/ahunos/miniforge3/envs/r-env/bin/Rscript
+  language: R
+  script: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
+  site: 69
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-14T22:30:28-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/run_manually_run_DeSeq2.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 7
+- kind: mkdir
+  paths:
+  - ${OUTPUT_DIR}
+  site: 47
+- detail: ${OUTPUT_DIR}
+  kind: cd
+  site: 48
+unresolved:
+- kind: round_1_bash_scope
+  note: 'round 1 bash: var assignments, mkdir/cd/export/set/source side_effects, single-shot
+    invocation detection, two compliance checks'
