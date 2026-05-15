@@ -140,9 +140,7 @@ def run_parser(script: Path, out_dir: Path, *, language: str,
         cmd = [python_bin, str(PARSER_PY)] + common
         # Python parser doesn't accept --pair_launcher yet; surface a note
     elif language == "bash":
-        # bash parser doesn't ship --report_dir; just emit YAML
-        cmd = [python_bin, str(PARSER_BASH),
-               "--input", str(script), "--output", str(inferred)]
+        cmd = [python_bin, str(PARSER_BASH)] + common
     else:
         return {"errored": True, "stderr": f"unknown language {language}"}
 

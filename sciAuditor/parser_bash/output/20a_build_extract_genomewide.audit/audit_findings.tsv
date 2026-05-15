@@ -1,0 +1,9 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	13,14,15,16,17,18,19,20,21,28	10 variables resolve to absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	raw-data-write		compliance check passed: raw-data-write
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+OK	logging-dual-capture		compliance check passed: logging-dual-capture
+OK	set-strict-mode		compliance check passed: set-strict-mode
+OK	genome-build-tag		compliance check passed: genome-build-tag

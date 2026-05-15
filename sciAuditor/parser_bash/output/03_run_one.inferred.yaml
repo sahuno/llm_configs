@@ -1,0 +1,306 @@
+analysis_unit:
+  id: 03_run_one
+  kind: single
+audit_findings_preview:
+- note: 'compliance check passed: script-header-metadata'
+  rule: script-header-metadata
+  severity: OK
+- note: 5 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id001
+  - 91
+  - 108
+  - 109
+  - 110
+  - 111
+- note: 'compliance check passed: forbidden-variable-names'
+  rule: forbidden-variable-names
+  severity: OK
+- note: 'compliance check passed: raw-data-write'
+  rule: raw-data-write
+  severity: OK
+- note: 'compliance check passed: hardcoded-contig'
+  rule: hardcoded-contig
+  severity: OK
+- note: no `exec > >(tee -a $LOG) 2>&1` dual-capture idiom detected
+  rule: logging-dual-capture
+  severity: NOTE
+  sites: &id002 []
+- note: 'compliance check passed: set-strict-mode'
+  rule: set-strict-mode
+  severity: OK
+compliance_checks:
+- evidence_sites:
+  - 1
+  note: null
+  rule: script-header-metadata
+  status: pass
+- evidence_sites: *id001
+  note: 5 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+- evidence_sites: []
+  note: null
+  rule: forbidden-variable-names
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: raw-data-write
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: hardcoded-contig
+  status: pass
+- evidence_sites: *id002
+  note: no `exec > >(tee -a $LOG) 2>&1` dual-capture idiom detected
+  rule: logging-dual-capture
+  status: fail
+- evidence_sites: []
+  note: null
+  rule: set-strict-mode
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: genome-build-tag
+  status: n/a
+config_interface:
+  framework: shell_variables
+  options:
+  - default: ''
+    default_kind: relative
+    name: INPUT_BAM
+    site: 11
+  - default: ''
+    default_kind: relative
+    name: OUTPUT_DIR
+    site: 12
+  - default: ''
+    default_kind: relative
+    name: TMP_DIR
+    site: 13
+  - default: ''
+    default_kind: relative
+    name: CSV_PATH
+    site: 14
+  - default: 8
+    default_kind: relative
+    name: THREADS
+    site: 15
+  - default: 2G
+    default_kind: relative
+    name: MEM_PER_THREAD
+    site: 16
+  - default: 6
+    default_kind: relative
+    name: COMPRESSION_LEVEL
+    site: 17
+  - default: coord
+    default_kind: relative
+    name: SORT_KEY
+    site: 18
+  - default: BAM
+    default_kind: relative
+    name: OUTPUT_FMT
+    site: 19
+  - default: ''
+    default_kind: relative
+    name: REFERENCE
+    site: 20
+  - default: ${SAMTOOLS_BIN:-samtools}
+    default_kind: relative
+    name: SAMTOOLS_BIN
+    site: 21
+  - default: /usr/bin/time
+    default_kind: absolute
+    name: GTIME_BIN
+    site: 91
+  - default: conda
+    default_kind: relative
+    name: BUILD_MODE
+    site: 23
+  - default: 1
+    default_kind: relative
+    name: REPLICATE
+    site: 24
+  - default: ''
+    default_kind: relative
+    name: RUN_ID
+    site: 25
+  - default: 0
+    default_kind: relative
+    name: WARMUP
+    site: 26
+  - default: 0
+    default_kind: relative
+    name: KEEP_OUTPUT
+    site: 27
+  - default: $(command -v "${SAMTOOLS_BIN:-samtools}")
+    default_kind: relative
+    name: SAMTOOLS_RESOLVED
+    site: 86
+  - default: $(dirname "$(command -v "${SAMTOOLS_BIN:-samtools}")")/time
+    default_kind: relative
+    name: CANDIDATE_SIBLING
+    site: 87
+  - default: $(date '+%Y%m%d_%H%M%S')
+    default_kind: relative
+    name: TIMESTAMP
+    site: 103
+  - default: $(basename "")
+    default_kind: relative
+    name: TMP_TAG
+    site: 104
+  - default: $([[ "BAM" == "CRAM" ]] && echo "cram" || echo "bam")
+    default_kind: relative
+    name: OUT_EXT
+    site: 107
+  - default: /.$([[ "BAM" == "CRAM" ]] && echo "cram" || echo "bam")
+    default_kind: absolute
+    name: OUT_BAM
+    site: 108
+  - default: /.time.txt
+    default_kind: absolute
+    name: TIME_FILE
+    site: 109
+  - default: /.stdout.log
+    default_kind: absolute
+    name: STDOUT_FILE
+    site: 110
+  - default: /.stderr.log
+    default_kind: absolute
+    name: STDERR_FILE
+    site: 111
+  - default: ("${SAMTOOLS_BIN:-samtools}" sort)
+    default_kind: relative
+    name: SORT_CMD
+    site: 116
+  - default: $(stat -f -c '%T' "" 2>/dev/null || echo "unknown")
+    default_kind: relative
+    name: TMP_FS_TYPE
+    site: 127
+  - default: $("${SAMTOOLS_BIN:-samtools}" --version | head -1 | awk '{print $2}')
+    default_kind: relative
+    name: SAMTOOLS_VERSION
+    site: 128
+  - default: '$(awk -F'': '' ''/^model name/ {print $2; exit}'' /proc/cpuinfo 2>/dev/null
+      | tr '','' '' '' | tr -s '' '')'
+    default_kind: relative
+    name: CPU_MODEL
+    site: 129
+  - default: ("${SORT_CMD[@]}")
+    default_kind: relative
+    name: WARM_CMD
+    site: 137
+  - default: $?
+    default_kind: relative
+    name: EXIT_STATUS
+    site: 153
+  - default: $(parse_field "Elapsed (wall clock) time")
+    default_kind: relative
+    name: ELAPSED_RAW
+    site: 167
+  - default: $(parse_field "User time (seconds)")
+    default_kind: relative
+    name: USER_CPU
+    site: 168
+  - default: $(parse_field "System time (seconds)")
+    default_kind: relative
+    name: SYS_CPU
+    site: 169
+  - default: $(parse_field "Percent of CPU")
+    default_kind: relative
+    name: CPU_PCT_RAW
+    site: 170
+  - default: $(parse_field "Maximum resident set size")
+    default_kind: relative
+    name: PEAK_RSS_KB
+    site: 171
+  - default: $(parse_field "Minor (reclaiming a frame) page faults")
+    default_kind: relative
+    name: MINOR_PF
+    site: 172
+  - default: $(parse_field "Major (requiring I/O) page faults")
+    default_kind: relative
+    name: MAJOR_PF
+    site: 173
+  - default: $(parse_field "File system inputs")
+    default_kind: relative
+    name: FS_IN
+    site: 174
+  - default: $(parse_field "File system outputs")
+    default_kind: relative
+    name: FS_OUT
+    site: 175
+  - default: ${CPU_PCT_RAW%\%}
+    default_kind: relative
+    name: CPU_PCT
+    site: 176
+  - default: $(elapsed_to_s "$(parse_field "Elapsed (wall clock) time")")
+    default_kind: relative
+    name: WALL_S
+    site: 187
+  - default: $(stat -c '%s' "/.$([[ "BAM" == "CRAM" ]] && echo "cram" || echo "bam")"
+      2>/dev/null || echo 0)
+    default_kind: relative
+    name: OUT_BYTES
+    site: 189
+  - default: run_id,timestamp,host,cpu_model,partition,slurm_jobid,samtools_version,build_mode,input_bam,threads,mem_per_thread,compression_level,sort_key,output_fmt,tmp_dir,tmp_fs_type,replicate,wall_s,user_cpu_s,sys_cpu_s,cpu_pct,peak_rss_kb,minor_pf,major_pf,fs_in,fs_out,exit_status,output_bytes,output_path
+    default_kind: relative
+    name: HEADER
+    site: 194
+  - default: ',$(date ''+%Y%m%d_%H%M%S''),$(hostname),$(awk -F'': '' ''/^model name/
+      {print $2; exit}'' /proc/cpuinfo 2>/dev/null | tr '','' '' '' | tr -s '' ''),${SLURM_JOB_PARTITION:-NA},${SLURM_JOB_ID:-NA},$("${SAMTOOLS_BIN:-samtools}"
+      --version | head -1 | awk ''{print $2}''),conda,,8,2G,6,coord,BAM,,$(stat -f
+      -c ''%T'' "" 2>/dev/null || echo "unknown"),1,$(elapsed_to_s "$(parse_field
+      "Elapsed (wall clock) time")"),$(parse_field "User time (seconds)"),$(parse_field
+      "System time (seconds)"),${CPU_PCT_RAW%\%},$(parse_field "Maximum resident set
+      size"),$(parse_field "Minor (reclaiming a frame) page faults"),$(parse_field
+      "Major (requiring I/O) page faults"),$(parse_field "File system inputs"),$(parse_field
+      "File system outputs"),$?,$(stat -c ''%s'' "/.$([[ "BAM" == "CRAM" ]] && echo
+      "cram" || echo "bam")" 2>/dev/null || echo 0),/.$([[ "BAM" == "CRAM" ]] && echo
+      "cram" || echo "bam")'
+    default_kind: relative
+    name: ROW
+    site: 195
+  - default: .lock
+    default_kind: relative
+    name: LOCK_FILE
+    site: 198
+environment:
+  packages: null
+  shell: bash
+genome_build_declared: null
+inputs: []
+invocation: null
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-15T00:15:39-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/users/ahunos/projects/biotoolsBenchmarks/samtools/sort/src/03_run_one.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 6
+- kind: mkdir
+  paths:
+  - $OUTPUT_DIR
+  - $TMP_DIR
+  site: 101
+- detail: set -e
+  kind: set_flag
+  site: 154
+unresolved:
+- kind: round_2_bash_scope
+  note: 'round 2 bash: var assignments, side_effects, invocation, 7 compliance checks
+    (2 BLOCKER / 3 WARNING / 2 NOTE); no inputs/outputs/models/dataframes (launcher
+    pattern)'

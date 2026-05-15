@@ -7,6 +7,22 @@ script_path	language	severity	rule	sites	note
 06_apm_trimodal_distributions.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 06_apm_trimodal_distributions.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 06_apm_trimodal_distributions.R	R	NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm
+08_q3_global_methylation_diversity.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+08_q3_global_methylation_diversity.R	R	WARNING	relative-paths-only	21,25,29,33	4 CLI defaults are absolute paths
+08_q3_global_methylation_diversity.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+08_q3_global_methylation_diversity.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+08_q3_global_methylation_diversity.R	R	OK	header-preserved		compliance check passed: header-preserved
+08_q3_global_methylation_diversity.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+08_q3_global_methylation_diversity.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+08_q3_global_methylation_diversity.R	R	NOTE	pair-binding-coverage		6 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --top_n, --hyper_threshold, --hypo_threshold
+05_plot_peptide_distribution.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+05_plot_peptide_distribution.R	R	WARNING	relative-paths-only	15,19	2 CLI defaults are absolute paths
+05_plot_peptide_distribution.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+05_plot_peptide_distribution.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+05_plot_peptide_distribution.R	R	OK	header-preserved		compliance check passed: header-preserved
+05_plot_peptide_distribution.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+05_plot_peptide_distribution.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+05_plot_peptide_distribution.R	R	NOTE	pair-binding-coverage		1 analysis CLI option(s) not bound by launcher (will use defaults): --peptide_counts
 09_q1_mediation_analysis.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 09_q1_mediation_analysis.R	R	WARNING	relative-paths-only	25,29,33,37	4 CLI defaults are absolute paths
 09_q1_mediation_analysis.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -23,38 +39,6 @@ script_path	language	severity	rule	sites	note
 03_apm_methylation_all36.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 03_apm_methylation_all36.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 03_apm_methylation_all36.R	R	NOTE	pair-binding-coverage		2 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --tpm
-05_plot_peptide_distribution.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-05_plot_peptide_distribution.R	R	WARNING	relative-paths-only	15,19	2 CLI defaults are absolute paths
-05_plot_peptide_distribution.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-05_plot_peptide_distribution.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-05_plot_peptide_distribution.R	R	OK	header-preserved		compliance check passed: header-preserved
-05_plot_peptide_distribution.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-05_plot_peptide_distribution.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-05_plot_peptide_distribution.R	R	NOTE	pair-binding-coverage		1 analysis CLI option(s) not bound by launcher (will use defaults): --peptide_counts
-04_cta_demethylation_analysis.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-04_cta_demethylation_analysis.R	R	WARNING	relative-paths-only	12,16,20,24	4 CLI defaults are absolute paths
-04_cta_demethylation_analysis.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-04_cta_demethylation_analysis.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-04_cta_demethylation_analysis.R	R	OK	header-preserved		compliance check passed: header-preserved
-04_cta_demethylation_analysis.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-04_cta_demethylation_analysis.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-04_cta_demethylation_analysis.R	R	NOTE	pair-binding-coverage		4 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --meth_threshold
-07_q2_strengthen_apm_tests.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-07_q2_strengthen_apm_tests.R	R	WARNING	relative-paths-only	21,25,29,33	4 CLI defaults are absolute paths
-07_q2_strengthen_apm_tests.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-07_q2_strengthen_apm_tests.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-07_q2_strengthen_apm_tests.R	R	OK	header-preserved		compliance check passed: header-preserved
-07_q2_strengthen_apm_tests.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-07_q2_strengthen_apm_tests.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-07_q2_strengthen_apm_tests.R	R	NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm
-08_q3_global_methylation_diversity.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-08_q3_global_methylation_diversity.R	R	WARNING	relative-paths-only	21,25,29,33	4 CLI defaults are absolute paths
-08_q3_global_methylation_diversity.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-08_q3_global_methylation_diversity.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-08_q3_global_methylation_diversity.R	R	OK	header-preserved		compliance check passed: header-preserved
-08_q3_global_methylation_diversity.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-08_q3_global_methylation_diversity.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-08_q3_global_methylation_diversity.R	R	NOTE	pair-binding-coverage		6 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --top_n, --hyper_threshold, --hypo_threshold
 02_apm_methylation_analysis.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 02_apm_methylation_analysis.R	R	WARNING	relative-paths-only	11,15,19,23	4 CLI defaults are absolute paths
 02_apm_methylation_analysis.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -63,21 +47,22 @@ script_path	language	severity	rule	sites	note
 02_apm_methylation_analysis.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 02_apm_methylation_analysis.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 02_apm_methylation_analysis.R	R	NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm
-10_q1_pooled_mediation_summary.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-10_q1_pooled_mediation_summary.R	R	WARNING	relative-paths-only	19,21,23,25	4 CLI defaults are absolute paths
-10_q1_pooled_mediation_summary.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-10_q1_pooled_mediation_summary.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-10_q1_pooled_mediation_summary.R	R	OK	header-preserved		compliance check passed: header-preserved
-10_q1_pooled_mediation_summary.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-10_q1_pooled_mediation_summary.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-10_q1_pooled_mediation_summary.R	R	NOTE	pair-binding-coverage		4 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --n_boot
-13_build_epdnew_promoters.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-13_build_epdnew_promoters.R	R	WARNING	relative-paths-only	17,19,22,31,33	5 CLI defaults are absolute paths
-13_build_epdnew_promoters.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-13_build_epdnew_promoters.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-13_build_epdnew_promoters.R	R	BLOCKER	header-preserved	93	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
-13_build_epdnew_promoters.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-13_build_epdnew_promoters.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+07_q2_strengthen_apm_tests.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+07_q2_strengthen_apm_tests.R	R	WARNING	relative-paths-only	21,25,29,33	4 CLI defaults are absolute paths
+07_q2_strengthen_apm_tests.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+07_q2_strengthen_apm_tests.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+07_q2_strengthen_apm_tests.R	R	OK	header-preserved		compliance check passed: header-preserved
+07_q2_strengthen_apm_tests.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+07_q2_strengthen_apm_tests.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+07_q2_strengthen_apm_tests.R	R	NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm
+04_cta_demethylation_analysis.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+04_cta_demethylation_analysis.R	R	WARNING	relative-paths-only	12,16,20,24	4 CLI defaults are absolute paths
+04_cta_demethylation_analysis.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+04_cta_demethylation_analysis.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+04_cta_demethylation_analysis.R	R	OK	header-preserved		compliance check passed: header-preserved
+04_cta_demethylation_analysis.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+04_cta_demethylation_analysis.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+04_cta_demethylation_analysis.R	R	NOTE	pair-binding-coverage		4 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --meth_threshold
 12_purity_sensitivity.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 12_purity_sensitivity.R	R	WARNING	relative-paths-only	19,23,27,31	4 CLI defaults are absolute paths
 12_purity_sensitivity.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -86,22 +71,14 @@ script_path	language	severity	rule	sites	note
 12_purity_sensitivity.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 12_purity_sensitivity.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 12_purity_sensitivity.R	R	NOTE	pair-binding-coverage		3 analysis CLI option(s) not bound by launcher (will use defaults): --q9_merged, --q1_pergene, --q1_3way
-11_q9_apm_methylation_io_response.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-11_q9_apm_methylation_io_response.R	R	WARNING	relative-paths-only	19,22,25,28,31,34,37	7 CLI defaults are absolute paths
-11_q9_apm_methylation_io_response.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-11_q9_apm_methylation_io_response.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-11_q9_apm_methylation_io_response.R	R	OK	header-preserved		compliance check passed: header-preserved
-11_q9_apm_methylation_io_response.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-11_q9_apm_methylation_io_response.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-11_q9_apm_methylation_io_response.R	R	NOTE	pair-binding-coverage		7 analysis CLI option(s) not bound by launcher (will use defaults): --apm_burden, --apm_pergene, --peptide_diversity, --global_meth, --cta_merged, --metadata, --cta_demeth_threshold
-12b_msi_tmb_effect_modification.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-12b_msi_tmb_effect_modification.R	R	WARNING	relative-paths-only	20,23	2 CLI defaults are absolute paths
-12b_msi_tmb_effect_modification.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-12b_msi_tmb_effect_modification.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-12b_msi_tmb_effect_modification.R	R	OK	header-preserved		compliance check passed: header-preserved
-12b_msi_tmb_effect_modification.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-12b_msi_tmb_effect_modification.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-12b_msi_tmb_effect_modification.R	R	NOTE	pair-binding-coverage		1 analysis CLI option(s) not bound by launcher (will use defaults): --q9_merged
+10_q1_pooled_mediation_summary.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+10_q1_pooled_mediation_summary.R	R	WARNING	relative-paths-only	19,21,23,25	4 CLI defaults are absolute paths
+10_q1_pooled_mediation_summary.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+10_q1_pooled_mediation_summary.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+10_q1_pooled_mediation_summary.R	R	OK	header-preserved		compliance check passed: header-preserved
+10_q1_pooled_mediation_summary.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+10_q1_pooled_mediation_summary.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+10_q1_pooled_mediation_summary.R	R	NOTE	pair-binding-coverage		4 analysis CLI option(s) not bound by launcher (will use defaults): --methylation_wide, --peptide_counts, --tpm, --n_boot
 14b_build_matrices.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 14b_build_matrices.R	R	WARNING	relative-paths-only	20,22,24,26,28	5 CLI defaults are absolute paths
 14b_build_matrices.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -110,6 +87,13 @@ script_path	language	severity	rule	sites	note
 14b_build_matrices.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 14b_build_matrices.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 14b_build_matrices.R	R	NOTE	pair-binding-coverage		5 analysis CLI option(s) not bound by launcher (will use defaults): --sample_sheet, --cpg_dir, --promoter_dir, --outdir, --log_dir
+13_build_epdnew_promoters.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+13_build_epdnew_promoters.R	R	WARNING	relative-paths-only	17,19,22,31,33	5 CLI defaults are absolute paths
+13_build_epdnew_promoters.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+13_build_epdnew_promoters.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+13_build_epdnew_promoters.R	R	BLOCKER	header-preserved	93	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+13_build_epdnew_promoters.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+13_build_epdnew_promoters.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 15_rerun_q2_q9_epdnew.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 15_rerun_q2_q9_epdnew.R	R	WARNING	relative-paths-only	24,26,28,30	4 CLI defaults are absolute paths
 15_rerun_q2_q9_epdnew.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -124,34 +108,22 @@ script_path	language	severity	rule	sites	note
 16_compare_definitions.R	R	OK	header-preserved		compliance check passed: header-preserved
 16_compare_definitions.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 16_compare_definitions.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	header-preserved		compliance check passed: header-preserved
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-18_q1_pdia3_epdnew_sensitivity.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	WARNING	relative-paths-only	24,26,28,31,33	5 CLI defaults are absolute paths
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	WARNING	forbidden-variable-names	NA	collisions: results
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	header-preserved		compliance check passed: header-preserved
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-23_lm_meth_to_rna_apm_full_vs_cgi.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
-22_lm_meth_to_rna_apm.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-22_lm_meth_to_rna_apm.R	R	WARNING	relative-paths-only	22,25,30,33	4 CLI defaults are absolute paths
-22_lm_meth_to_rna_apm.R	R	WARNING	forbidden-variable-names	NA,NA	collisions: results
-22_lm_meth_to_rna_apm.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-22_lm_meth_to_rna_apm.R	R	OK	header-preserved		compliance check passed: header-preserved
-22_lm_meth_to_rna_apm.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-22_lm_meth_to_rna_apm.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
-21_genomewide_meth_vs_tpm.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-21_genomewide_meth_vs_tpm.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
-21_genomewide_meth_vs_tpm.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-21_genomewide_meth_vs_tpm.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-21_genomewide_meth_vs_tpm.R	R	OK	header-preserved		compliance check passed: header-preserved
-21_genomewide_meth_vs_tpm.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-21_genomewide_meth_vs_tpm.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+12b_msi_tmb_effect_modification.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+12b_msi_tmb_effect_modification.R	R	WARNING	relative-paths-only	20,23	2 CLI defaults are absolute paths
+12b_msi_tmb_effect_modification.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+12b_msi_tmb_effect_modification.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+12b_msi_tmb_effect_modification.R	R	OK	header-preserved		compliance check passed: header-preserved
+12b_msi_tmb_effect_modification.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+12b_msi_tmb_effect_modification.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+12b_msi_tmb_effect_modification.R	R	NOTE	pair-binding-coverage		1 analysis CLI option(s) not bound by launcher (will use defaults): --q9_merged
+11_q9_apm_methylation_io_response.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+11_q9_apm_methylation_io_response.R	R	WARNING	relative-paths-only	19,22,25,28,31,34,37	7 CLI defaults are absolute paths
+11_q9_apm_methylation_io_response.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+11_q9_apm_methylation_io_response.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+11_q9_apm_methylation_io_response.R	R	OK	header-preserved		compliance check passed: header-preserved
+11_q9_apm_methylation_io_response.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+11_q9_apm_methylation_io_response.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+11_q9_apm_methylation_io_response.R	R	NOTE	pair-binding-coverage		7 analysis CLI option(s) not bound by launcher (will use defaults): --apm_burden, --apm_pergene, --peptide_diversity, --global_meth, --cta_merged, --metadata, --cta_demeth_threshold
 17_epdnew_figures.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 17_epdnew_figures.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
 17_epdnew_figures.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -159,6 +131,20 @@ script_path	language	severity	rule	sites	note
 17_epdnew_figures.R	R	OK	header-preserved		compliance check passed: header-preserved
 17_epdnew_figures.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 17_epdnew_figures.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	header-preserved		compliance check passed: header-preserved
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+18_q1_pdia3_epdnew_sensitivity.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+22_lm_meth_to_rna_apm.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+22_lm_meth_to_rna_apm.R	R	WARNING	relative-paths-only	22,25,30,33	4 CLI defaults are absolute paths
+22_lm_meth_to_rna_apm.R	R	WARNING	forbidden-variable-names	NA,NA	collisions: results
+22_lm_meth_to_rna_apm.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+22_lm_meth_to_rna_apm.R	R	OK	header-preserved		compliance check passed: header-preserved
+22_lm_meth_to_rna_apm.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+22_lm_meth_to_rna_apm.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 24_elasticnet_meth_to_rna_apm.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 24_elasticnet_meth_to_rna_apm.R	R	WARNING	relative-paths-only	32,34,36,38,45,47	6 CLI defaults are absolute paths
 24_elasticnet_meth_to_rna_apm.R	R	WARNING	forbidden-variable-names	NA	collisions: results
@@ -166,6 +152,13 @@ script_path	language	severity	rule	sites	note
 24_elasticnet_meth_to_rna_apm.R	R	BLOCKER	header-preserved	81	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
 24_elasticnet_meth_to_rna_apm.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 24_elasticnet_meth_to_rna_apm.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	WARNING	relative-paths-only	24,26,28,31,33	5 CLI defaults are absolute paths
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	WARNING	forbidden-variable-names	NA	collisions: results
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	header-preserved		compliance check passed: header-preserved
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+23_lm_meth_to_rna_apm_full_vs_cgi.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
 19_q11_meth_vs_tpm_epdnew.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 19_q11_meth_vs_tpm_epdnew.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
 19_q11_meth_vs_tpm_epdnew.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -173,6 +166,13 @@ script_path	language	severity	rule	sites	note
 19_q11_meth_vs_tpm_epdnew.R	R	OK	header-preserved		compliance check passed: header-preserved
 19_q11_meth_vs_tpm_epdnew.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 19_q11_meth_vs_tpm_epdnew.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+21_genomewide_meth_vs_tpm.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+21_genomewide_meth_vs_tpm.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
+21_genomewide_meth_vs_tpm.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+21_genomewide_meth_vs_tpm.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+21_genomewide_meth_vs_tpm.R	R	OK	header-preserved		compliance check passed: header-preserved
+21_genomewide_meth_vs_tpm.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+21_genomewide_meth_vs_tpm.R	R	OK	logging-dual-capture		compliance check passed: logging-dual-capture
 25_nlrc5_lasso_cpgs.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 25_nlrc5_lasso_cpgs.R	R	WARNING	relative-paths-only	24,26,28,34,36	5 CLI defaults are absolute paths
 25_nlrc5_lasso_cpgs.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -180,13 +180,13 @@ script_path	language	severity	rule	sites	note
 25_nlrc5_lasso_cpgs.R	R	BLOCKER	header-preserved	63	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
 25_nlrc5_lasso_cpgs.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 25_nlrc5_lasso_cpgs.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
-30_plotly_html.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-30_plotly_html.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
-30_plotly_html.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-30_plotly_html.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-30_plotly_html.R	R	BLOCKER	header-preserved	396	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
-30_plotly_html.R	R	BLOCKER	hardcoded-contig	398	1 line(s) contain hardcoded contig literals (chrN / chrXY / chrMT)
-30_plotly_html.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
+14a_extract_methylation.sh	bash	OK	script-header-metadata		compliance check passed: script-header-metadata
+14a_extract_methylation.sh	bash	WARNING	relative-paths-only	20,21,22,23,24,25,26,32	8 variables resolve to absolute paths
+14a_extract_methylation.sh	bash	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+14a_extract_methylation.sh	bash	OK	raw-data-write		compliance check passed: raw-data-write
+14a_extract_methylation.sh	bash	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+14a_extract_methylation.sh	bash	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+14a_extract_methylation.sh	bash	OK	set-strict-mode		compliance check passed: set-strict-mode
 29_fdr_genomewide.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 29_fdr_genomewide.R	R	WARNING	relative-paths-only	29,31,35,38,40,42	6 CLI defaults are absolute paths
 29_fdr_genomewide.R	R	WARNING	forbidden-variable-names	NA	collisions: results
@@ -194,28 +194,6 @@ script_path	language	severity	rule	sites	note
 29_fdr_genomewide.R	R	BLOCKER	header-preserved	122	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
 29_fdr_genomewide.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 29_fdr_genomewide.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
-plot_sample_overlap_v2.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-plot_sample_overlap_v2.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
-plot_sample_overlap_v2.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-plot_sample_overlap_v2.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-plot_sample_overlap_v2.R	R	OK	header-preserved		compliance check passed: header-preserved
-plot_sample_overlap_v2.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-plot_sample_overlap_v2.R	R	NOTE	logging-dual-capture		no log-capture setup detected
-plot_sample_overlap.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-plot_sample_overlap.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
-plot_sample_overlap.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-plot_sample_overlap.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-plot_sample_overlap.R	R	OK	header-preserved		compliance check passed: header-preserved
-plot_sample_overlap.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-plot_sample_overlap.R	R	NOTE	logging-dual-capture		no log-capture setup detected
-assoc_peptides_DNAme.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
-assoc_peptides_DNAme.R	R	WARNING	relative-paths-only	14,18,22,26	4 CLI defaults are absolute paths
-assoc_peptides_DNAme.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
-assoc_peptides_DNAme.R	R	OK	raw-data-write		compliance check passed: raw-data-write
-assoc_peptides_DNAme.R	R	OK	header-preserved		compliance check passed: header-preserved
-assoc_peptides_DNAme.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
-assoc_peptides_DNAme.R	R	NOTE	logging-dual-capture		no log-capture setup detected
-assoc_peptides_DNAme.R	R	NOTE	pair-binding-coverage		7 analysis CLI option(s) not bound by launcher (will use defaults): --peptide_counts, --gtf, --bedmethyl_dir, --outdir, --min_coverage, --upstream, --downstream
 26_elasticnet_genomewide.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
 26_elasticnet_genomewide.R	R	WARNING	relative-paths-only	26,28,30,40,42	5 CLI defaults are absolute paths
 26_elasticnet_genomewide.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
@@ -233,3 +211,54 @@ assoc_peptides_DNAme.R	R	NOTE	pair-binding-coverage		7 analysis CLI option(s) no
 27_elasticnet_seed_stability.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
 27_elasticnet_seed_stability.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
 27_elasticnet_seed_stability.R	R	NOTE	pair-binding-coverage		11 analysis CLI option(s) not bound by launcher (will use defaults): --cpg_dir, --summary, --sample_sheet, --tpm, --top_n, --seeds, --min_cov_frac, --definition, --include_genes, --outdir, --log_dir
+30_plotly_html.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+30_plotly_html.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
+30_plotly_html.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+30_plotly_html.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+30_plotly_html.R	R	BLOCKER	header-preserved	396	1 read call(s) drop headers explicitly (header=FALSE / col.names=FALSE)
+30_plotly_html.R	R	BLOCKER	hardcoded-contig	398	1 line(s) contain hardcoded contig literals (chrN / chrXY / chrMT)
+30_plotly_html.R	R	NOTE	logging-dual-capture		partial: need both sink(split=TRUE) and globalCallingHandlers(message=…)
+plot_sample_overlap.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+plot_sample_overlap.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
+plot_sample_overlap.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+plot_sample_overlap.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+plot_sample_overlap.R	R	OK	header-preserved		compliance check passed: header-preserved
+plot_sample_overlap.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+plot_sample_overlap.R	R	NOTE	logging-dual-capture		no log-capture setup detected
+plot_sample_overlap_v2.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+plot_sample_overlap_v2.R	R	OK	relative-paths-only		compliance check passed: relative-paths-only
+plot_sample_overlap_v2.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+plot_sample_overlap_v2.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+plot_sample_overlap_v2.R	R	OK	header-preserved		compliance check passed: header-preserved
+plot_sample_overlap_v2.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+plot_sample_overlap_v2.R	R	NOTE	logging-dual-capture		no log-capture setup detected
+20a_build_extract_genomewide.sh	bash	OK	script-header-metadata		compliance check passed: script-header-metadata
+20a_build_extract_genomewide.sh	bash	WARNING	relative-paths-only	13,14,15,16,17,18,19,20,21,28	10 variables resolve to absolute paths
+20a_build_extract_genomewide.sh	bash	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+20a_build_extract_genomewide.sh	bash	OK	raw-data-write		compliance check passed: raw-data-write
+20a_build_extract_genomewide.sh	bash	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+20a_build_extract_genomewide.sh	bash	OK	logging-dual-capture		compliance check passed: logging-dual-capture
+20a_build_extract_genomewide.sh	bash	OK	set-strict-mode		compliance check passed: set-strict-mode
+20a_build_extract_genomewide.sh	bash	OK	genome-build-tag		compliance check passed: genome-build-tag
+assoc_peptides_DNAme.R	R	OK	script-header-metadata		compliance check passed: script-header-metadata
+assoc_peptides_DNAme.R	R	WARNING	relative-paths-only	14,18,22,26	4 CLI defaults are absolute paths
+assoc_peptides_DNAme.R	R	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+assoc_peptides_DNAme.R	R	OK	raw-data-write		compliance check passed: raw-data-write
+assoc_peptides_DNAme.R	R	OK	header-preserved		compliance check passed: header-preserved
+assoc_peptides_DNAme.R	R	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+assoc_peptides_DNAme.R	R	NOTE	logging-dual-capture		no log-capture setup detected
+assoc_peptides_DNAme.R	R	NOTE	pair-binding-coverage		7 analysis CLI option(s) not bound by launcher (will use defaults): --peptide_counts, --gtf, --bedmethyl_dir, --outdir, --min_coverage, --upstream, --downstream
+submit_26_elasticnet_genomewide.sh	bash	NOTE	script-header-metadata	1	missing Author/Date/Purpose in first 10 comment lines
+submit_26_elasticnet_genomewide.sh	bash	WARNING	relative-paths-only	19,20,21,22	4 variables resolve to absolute paths
+submit_26_elasticnet_genomewide.sh	bash	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+submit_26_elasticnet_genomewide.sh	bash	OK	raw-data-write		compliance check passed: raw-data-write
+submit_26_elasticnet_genomewide.sh	bash	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+submit_26_elasticnet_genomewide.sh	bash	NOTE	logging-dual-capture		no `exec > >(tee -a $LOG) 2>&1` dual-capture idiom detected
+submit_26_elasticnet_genomewide.sh	bash	OK	set-strict-mode		compliance check passed: set-strict-mode
+submit_26_perm.sh	bash	NOTE	script-header-metadata	1	missing Author/Date/Purpose in first 10 comment lines
+submit_26_perm.sh	bash	WARNING	relative-paths-only	38,41,42,43,44	5 variables resolve to absolute paths
+submit_26_perm.sh	bash	OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+submit_26_perm.sh	bash	OK	raw-data-write		compliance check passed: raw-data-write
+submit_26_perm.sh	bash	OK	hardcoded-contig		compliance check passed: hardcoded-contig
+submit_26_perm.sh	bash	NOTE	logging-dual-capture		no `exec > >(tee -a $LOG) 2>&1` dual-capture idiom detected
+submit_26_perm.sh	bash	OK	set-strict-mode		compliance check passed: set-strict-mode

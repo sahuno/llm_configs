@@ -17,6 +17,21 @@ audit_findings_preview:
   - 25
   - 26
   - 32
+- note: 'compliance check passed: forbidden-variable-names'
+  rule: forbidden-variable-names
+  severity: OK
+- note: 'compliance check passed: raw-data-write'
+  rule: raw-data-write
+  severity: OK
+- note: 'compliance check passed: hardcoded-contig'
+  rule: hardcoded-contig
+  severity: OK
+- note: 'compliance check passed: logging-dual-capture'
+  rule: logging-dual-capture
+  severity: OK
+- note: 'compliance check passed: set-strict-mode'
+  rule: set-strict-mode
+  severity: OK
 compliance_checks:
 - evidence_sites:
   - 1
@@ -27,6 +42,30 @@ compliance_checks:
   note: 8 variables resolve to absolute paths
   rule: relative-paths-only
   status: fail
+- evidence_sites: []
+  note: null
+  rule: forbidden-variable-names
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: raw-data-write
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: hardcoded-contig
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: logging-dual-capture
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: set-strict-mode
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: genome-build-tag
+  status: n/a
 config_interface:
   framework: shell_variables
   options:
@@ -112,6 +151,7 @@ config_interface:
 environment:
   packages: null
   shell: bash
+genome_build_declared: null
 inputs: []
 invocation: null
 outputs: []
@@ -123,7 +163,7 @@ runtime_context:
 schema_version: '0.2'
 script:
   git_rev: <runtime>
-  inferred_at: '2026-05-14T23:57:32-04:00'
+  inferred_at: '2026-05-15T00:16:13-04:00'
   language: bash
   layers_used:
   - static
@@ -144,6 +184,7 @@ side_effects:
   kind: env_set
   site: 85
 unresolved:
-- kind: round_1_bash_scope
-  note: 'round 1 bash: var assignments, mkdir/cd/export/set/source side_effects, single-shot
-    invocation detection, two compliance checks'
+- kind: round_2_bash_scope
+  note: 'round 2 bash: var assignments, side_effects, invocation, 7 compliance checks
+    (2 BLOCKER / 3 WARNING / 2 NOTE); no inputs/outputs/models/dataframes (launcher
+    pattern)'

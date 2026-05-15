@@ -1,0 +1,191 @@
+analysis_unit:
+  id: 20a_build_extract_genomewide
+  kind: single
+audit_findings_preview:
+- note: 'compliance check passed: script-header-metadata'
+  rule: script-header-metadata
+  severity: OK
+- note: 10 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id001
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 28
+- note: 'compliance check passed: forbidden-variable-names'
+  rule: forbidden-variable-names
+  severity: OK
+- note: 'compliance check passed: raw-data-write'
+  rule: raw-data-write
+  severity: OK
+- note: 'compliance check passed: hardcoded-contig'
+  rule: hardcoded-contig
+  severity: OK
+- note: 'compliance check passed: logging-dual-capture'
+  rule: logging-dual-capture
+  severity: OK
+- note: 'compliance check passed: set-strict-mode'
+  rule: set-strict-mode
+  severity: OK
+- note: 'compliance check passed: genome-build-tag'
+  rule: genome-build-tag
+  severity: OK
+compliance_checks:
+- evidence_sites:
+  - 1
+  note: null
+  rule: script-header-metadata
+  status: pass
+- evidence_sites: *id001
+  note: 10 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+- evidence_sites: []
+  note: null
+  rule: forbidden-variable-names
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: raw-data-write
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: hardcoded-contig
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: logging-dual-capture
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: set-strict-mode
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: genome-build-tag
+  status: pass
+config_interface:
+  framework: shell_variables
+  options:
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod
+    default_kind: absolute
+    name: BASE
+    site: 13
+  - default: /data1/greenbab/database/EPDpromoters/data/processed/epdnew_human/2026-04-14/Hs_EPDnew.hg38.bed.gz
+    default_kind: absolute
+    name: EPDNEW
+    site: 14
+  - default: /data1/greenbab/database/sizes.Homo_sapiens_assembly38
+    default_kind: absolute
+    name: SIZES
+    site: 15
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_markdup_bams_pileup_batch1.tsv
+    default_kind: absolute
+    name: SAMPLE_SHEET
+    site: 16
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_genomewide
+    default_kind: absolute
+    name: OUT_BASE
+    site: 17
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_genomewide/epdnew_genomewide_promoters.hg38.bed
+    default_kind: absolute
+    name: BED_OUT
+    site: 18
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_genomewide/per_sample_cpg
+    default_kind: absolute
+    name: CPG_DIR
+    site: 19
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+    default_kind: absolute
+    name: LOG_DIR
+    site: 20
+  - default: /data1/greenbab/users/ahunos/apps/bedtools2/bin/bedtools
+    default_kind: absolute
+    name: BEDTOOLS
+    site: 21
+  - default: ${MIN_COV:-5}
+    default_kind: relative
+    name: MIN_COV
+    site: 23
+  - default: ${WINDOW:-500}
+    default_kind: relative
+    name: WINDOW
+    site: 24
+  - default: ${NPAR:-8}
+    default_kind: relative
+    name: NPAR
+    site: 25
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs/20a_build_extract_genomewide_$(date
+      '+%Y%m%d_%H%M%S').log
+    default_kind: absolute
+    name: LOG_FILE
+    site: 28
+  - default: $(mktemp)
+    default_kind: relative
+    name: TASKS
+    site: 94
+  - default: $(date +%s)
+    default_kind: relative
+    name: START
+    site: 98
+  - default: $'\''\t'\'' read -r sample pileup <<< "{}"
+    default_kind: relative
+    name: IFS
+    site: 100
+  - default: $(date +%s)
+    default_kind: relative
+    name: END
+    site: 103
+environment:
+  packages: null
+  shell: bash
+genome_build_declared: hg38
+inputs: []
+invocation:
+  flags: []
+  invoker: python3
+  language: python
+  script: '-'
+  site: 44
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-15T00:15:38-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/20a_build_extract_genomewide.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 10
+- kind: mkdir
+  paths:
+  - ${OUT_BASE}
+  - ${CPG_DIR}
+  - ${LOG_DIR}
+  site: 27
+- detail: export -f process_one
+  kind: env_set
+  site: 91
+- detail: export BEDTOOLS MIN_COV CPG_DIR BED_OUT
+  kind: env_set
+  site: 92
+unresolved:
+- kind: round_2_bash_scope
+  note: 'round 2 bash: var assignments, side_effects, invocation, 7 compliance checks
+    (2 BLOCKER / 3 WARNING / 2 NOTE); no inputs/outputs/models/dataframes (launcher
+    pattern)'

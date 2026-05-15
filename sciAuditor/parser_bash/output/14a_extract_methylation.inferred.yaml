@@ -1,0 +1,190 @@
+analysis_unit:
+  id: 14a_extract_methylation
+  kind: single
+audit_findings_preview:
+- note: 'compliance check passed: script-header-metadata'
+  rule: script-header-metadata
+  severity: OK
+- note: 8 variables resolve to absolute paths
+  rule: relative-paths-only
+  severity: WARNING
+  sites: &id001
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 32
+- note: 'compliance check passed: forbidden-variable-names'
+  rule: forbidden-variable-names
+  severity: OK
+- note: 'compliance check passed: raw-data-write'
+  rule: raw-data-write
+  severity: OK
+- note: 'compliance check passed: hardcoded-contig'
+  rule: hardcoded-contig
+  severity: OK
+- note: 'compliance check passed: logging-dual-capture'
+  rule: logging-dual-capture
+  severity: OK
+- note: 'compliance check passed: set-strict-mode'
+  rule: set-strict-mode
+  severity: OK
+compliance_checks:
+- evidence_sites:
+  - 1
+  note: null
+  rule: script-header-metadata
+  status: pass
+- evidence_sites: *id001
+  note: 8 variables resolve to absolute paths
+  rule: relative-paths-only
+  status: fail
+- evidence_sites: []
+  note: null
+  rule: forbidden-variable-names
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: raw-data-write
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: hardcoded-contig
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: logging-dual-capture
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: set-strict-mode
+  status: pass
+- evidence_sites: []
+  note: null
+  rule: genome-build-tag
+  status: n/a
+config_interface:
+  framework: shell_variables
+  options:
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod
+    default_kind: absolute
+    name: BASE
+    site: 20
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme
+    default_kind: absolute
+    name: SCRIPTS
+    site: 21
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_promoters
+    default_kind: absolute
+    name: PROMOTER_DIR
+    site: 22
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/per_sample_cpg
+    default_kind: absolute
+    name: OUT_DIR
+    site: 23
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs
+    default_kind: absolute
+    name: LOG_DIR
+    site: 24
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/DNAme_L1EM/SU2C_markdup_bams_pileup_batch1.tsv
+    default_kind: absolute
+    name: SAMPLE_SHEET
+    site: 25
+  - default: /data1/greenbab/users/ahunos/apps/bedtools2/bin/bedtools
+    default_kind: absolute
+    name: BEDTOOLS
+    site: 26
+  - default: ${MIN_COV:-5}
+    default_kind: relative
+    name: MIN_COV
+    site: 28
+  - default: ${NPAR:-8}
+    default_kind: relative
+    name: NPAR
+    site: 29
+  - default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/logs/14a_extract_methylation_$(date
+      '+%Y%m%d_%H%M%S').log
+    default_kind: absolute
+    name: LOG_FILE
+    site: 32
+  - default: (
+    default_kind: relative
+    name: BED_SETS
+    site: 44
+  - default: ${s%%:*}
+    default_kind: relative
+    name: name
+    site: 112
+  - default: $(mktemp)
+    default_kind: relative
+    name: TASK_LIST
+    site: 88
+  - default: $(wc -l < "$(mktemp)")
+    default_kind: relative
+    name: N_TASKS
+    site: 97
+  - default: $(date +%s)
+    default_kind: relative
+    name: START
+    site: 100
+  - default: $'\''\t'\'' read -r sample pileup set_name bed_path <<< "{}"
+    default_kind: relative
+    name: IFS
+    site: 103
+  - default: $(date +%s)
+    default_kind: relative
+    name: END
+    site: 106
+  - default: $(ls "/data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/per_sample_cpg"/*.${s%%:*}.cpg.tsv
+      2>/dev/null | wc -l)
+    default_kind: relative
+    name: n
+    site: 113
+  - default: $(cat "/data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/epdnew_analysis/per_sample_cpg"/*.${s%%:*}.cpg.tsv
+      2>/dev/null | wc -l)
+    default_kind: relative
+    name: total_rows
+    site: 114
+environment:
+  packages: null
+  shell: bash
+genome_build_declared: null
+inputs: []
+invocation: null
+outputs: []
+runtime_context:
+  cwd_at_invocation: <runtime>
+  host: <runtime>
+  resolved_cwd: <runtime>
+  user: <runtime>
+schema_version: '0.2'
+script:
+  git_rev: <runtime>
+  inferred_at: '2026-05-15T00:15:38-04:00'
+  language: bash
+  layers_used:
+  - static
+  path: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts/14a_extract_methylation.sh
+side_effects:
+- detail: set -euo pipefail
+  kind: set_flag
+  site: 18
+- kind: mkdir
+  paths:
+  - ${OUT_DIR}
+  - ${LOG_DIR}
+  site: 31
+- detail: export -f process_one
+  kind: env_set
+  site: 84
+- detail: export BEDTOOLS MIN_COV OUT_DIR
+  kind: env_set
+  site: 85
+unresolved:
+- kind: round_2_bash_scope
+  note: 'round 2 bash: var assignments, side_effects, invocation, 7 compliance checks
+    (2 BLOCKER / 3 WARNING / 2 NOTE); no inputs/outputs/models/dataframes (launcher
+    pattern)'

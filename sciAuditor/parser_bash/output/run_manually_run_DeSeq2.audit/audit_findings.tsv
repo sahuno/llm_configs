@@ -1,0 +1,8 @@
+severity	rule	sites	note
+OK	script-header-metadata		compliance check passed: script-header-metadata
+WARNING	relative-paths-only	14,17,18,19,20,24	6 variables resolve to absolute paths
+OK	forbidden-variable-names		compliance check passed: forbidden-variable-names
+OK	raw-data-write		compliance check passed: raw-data-write
+OK	hardcoded-contig		compliance check passed: hardcoded-contig
+NOTE	logging-dual-capture		no `exec > >(tee -a $LOG) 2>&1` dual-capture idiom detected
+OK	set-strict-mode		compliance check passed: set-strict-mode

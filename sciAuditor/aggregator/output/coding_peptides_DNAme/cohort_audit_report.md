@@ -2,24 +2,23 @@
 
 - **Project dir**: `/data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/scripts`
 - **Scripts audited**: 35
-- **Inferred at**: 2026-05-14T23:57:34-04:00
+- **Inferred at**: 2026-05-15T00:16:14-04:00
 
 ## Headline
 
 | Findings | BLOCKER | WARNING | NOTE | OK | Parser errors |
 |---|---:|---:|---:|---:|---:|
-| Project total | 8 | 29 | 27 | 170 | 0 |
+| Project total | 8 | 33 | 31 | 191 | 0 |
 
 **Grade distribution:**
 
 | Grade | Scripts |
 |---|---:|
 | A | 4 |
-| B | 16 |
+| B | 18 |
 | C | 4 |
 | D | 1 |
-| F | 6 |
-| — | 4 |
+| F | 8 |
 
 ## Per-script
 
@@ -41,8 +40,10 @@
 | [11_q9_apm_methylation_io_response.R](per_script/11_q9_apm_methylation_io_response.R/audit_report.md) | R | ✓ | 6 / 7 (86%) | **B** | 0 | 1 | 1 |
 | [12_purity_sensitivity.R](per_script/12_purity_sensitivity.R/audit_report.md) | R | ✓ | 6 / 7 (86%) | **B** | 0 | 1 | 1 |
 | [12b_msi_tmb_effect_modification.R](per_script/12b_msi_tmb_effect_modification.R/audit_report.md) | R | ✓ | 6 / 7 (86%) | **B** | 0 | 1 | 1 |
+| [14a_extract_methylation.sh](per_script/14a_extract_methylation.sh/audit_report.md) | bash |  | 6 / 7 (86%) | **B** | 0 | 1 | 0 |
 | [14b_build_matrices.R](per_script/14b_build_matrices.R/audit_report.md) | R | ✓ | 6 / 7 (86%) | **B** | 0 | 1 | 1 |
 | [15_rerun_q2_q9_epdnew.R](per_script/15_rerun_q2_q9_epdnew.R/audit_report.md) | R |  | 6 / 7 (86%) | **B** | 0 | 1 | 0 |
+| [20a_build_extract_genomewide.sh](per_script/20a_build_extract_genomewide.sh/audit_report.md) | bash |  | 7 / 8 (88%) | **B** | 0 | 1 | 0 |
 | [plot_sample_overlap.R](per_script/plot_sample_overlap.R/audit_report.md) | R |  | 6 / 7 (86%) | **B** | 0 | 0 | 1 |
 | [plot_sample_overlap_v2.R](per_script/plot_sample_overlap_v2.R/audit_report.md) | R |  | 6 / 7 (86%) | **B** | 0 | 0 | 1 |
 | [13_build_epdnew_promoters.R](per_script/13_build_epdnew_promoters.R/audit_report.md) | R |  | 5 / 7 (71%) | **C** | 1 | 1 | 0 |
@@ -56,10 +57,8 @@
 | [27_elasticnet_seed_stability.R](per_script/27_elasticnet_seed_stability.R/audit_report.md) | R | ✓ | 3 / 7 (43%) | **F** | 1 | 2 | 2 |
 | [29_fdr_genomewide.R](per_script/29_fdr_genomewide.R/audit_report.md) | R |  | 3 / 7 (43%) | **F** | 1 | 2 | 1 |
 | [23_lm_meth_to_rna_apm_full_vs_cgi.R](per_script/23_lm_meth_to_rna_apm_full_vs_cgi.R/audit_report.md) | R |  | 4 / 7 (57%) | **F** | 0 | 2 | 1 |
-| [14a_extract_methylation.sh](per_script/14a_extract_methylation.sh/audit_report.md) | bash |  | — | **—** | 0 | 0 | 0 |
-| [20a_build_extract_genomewide.sh](per_script/20a_build_extract_genomewide.sh/audit_report.md) | bash |  | — | **—** | 0 | 0 | 0 |
-| [submit_26_elasticnet_genomewide.sh](per_script/submit_26_elasticnet_genomewide.sh/audit_report.md) | bash |  | — | **—** | 0 | 0 | 0 |
-| [submit_26_perm.sh](per_script/submit_26_perm.sh/audit_report.md) | bash |  | — | **—** | 0 | 0 | 0 |
+| [submit_26_elasticnet_genomewide.sh](per_script/submit_26_elasticnet_genomewide.sh/audit_report.md) | bash |  | 4 / 7 (57%) | **F** | 0 | 1 | 2 |
+| [submit_26_perm.sh](per_script/submit_26_perm.sh/audit_report.md) | bash |  | 4 / 7 (57%) | **F** | 0 | 1 | 2 |
 
 ## Findings rolled up by rule
 
@@ -67,8 +66,9 @@
 |---|---|---:|
 | BLOCKER | header-preserved | 7 |
 | BLOCKER | hardcoded-contig | 1 |
-| WARNING | relative-paths-only | 24 |
+| WARNING | relative-paths-only | 28 |
 | WARNING | forbidden-variable-names | 5 |
 | NOTE | pair-binding-coverage | 16 |
-| NOTE | logging-dual-capture | 11 |
+| NOTE | logging-dual-capture | 13 |
+| NOTE | script-header-metadata | 2 |
 
