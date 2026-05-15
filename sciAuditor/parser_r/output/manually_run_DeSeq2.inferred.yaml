@@ -1,0 +1,674 @@
+schema_version: '0.2'
+analysis_unit:
+  id: manually_run_DeSeq2
+  kind: single
+script:
+  path: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/scripts/manually_run_DeSeq2.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T21:26:35-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --source_dir
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/
+      default_kind: absolute
+      help: parent directory to RNA-seq count data
+      site: 62
+    - name: --workflow_dir
+      type: character
+      default: /data1/greenbab/users/ahunos/apps/workflows/RNA-seq_DiffExpr/
+      default_kind: absolute
+      help: Path to workflow directory
+      site: 65
+    - name: --blind_transform
+      type: logical
+      default: yes
+      default_kind: ~
+      help: Perform blind rlog transformation
+      site: 71
+    - name: --drop_samples
+      type: character
+      default: R.S.2,R.C.3
+      default_kind: relative
+      help: Comma-separated samples to drop
+      site: 73
+    - name: --ref_variable
+      type: character
+      default: DMSO
+      default_kind: relative
+      help: Reference condition variable
+      site: 75
+    - name: --min_read_counts
+      type: integer
+      default: 50.0
+      default_kind: ~
+      help: Minimum read count threshold
+      site: 77
+    - name: --smallest_group_size
+      type: integer
+      default: 3.0
+      default_kind: ~
+      help: Smallest group size for filtering
+      site: 79
+    - name: --qc_metrics
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/rerun_RNASeq_11032025/qc.tsv
+      default_kind: absolute
+      help: Path to QC metrics TSV file
+      site: 81
+    - name: --metadata_File
+      type: character
+      default: /data1/greenbab/projects/triplicates_epigenetics_diyva/configs/metadata_triplicates_recoded.csv
+      default_kind: absolute
+      help: Path metadata file
+      site: 84
+    - name: --log_dir
+      type: character
+      default: logs
+      default_kind: relative
+      help: 'Directory for log files [default: logs]'
+      site: 88
+    - name: --png_dpi
+      type: integer
+      default: 150.0
+      default_kind: ~
+      help: 'DPI for PNG figures. Use 150 for fast/small, 300 for publication [default:
+        150]'
+      site: 91
+    - name: --rasterise_dpi
+      type: integer
+      default: 100.0
+      default_kind: ~
+      help: 'DPI for ggrastr rasterisation of PDF/SVG geom layers. Rasterises data
+        layers (points, violins) while keeping text/axes as vector. 0 = pure vector
+        (no rasterisation). [default: 100]'
+      site: 93
+inputs:
+  - id: input_01
+    path_template: '{source_dir}/annot.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 173
+    resolution_confidence: medium
+  - id: input_02
+    path_template: '{source_dir}/CT/counts_annot.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 174
+    resolution_confidence: medium
+  - id: input_03
+    path_template: '{source_dir}/CT/counts.tsv'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 175
+    resolution_confidence: medium
+  - id: input_04
+    path_template: '{opt.qc_metrics}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 176
+    resolution_confidence: high
+  - id: input_05
+    path_template: '{opt.metadata_File}'
+    kind: tabular
+    format: csv
+    read_call:
+      fn: read.csv
+      site: 370
+    resolution_confidence: medium
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_gene_lists.tsv
+    write_call:
+      fn: fwrite
+      site: 355
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_02
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_gene_lists_long.tsv
+    write_call:
+      fn: fwrite
+      site: 363
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_03
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/cts_coding_raw_counts.tsv
+    write_call:
+      fn: fwrite
+      site: 480
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_04
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/metadata_samples.tsv
+    write_call:
+      fn: fwrite
+      site: 481
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_05
+    kind: tabular
+    format: multi
+    path_template: filepath("pdf")
+    write_call:
+      fn: ggsave
+      site: 586
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_06
+    kind: tabular
+    format: multi
+    path_template: filepath("png")
+    write_call:
+      fn: ggsave
+      site: 587
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_07
+    kind: tabular
+    format: multi
+    path_template: filepath("svg")
+    write_call:
+      fn: ggsave
+      site: 589
+    write_mode: overwrite
+    write_params: ~
+    resolution_confidence: low
+  - id: output_08
+    kind: tabular
+    format: tsv
+    path_template: '{out_file}'
+    write_call:
+      fn: fwrite
+      site: 1569
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_09
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/barplot_chisq_test_results.tsv
+    write_call:
+      fn: fwrite
+      site: 1738
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_10
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/barplot_pairwise_proportion_tests.tsv
+    write_call:
+      fn: fwrite
+      site: 1739
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_11
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2214
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_12
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2215
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_13
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_C5_GO_results.tsv
+    write_call:
+      fn: fwrite
+      site: 2216
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_14
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/Antigen_Presentation_NES_all_contrasts.tsv
+    write_call:
+      fn: fwrite
+      site: 2627
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_15
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2682
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_16
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2683
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_17
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_M5_GO_significant.tsv
+    write_call:
+      fn: fwrite
+      site: 2684
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_18
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/GSEA_running_score_IFNgamma_CKi_vs_DMSO.tsv
+    write_call:
+      fn: fwrite
+      site: 3089
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_19
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3099
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_20
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3100
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_21
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_DESeq2_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3101
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_22
+    kind: tabular
+    format: tsv
+    path_template: '{out_path}'
+    write_call:
+      fn: fwrite
+      site: 3114
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_23
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_CKi_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3123
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_24
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/CKi_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3124
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_25
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/QSTAT_vs_DMSO_GSEA_Hallmark_results.tsv
+    write_call:
+      fn: fwrite
+      site: 3125
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_26
+    kind: tabular
+    format: tsv
+    path_template: '{tsv_path}'
+    write_call:
+      fn: fwrite
+      site: 4462
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: medium
+  - id: output_27
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_availability_per_contrast.tsv
+    write_call:
+      fn: fwrite
+      site: 4530
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_28
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_VST_all_conditions.tsv
+    write_call:
+      fn: fwrite
+      site: 4953
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+  - id: output_29
+    kind: tabular
+    format: tsv
+    path_template: data/manual_DeSeq2/target_genes_VST_all_conditions_scaled.tsv
+    write_call:
+      fn: fwrite
+      site: 4958
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes: []
+transformations: []
+models: []
+figures: []
+stochastic_ops:
+  - site: 1299
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1298
+    seed_value: 1
+  - site: 1358
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1357
+    seed_value: 1
+  - site: 1407
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 1406
+    seed_value: 1
+  - site: 2179
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2178
+    seed_value: 1
+  - site: 2191
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2190
+    seed_value: 1
+  - site: 2203
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2202
+    seed_value: 1
+  - site: 2420
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2419
+    seed_value: 1
+  - site: 2442
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2441
+    seed_value: 1
+  - site: 2455
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2454
+    seed_value: 1
+  - site: 2644
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2643
+    seed_value: 1
+  - site: 2657
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2656
+    seed_value: 1
+  - site: 2670
+    fn: GSEA
+    seed_set: yes
+    seed_set_evidence_site: 2669
+    seed_value: 1
+seed_policy:
+  declared_value: 1
+  multiple_values_observed: ~
+  coverage:
+    stochastic_ops: 12
+    seeded: 12
+    unseeded: 0
+  divergence_from_claude_default: yes
+  severity: NOTE
+  note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 25
+    kind: r_option
+    detail: options(width = 200)
+  - site: 107
+    kind: mkdir
+    paths:
+      - figures/manual_DeSeq2
+  - site: 108
+    kind: mkdir
+    paths:
+      - data/manual_DeSeq2
+  - site: 114
+    kind: mkdir
+    paths:
+      - '{log_dir}'
+  - site: 575
+    kind: mkdir
+    paths:
+      - dirname(filepath(ext))
+  - site: 1568
+    kind: mkdir
+    paths:
+      - dirname(out_file)
+  - site: 3507
+    kind: mkdir
+    paths:
+      - '{output_dir}/{subdir}'
+environment:
+  r_packages:
+    - DESeq2
+    - tidyverse
+    - EnhancedVolcano
+    - viridis
+    - magrittr
+    - pheatmap
+    - data.table
+    - ggrepel
+    - ggfortify
+    - clusterProfiler
+    - org.Mm.eg.db
+    - ggnewscale
+    - cowplot
+    - RColorBrewer
+    - NbClust
+    - msigdbr
+    - enrichplot
+    - ggpubr
+    - ggVennDiagram
+    - ggrastr
+    - optparse
+    - ComplexHeatmap
+    - grid
+    - ggplotify
+    - circlize
+    - patchwork
+  container: ~
+organism_inferred: mouse
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: fail
+    evidence_sites:
+      - 1
+    note: missing Date or Purpose
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 62
+      - 65
+      - 81
+      - 84
+    note: 4 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: pass
+    evidence_sites:
+      - 1299
+      - 1358
+      - 1407
+      - 2179
+      - 2191
+      - 2203
+      - 2420
+      - 2442
+      - 2455
+      - 2644
+      - 2657
+      - 2670
+    note: ~
+  - rule: logging-dual-capture
+    status: pass
+    evidence_sites:
+      - 122
+      - 135
+    note: ~
+  - rule: genome-build-tag
+    status: fail
+    evidence_sites: []
+    note: organism inferred=mouse but no genome build (mm10/mm39/GRCm39/hg38/...)
+      declared in any path
+audit_findings_preview:
+  - severity: NOTE
+    rule: script-header-metadata
+    sites:
+      - 1
+    note: missing Date or Purpose
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 62
+      - 65
+      - 81
+      - 84
+    note: 4 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: OK
+    rule: seed-coverage
+    note: 'compliance check passed: seed-coverage'
+  - severity: OK
+    rule: logging-dual-capture
+    note: 'compliance check passed: logging-dual-capture'
+  - severity: WARNING
+    rule: genome-build-tag
+    sites: []
+    note: organism inferred=mouse; no genome build token in inputs/outputs
+  - severity: NOTE
+    rule: seed-policy
+    note: seed=1 used across 12 stochastic ops; CLAUDE.md default is 42
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round-1 parser scope: dataframes/transformations/models/figures/functions_defined/hardcoded_data
+      not yet populated'
+

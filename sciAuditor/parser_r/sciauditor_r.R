@@ -395,25 +395,28 @@ collect_side_effects <- function(calls_all) {
 
 collect_stochastic_ops <- function(calls_all) {
   out <- list()
-  seed_sites <- integer()
-  # First pass: record set.seed sites
+  # First pass: record (line, value) of every set.seed call
+  seed_pairs <- list()
   for (item in calls_all) {
     if (identical(call_name(item$call), "set.seed")) {
-      seed_sites <- c(seed_sites, item$line_start)
+      v <- arg_by(item$call, pos = 1)
+      val <- if (is.numeric(v) && length(v) == 1) as.integer(v) else NA_integer_
+      seed_pairs[[length(seed_pairs) + 1]] <- list(line = item$line_start, value = val)
     }
   }
-  # Second pass: every stochastic op gets seed_set by "is there a set.seed
-  # before this line in the linear file order?". Static approximation —
-  # full control-flow walk is Phase 4.
+  seed_sites <- vapply(seed_pairs, function(x) x$line, integer(1))
+  # Second pass: linear-order "is there a set.seed earlier in the file?"
   for (item in calls_all) {
     nm <- call_name(item$call)
     if (is.na(nm) || nm == "set.seed") next
     if (!(nm %in% STOCHASTIC_FNS)) next
+    earlier <- which(seed_sites <= item$line_start)
     out[[length(out) + 1]] <- list(
       site     = item$line_start,
       fn       = nm,
-      seed_set = any(seed_sites <= item$line_start),
-      seed_set_evidence_site = if (length(seed_sites)) max(seed_sites[seed_sites <= item$line_start]) else NA_integer_
+      seed_set = length(earlier) > 0,
+      seed_set_evidence_site = if (length(earlier)) seed_sites[max(earlier)] else NA_integer_,
+      seed_value = if (length(earlier)) seed_pairs[[max(earlier)]]$value else NA_integer_
     )
   }
   out
@@ -445,16 +448,18 @@ compliance_checks <- function(parse_tree, calls_all, raw_lines, config_iface, st
     out[[length(out) + 1]] <<- list(rule = rule, status = status,
                                     evidence_sites = evidence_sites, note = note)
   }
-  # script-header-metadata: author + date + Purpose in first 10 comment lines
+  # script-header-metadata: author + date + Purpose in first 10 comment lines.
+  # Accept both "Author:" and "Name:" as the author identifier; the CLAUDE.md
+  # convention is "Author:" but "name:" / "Name:" appears in the lab corpus.
   head_comments <- raw_lines[seq_len(min(10, length(raw_lines)))]
   head_comments <- head_comments[grepl("^\\s*#", head_comments)]
-  has_author  <- any(grepl("(?i)author", head_comments, perl = TRUE))
+  has_author  <- any(grepl("(?i)(^|[^a-z])(author|name)\\s*:", head_comments, perl = TRUE))
   has_date    <- any(grepl("(?i)date|[0-9]{4}-[0-9]{2}-[0-9]{2}", head_comments, perl = TRUE))
   has_purpose <- any(grepl("(?i)purpose|description", head_comments, perl = TRUE))
   push("script-header-metadata",
        if (has_author && (has_date || has_purpose)) "pass" else "fail",
-       evidence_sites = if (length(head_comments)) list(1) else list(),
-       note = if (!has_author) "no `# Author:` line in first 10 comment lines"
+       evidence_sites = if (length(head_comments)) list(1L) else list(),
+       note = if (!has_author) "no `# Author:` (or `# Name:`) line in first 10 comment lines"
               else if (!has_date && !has_purpose) "missing Date or Purpose"
               else NULL)
 
@@ -581,15 +586,23 @@ findings       <- findings_from_compliance(checks)
 # seed_policy summary
 seed_policy <- if (length(stoch_ops) == 0) {
   list(declared_value = NULL,
-       coverage       = list(stochastic_ops = 0, seeded = 0, unseeded = 0),
+       coverage       = list(stochastic_ops = 0L, seeded = 0L, unseeded = 0L),
        severity       = "n/a")
 } else {
   seeded <- sum(vapply(stoch_ops, function(s) isTRUE(s$seed_set), logical(1)))
-  list(declared_value = NULL,    # static layer can't know the literal seed value yet
-       coverage       = list(stochastic_ops = length(stoch_ops),
-                             seeded = seeded,
-                             unseeded = length(stoch_ops) - seeded),
-       severity       = if (seeded < length(stoch_ops)) "WARNING" else "NOTE")
+  vals <- unique(stats::na.omit(vapply(stoch_ops, function(s) s$seed_value %||% NA_integer_, integer(1))))
+  declared <- if (length(vals) == 1) as.integer(vals) else NULL  # single-value scripts only
+  CLAUDE_DEFAULT_SEED <- 42L
+  divergent <- !is.null(declared) && !identical(declared, CLAUDE_DEFAULT_SEED)
+  list(declared_value = declared,
+       multiple_values_observed = if (length(vals) > 1) as.list(as.integer(vals)) else NULL,
+       coverage       = list(stochastic_ops = as.integer(length(stoch_ops)),
+                             seeded         = as.integer(seeded),
+                             unseeded       = as.integer(length(stoch_ops) - seeded)),
+       divergence_from_claude_default = divergent,
+       severity       = if (seeded < length(stoch_ops)) "WARNING" else if (divergent) "NOTE" else "OK",
+       note = if (divergent) sprintf("seed=%d used across %d stochastic ops; CLAUDE.md default is %d",
+                                     declared, length(stoch_ops), CLAUDE_DEFAULT_SEED) else NULL)
 }
 
 # Organism / genome inference: package allowlist hits
@@ -607,6 +620,33 @@ gb_tokens <- c("mm10","mm39","GRCm39","hg38","GRCh38","hg19","GRCh37","t2t","chm
 genome_build_declared <- {
   hit <- gb_tokens[vapply(gb_tokens, function(t) any(grepl(t, all_paths, fixed = TRUE)), logical(1))]
   if (length(hit)) hit[1] else NULL
+}
+
+# Cross-field finding: organism inferred but no genome build tag → WARNING.
+# This is derived after the per-rule compliance pass; appended in place.
+if (!is.null(organism_inferred) && is.null(genome_build_declared)) {
+  checks[[length(checks) + 1]] <- list(
+    rule = "genome-build-tag",
+    status = "fail",
+    evidence_sites = list(),
+    note = sprintf("organism inferred=%s but no genome build (mm10/mm39/GRCm39/hg38/...) declared in any path", organism_inferred)
+  )
+  findings[[length(findings) + 1]] <- list(
+    severity = "WARNING",
+    rule = "genome-build-tag",
+    sites = list(),
+    note = sprintf("organism inferred=%s; no genome build token in inputs/outputs", organism_inferred)
+  )
+}
+
+# Append seed-policy as a finding when severity is NOTE / WARNING
+if (!is.null(seed_policy$severity) && seed_policy$severity %in% c("NOTE", "WARNING")) {
+  sev <- if (identical(seed_policy$severity, "WARNING")) "WARNING" else "NOTE"
+  findings[[length(findings) + 1]] <- list(
+    severity = sev,
+    rule = "seed-policy",
+    note = seed_policy$note %||% "see seed_policy block"
+  )
 }
 
 # Assemble the v0.2 YAML root
