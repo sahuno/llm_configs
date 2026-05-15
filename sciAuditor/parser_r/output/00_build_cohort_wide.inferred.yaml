@@ -1,0 +1,146 @@
+schema_version: '0.2'
+analysis_unit:
+  id: 00_build_cohort_wide
+  kind: single
+script:
+  path: /data1/greenbab/users/ahunos/projects/cohort_overview/scripts/00_build_cohort_wide.R
+  language: R
+  git_rev: <runtime>
+  inferred_at: 2026-05-14T21:21:16-0400
+  layers_used:
+    - static
+runtime_context:
+  cwd_at_invocation: <runtime>
+  resolved_cwd: <runtime>
+  host: <runtime>
+  user: <runtime>
+config_interface:
+  framework: optparse
+  options:
+    - name: --metadata
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/scripts/coding_peptides_DNAme/metadata_merged.tsv
+      default_kind: absolute
+      help: ~
+      site: 15
+    - name: --meth_cohort
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/Q2exp_apm_burden_all36_tumors.tsv
+      default_kind: absolute
+      help: ~
+      site: 17
+    - name: --out
+      type: character
+      default: /data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/coding_peptides_DNAme/cohort_overview/data/cohort_wide.tsv
+      default_kind: absolute
+      help: ~
+      site: 19
+inputs:
+  - id: input_01
+    path_template: '{opt.metadata}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 24
+    resolution_confidence: high
+  - id: input_02
+    path_template: '{opt.meth_cohort}'
+    kind: tabular
+    format: tsv
+    read_call:
+      fn: fread
+      site: 27
+    resolution_confidence: high
+outputs:
+  - id: output_01
+    kind: tabular
+    format: tsv
+    path_template: '{opt.out}'
+    write_call:
+      fn: fwrite
+      site: 119
+    write_mode: overwrite
+    write_params:
+      sep: "\t"
+    resolution_confidence: high
+package_resources: ~
+env_vars_read: []
+env_vars_written: []
+dataframes: []
+transformations: []
+models: []
+figures: []
+stochastic_ops: []
+seed_policy:
+  declared_value: ~
+  coverage:
+    stochastic_ops: 0.0
+    seeded: 0.0
+    unseeded: 0.0
+  severity: n/a
+functions_defined: ~
+hardcoded_data: ~
+external_binaries: []
+driver_pattern: ~
+validation: ~
+side_effects:
+  - site: 118
+    kind: mkdir
+    paths:
+      - dirname(opt$out)
+environment:
+  r_packages:
+    - data.table
+    - optparse
+  container: ~
+organism_inferred: ~
+genome_build_declared: ~
+compliance_checks:
+  - rule: script-header-metadata
+    status: pass
+    evidence_sites:
+      - 1.0
+    note: ~
+  - rule: relative-paths-only
+    status: fail
+    evidence_sites:
+      - 15
+      - 17
+      - 19
+    note: 3 CLI defaults are absolute paths
+  - rule: forbidden-variable-names
+    status: pass
+    evidence_sites: []
+    note: ~
+  - rule: seed-coverage
+    status: n/a
+    evidence_sites: []
+    note: no stochastic ops detected
+  - rule: logging-dual-capture
+    status: fail
+    evidence_sites: []
+    note: no log-capture setup detected
+audit_findings_preview:
+  - severity: OK
+    rule: script-header-metadata
+    note: 'compliance check passed: script-header-metadata'
+  - severity: WARNING
+    rule: relative-paths-only
+    sites:
+      - 15
+      - 17
+      - 19
+    note: 3 CLI defaults are absolute paths
+  - severity: OK
+    rule: forbidden-variable-names
+    note: 'compliance check passed: forbidden-variable-names'
+  - severity: NOTE
+    rule: logging-dual-capture
+    sites: []
+    note: no log-capture setup detected
+unresolved:
+  - kind: not_yet_implemented
+    note: 'round-1 parser scope: dataframes/transformations/models/figures/functions_defined/hardcoded_data
+      not yet populated'
+
