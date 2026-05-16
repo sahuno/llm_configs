@@ -59,3 +59,8 @@ LOCAL_CONTAINERS:
     symlinks:
       - "/data1/greenbab/software/images/modkit_latest.sif"           # group-shared 'latest' alias
       - "/data1/greenbab/users/ahunos/apps/containers/modkit_latest.sif"  # personal 'latest' alias
+  - name: "igv-reports v1.16.0; self-contained HTML genomic-region reports (create_report)"
+    path: "/data1/greenbab/users/ahunos/apps/containers/igv-reports_1.16.0.sif"
+    source: "https://depot.galaxyproject.org/singularity/igv-reports:1.16.0--pyh7e72e81_0"
+    notes: "Pull command: wget -O <path> '<source>'. Always invoke with `singularity exec --cleanenv` — host SSL_CERT_FILE on RHEL 8 leaks into SIF and crashes create_report's standalone ideogram fetch (see rules/apptainer_env_leak.md). The igv-reports skill driver handles --cleanenv automatically when --apptainer is passed."
+    used_by_skill: "igv-reports"
