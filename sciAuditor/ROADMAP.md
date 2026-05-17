@@ -34,7 +34,7 @@ a script on head-of-real (first N rows) data and ground-truths:
 Requires per-script `audit_fixture:` override in the manifest for
 balance-sensitive scripts (DE analysis, paired tests).
 
-### 3. Snakemake / Nextflow DAG audit
+### 3. Snakemake / Nextflow DAG audit  **(round 1 PLANNED — see `08_workflow_dag_audit_plan.md`)**
 The cross-script audit deferred in `01_first_principles_brainstorm.md`
 §12.5. Auditor reads a Snakefile / nextflow main.nf, builds the rule
 DAG, and validates:
@@ -42,6 +42,14 @@ DAG, and validates:
   schema (use the inferred YAML schemas from per-script audits)
 - intermediate files have a genome tag
 - shared params don't drift across rules
+
+**Status**: brainstorm + plan locked. Brainstorm
+[`07_workflow_dag_audit_brainstorm.md`](07_workflow_dag_audit_brainstorm.md)
+captures the alternatives considered; plan
+[`08_workflow_dag_audit_plan.md`](08_workflow_dag_audit_plan.md)
+carries the locked decisions for round 1 (Snakemake-only, D1 schema
++ D2 topology contracts, MVP target = the CCV-neoquality-pipeline
+Snakefile). Ready to execute when next round of work starts.
 
 ### 4. Workflow-DAG awareness inside the cohort aggregator
 Less ambitious than full Snakemake parsing — given a numbered

@@ -151,6 +151,16 @@ full list. Headline results:
     --jobs 8 --fail-on BLOCKER
 ```
 
+## Next round (ROADMAP #3)
+
+Workflow-level DAG audit. Brainstorm + plan committed:
+- `07_workflow_dag_audit_brainstorm.md` — alternatives considered + open questions
+- `08_workflow_dag_audit_plan.md` — locked decisions for round 1 (Snakemake-only, D2 topology + D1 schema contracts; MVP fixture = CCV-neoquality-pipeline Snakefile; ≥ 1 real finding = acceptance)
+
+Total round-1 budget per the plan: ~760 lines + verification, split
+across 5 work items. Order: snakemake_loader → workflow_check (D2,
+then D1) → per-rule dispatch → report+TSV → CLI+demo.
+
 ## What's open
 
 See `ROADMAP.md`.
