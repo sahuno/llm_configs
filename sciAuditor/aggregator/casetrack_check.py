@@ -369,6 +369,67 @@ def rule_results_drift(append_info: dict, index: CasetrackIndex) -> list[Finding
     return out
 
 
+def rule_untracked_output(inferred_yaml: dict, index: CasetrackIndex) -> list[Finding]:
+    """C1 WARNING: a script writes a summary-TSV-shaped output (basename
+    matches a declared [analyses.X].summary_tsv) but never calls
+    `casetrack append` for that file. Most common drift in the
+    write-summary → append pattern: the append step got commented out
+    for a test run and never restored.
+
+    Scope round 2 (decision #3): exact basename match only. Fuzzy matches
+    (e.g. `modkit_summary_v2.tsv` vs declared `modkit_summary.tsv`) are
+    deferred to round 3 polish if the false-negative rate proves high.
+    """
+    out: list[Finding] = []
+    outputs = inferred_yaml.get("outputs") or []
+    appends = inferred_yaml.get("casetrack_appends") or []
+
+    # Build a fast lookup: basename → set of analyses that declare it
+    declared_by_basename: dict[str, list[str]] = defaultdict(list)
+    for aname, decl in index.analyses.items():
+        if decl.summary_tsv:
+            declared_by_basename[decl.summary_tsv].append(aname)
+    if not declared_by_basename:
+        return out
+
+    # Basename set of files actually appended to casetrack in this script
+    appended_basenames: set[str] = set()
+    for ap in appends:
+        r = ap.get("results") or ""
+        if r:
+            appended_basenames.add(Path(r).name)
+
+    seen_already: set[str] = set()
+    for o in outputs:
+        path = (o.get("path_template") or o.get("path") or "")
+        if not path:
+            continue
+        basename = Path(path).name
+        if basename not in declared_by_basename:
+            continue
+        if basename in appended_basenames:
+            continue
+        if basename in seen_already:
+            continue
+        seen_already.add(basename)
+        analyses_for_file = declared_by_basename[basename]
+        wc_site = (o.get("write_call") or {}).get("site")
+        site_str = (f"output:{path}:L{wc_site}" if wc_site
+                    else f"output:{path}")
+        analyses_hint = (", ".join(sorted(analyses_for_file)))
+        out.append(Finding(
+            severity="WARNING",
+            rule="casetrack-untracked-output",
+            sites=site_str,
+            note=(f"Script writes '{basename}' which matches the declared "
+                  f"summary_tsv for casetrack analysis '{analyses_hint}', "
+                  f"but no `casetrack append --results {basename}` call "
+                  f"was detected. If this was intentional (exploratory "
+                  f"run / side output), --ignore the script."),
+        ))
+    return out
+
+
 def rule_orphan_analysis(append_info: dict, index: CasetrackIndex) -> list[Finding]:
     """NOTE: --analysis X used by a script but X is neither declared in
     [analyses.X] nor seen in provenance.jsonl. Likely typo."""
@@ -447,6 +508,8 @@ def check_script(inferred_yaml: dict, index: CasetrackIndex) -> list[Finding]:
         findings.extend(rule_fk_mismatch(ap, index, matched_output, cols))
         findings.extend(rule_prefix_collision(ap, index, cols))
         findings.extend(rule_results_drift(ap, index))
+    # Round-2: script-level C1 rule — independent of any single append entry
+    findings.extend(rule_untracked_output(inferred_yaml, index))
     return findings
 
 
