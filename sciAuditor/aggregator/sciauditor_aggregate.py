@@ -195,6 +195,73 @@ def language_for(path: Path) -> str:
 GRADE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "F": 4, "N/A": 5, "—": 5}
 
 
+def regenerate_findings_section(report_path: Path, findings_tsv: Path) -> bool:
+    """Round-2 Item 4 — refresh the `## Findings` section in a per-script
+    audit_report.md from the post-append findings.tsv. Returns True if
+    the report was rewritten.
+
+    Surgical scope: ONLY the `## Findings` section is replaced. Headline /
+    By category / Inventory / Pair binding are emitted by the parser
+    against the pre-casetrack-append data and remain correct (they're
+    driven by `compliance_checks` and inferred structure, not by the
+    appended findings). Decision A (regenerate from scratch) collapsed to
+    its minimal form: the only stale part of the report is exactly the
+    section that lists individual findings, so that's all we rewrite.
+    """
+    if report_path is None or findings_tsv is None:
+        return False
+    if not (report_path.exists() and findings_tsv.exists()):
+        return False
+    text = report_path.read_text()
+    m = re.search(r"^## Findings\s*$", text, flags=re.MULTILINE)
+    if m is None:
+        return False  # report shape unexpected; leave alone
+    start = m.start()
+    after = text[m.end():]
+    nxt = re.search(r"^## ", after, flags=re.MULTILINE)
+    end = m.end() + nxt.start() if nxt else len(text)
+
+    # Read findings (skip header)
+    by_sev: dict[str, list[dict]] = {"BLOCKER": [], "WARNING": [], "NOTE": [], "OK": []}
+    with findings_tsv.open() as f:
+        next(f, None)
+        for line in f:
+            parts = line.rstrip("\n").split("\t", 3)
+            if len(parts) < 4:
+                parts += [""] * (4 - len(parts))
+            sev, rule, sites, note = parts
+            if sev in by_sev:
+                by_sev[sev].append({"rule": rule, "sites": sites, "note": note})
+
+    lines: list[str] = ["## Findings", ""]
+    for sev in ("BLOCKER", "WARNING", "NOTE", "OK"):
+        hits = by_sev[sev]
+        if not hits:
+            continue
+        lines.append(f"### {sev} ({len(hits)})")
+        lines.append("")
+        for h in hits:
+            sites = h["sites"]
+            # sites can be empty, comma-separated line numbers, or a
+            # casetrack-shaped tag like "analysis:foo" / "results:..." /
+            # "output:path:L42". Render the former as (L1, L2) and the
+            # latter verbatim.
+            if sites:
+                if all(part.strip().isdigit() for part in sites.split(",")):
+                    sites_str = " (L" + ", L".join(s.strip()
+                                                    for s in sites.split(",")) + ")"
+                else:
+                    sites_str = f" ({sites})"
+            else:
+                sites_str = ""
+            lines.append(f"- **{h['rule']}**{sites_str} — {h['note']}")
+        lines.append("")
+    new_section = "\n".join(lines) + ("\n" if not lines[-1] else "")
+
+    report_path.write_text(text[:start] + new_section + text[end:])
+    return True
+
+
 def audit_one_script(work: dict) -> dict:
     """Worker function: parse one script, return its per_script_row and the
     rows for cohort_findings.tsv. Self-contained / picklable so it can run
@@ -227,6 +294,10 @@ def audit_one_script(work: dict) -> dict:
                 with res["findings_tsv"].open("a") as f:
                     for fd in ct_findings:
                         f.write(fd.as_tsv_row() + "\n")
+                # Round-2 Item 4: refresh the per-script audit_report.md so
+                # its `## Findings` section reflects the appended findings
+                # too (Headline / By category / Inventory stay parser-owned).
+                regenerate_findings_section(res["report_md"], res["findings_tsv"])
         except Exception as e:
             sys.stderr.write(f"[aggregate] WARN: casetrack check failed on "
                              f"{s}: {e}\n")
