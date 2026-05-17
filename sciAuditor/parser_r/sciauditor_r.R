@@ -54,6 +54,47 @@ resolve_bash_parser <- function(user_value) {
 }
 
 # ---------------------------------------------------------------------------
+# Casetrack append extractor — round-2 addition (symmetric with parser_py /
+# parser_bash). Scans raw source for `casetrack ... append ...` regardless
+# of how it's invoked (system(), system2(), processx::run, glue() into
+# system, etc.) — the literal tokens 'casetrack' and 'append' appear in
+# every form. Same regex shape as the Python/bash extractors so
+# casetrack_check.py consumes the YAML field identically across languages.
+# ---------------------------------------------------------------------------
+# Round-2: widened delimiter to [\\s\\S]{1,40} for symmetry with parser_py /
+# parser_bash (catches forms like system2("casetrack", c("append",...))).
+CASETRACK_APPEND_RE <- "(?i)\\bcasetrack\\b[\\s\\S]{1,40}?\\bappend\\b[\\s\\S]{0,500}?(?:\\n\\n|$|;;)"
+CT_ANALYSIS_RE    <- "--analysis[=\\s,\"'\\]]+([^\\s'\",)\\]]+)"
+CT_RESULTS_RE     <- "--results[=\\s,\"'\\]]+([^\\s'\",)\\]]+)"
+CT_PROJECT_DIR_RE <- "--project[_-]dir[=\\s,\"'\\]]+([^\\s'\",)\\]]+)"
+
+extract_casetrack_appends <- function(source_text) {
+  out <- list()
+  if (!nzchar(source_text)) return(out)
+  m <- gregexpr(CASETRACK_APPEND_RE, source_text, perl = TRUE)[[1]]
+  if (length(m) == 1L && m[[1]] == -1L) return(out)
+  match_lens <- attr(m, "match.length")
+  for (i in seq_along(m)) {
+    start_pos <- m[[i]]; len <- match_lens[[i]]
+    block <- substr(source_text, start_pos, start_pos + len - 1L)
+    am <- regmatches(block, regexec(CT_ANALYSIS_RE, block, perl = TRUE))[[1]]
+    rm <- regmatches(block, regexec(CT_RESULTS_RE,  block, perl = TRUE))[[1]]
+    pm <- regmatches(block, regexec(CT_PROJECT_DIR_RE, block, perl = TRUE))[[1]]
+    if (length(am) < 2L && length(rm) < 2L) next  # skip blocks with no flags
+    prefix <- substr(source_text, 1L, start_pos - 1L)
+    site   <- length(strsplit(prefix, "\n", fixed = TRUE)[[1]]) + 1L
+    out[[length(out) + 1L]] <- list(
+      analysis    = if (length(am) > 1L) am[[2L]] else NA_character_,
+      results     = if (length(rm) > 1L) rm[[2L]] else NA_character_,
+      project_dir = if (length(pm) > 1L) pm[[2L]] else NA_character_,
+      site        = as.integer(site)
+    )
+  }
+  out
+}
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 `%||%` <- function(a, b) if (!is.null(a)) a else b
@@ -1086,6 +1127,7 @@ dataframes_l   <- collect_dataframes(calls_all)
 # recover written column lists when validating FK / prefix collisions.
 outputs        <- link_outputs_to_dataframes(outputs, dataframes_l, calls_all)
 models_l       <- collect_models(calls_all)
+casetrack_appends <- extract_casetrack_appends(paste(raw_lines, collapse = "\n"))
 checks         <- compliance_checks(parse_tree, calls_all, raw_lines,
                                     config_iface, stoch_ops, inputs, outputs)
 findings       <- findings_from_compliance(checks)
@@ -1272,6 +1314,7 @@ root <- list(
   environment      = list(r_packages = as.list(packages), container = NULL),
   organism_inferred = organism_inferred,
   genome_build_declared = genome_build_declared,
+  casetrack_appends = casetrack_appends,
   compliance_checks = checks,
   audit_findings_preview = findings,
   unresolved = list(

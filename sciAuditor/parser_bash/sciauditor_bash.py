@@ -28,7 +28,9 @@ ABSOLUTE_PATH_RE = re.compile(r'^[/~]')
 # across bash / python / R source because the literal tokens ('casetrack',
 # 'append', '--analysis', '--results') appear identically in all three.
 CASETRACK_APPEND_RE = re.compile(
-    r"\bcasetrack\b[\s'\",)\]]{1,40}\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
+    # Round-2: widened delimiter to [\s\S]{1,40} for symmetry with parser_r /
+    # parser_py (catches forms like R's system2("casetrack", c("append",...))).
+    r"\bcasetrack\b[\s\S]{1,40}?\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
     re.IGNORECASE,
 )
 CT_ANALYSIS_RE    = re.compile(r"--analysis[=\s,\"'\]]+([^\s'\",)\]]+)")

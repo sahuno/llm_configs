@@ -30,7 +30,11 @@ import yaml
 # the literal tokens ('casetrack', 'append', '--analysis', '--results') appear
 # identically in bash / python / R source.
 CASETRACK_APPEND_RE = re.compile(
-    r"\bcasetrack\b[\s'\",)\]]{1,40}\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
+    # Round-2: widened delimiter class to [\s\S]{1,40} so we also catch
+    # R's system2("casetrack", c("append", ...)) and glue() forms whose
+    # delimiters include letters and open-parens. Still capped at 40
+    # chars to avoid pathological long-comment matches.
+    r"\bcasetrack\b[\s\S]{1,40}?\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
     re.IGNORECASE,
 )
 _CT_ANALYSIS_RE    = re.compile(r"--analysis[=\s,\"'\]]+([^\s'\",)\]]+)")
