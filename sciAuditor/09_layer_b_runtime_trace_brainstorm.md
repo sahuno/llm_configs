@@ -515,6 +515,61 @@ This is why I argued for ROADMAP #3 round 1 before Layer B round 1:
 the workflow auditor's WorkflowIndex is Layer B's dispatch loop. We
 ship one, the other becomes much easier.
 
+## 10b. Validation against a real lab artifact (calibration data)
+
+The SU2C coverage-QC archive at
+`/data1/greenbab/projects/janjigian_su2c_WGS-ONT_sam/DNAme_prod/results/archived/coverage_qc_cohort/`
+is a natural Layer B fixture: it contains the cohort-level outputs
+(`cohort_qc_summary.tsv` 190×20; `qc_traceback_report.tsv` 190×15)
+plus runtime logs from a production analysis. Probing the producer
+scripts at `data/src/build_qc_report.py` and
+`data/src/trace_qc_inputs_and_plot.py` gives concrete Layer A → B
+gap numbers:
+
+| Script | Output | Layer A cols inferred | Reality | Path template | Path resolved |
+|---|---|---|---|---|---|
+| `build_qc_report.py` | `cohort_qc_summary.tsv` | None | 20 cols | `{args.output}` | unresolved |
+| `trace_qc_inputs_and_plot.py` | `qc_traceback_report.tsv` | None | 15 cols | `{out_tsv}` | unresolved |
+
+**Resolution rate: 0/35 cols (0%) on two real audit-critical scripts.**
+Both scripts build their output dataframes via `pd.DataFrame(rows)`
+where `rows` is a list-of-dicts assembled inside a loop — the exact
+pattern Layer A's `_columns_from_df_call` heuristic cannot resolve
+statically. Layer B B1 would close this from runtime data; B3 would
+resolve the `{args.output}` / `{out_tsv}` path templates to concrete
+paths against any given fixture.
+
+**Qualitative finding**: `trace_qc_inputs_and_plot.py` is itself a
+*hand-rolled Layer B trace*. Its `trace_one(sample, bam_path,
+provenance, qc_dir)` function performs the contracts Layer B
+automates: file-existence checks (B5), byte-size capture (B3),
+provenance string consistency (cross-cohort version of B5), and
+re-parse-and-cross-check against the cohort summary's numbers (B2).
+The 190×15 output schema is essentially a per-sample trace artifact
+with one row per audited sample. The lab has already built the
+pattern by hand for the one analysis where it mattered most —
+generalising it across every audited script is exactly Layer B's
+job.
+
+**Implications for the round-1 plan (when 09 promotes to 10)**:
+
+1. **Fixture validation**: the `archived/coverage_qc_cohort/` outputs
+   are the ground-truth answer key. Round 1 of Layer B should
+   reproduce the 20-col / 15-col schemas from the two producer
+   scripts on a sliced fixture, and the regression test for round 1
+   is "Layer B traces match the archive's TSV columns exactly."
+2. **Trace artifact shape**: `qc_traceback_report.tsv` is a working
+   template for what Layer B's per-script trace should look like.
+   The artifact format proposal in §4 (JSON Lines events) should be
+   re-evaluated against the lab's actual hand-rolled flat-TSV-per-
+   sample shape — flat TSV may be friendlier for downstream R/Py
+   inspection than JSONL.
+3. **Resource budget**: the SU2C archive ran on 189 samples; a
+   round-1 Layer B execution on a 5-sample fixture should be ≤ 1/30
+   of the wall time, which the archive's `logs/mosdepth/<sample>.log`
+   timing data can calibrate.
+
+
 ## 10. Calibration: how much do we trust Layer B?
 
 The high-stakes lens says: **trust is earned per-finding, per-script,
