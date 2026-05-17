@@ -25,6 +25,39 @@ from datetime import datetime
 import yaml
 
 
+# casetrack append extractor — populates casetrack_appends[] for the shared
+# aggregator/casetrack_check.py module. Same regex shape as in parser_bash:
+# the literal tokens ('casetrack', 'append', '--analysis', '--results') appear
+# identically in bash / python / R source.
+CASETRACK_APPEND_RE = re.compile(
+    r"\bcasetrack\b[\s'\",)\]]{1,40}\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
+    re.IGNORECASE,
+)
+_CT_ANALYSIS_RE    = re.compile(r"--analysis[=\s,\"'\]]+([^\s'\",)\]]+)")
+_CT_RESULTS_RE     = re.compile(r"--results[=\s,\"'\]]+([^\s'\",)\]]+)")
+_CT_PROJECT_DIR_RE = re.compile(r"--project[_-]dir[=\s,\"'\]]+([^\s'\",)\]]+)")
+
+
+def extract_casetrack_appends(source: str) -> list[dict]:
+    """Scan source text for `casetrack append ...` invocations.
+    Returns a list of {analysis, results, project_dir, site} dicts."""
+    out = []
+    for m in CASETRACK_APPEND_RE.finditer(source):
+        rest = m.group("rest")
+        am = _CT_ANALYSIS_RE.search(rest)
+        rm = _CT_RESULTS_RE.search(rest)
+        pm = _CT_PROJECT_DIR_RE.search(rest)
+        if not am and not rm:
+            continue
+        out.append({
+            "analysis":    am.group(1) if am else None,
+            "results":     rm.group(1) if rm else None,
+            "project_dir": pm.group(1) if pm else None,
+            "site":        source.count("\n", 0, m.start()) + 1,
+        })
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Pattern catalogues
 # ---------------------------------------------------------------------------
@@ -992,6 +1025,7 @@ def assemble(path, raw_lines, tree):
     hardcoded = collect_hardcoded_data(tree, raw_lines)
     dataframes_l = collect_dataframes(tree)
     models_l     = collect_models(tree)
+    casetrack_appends = extract_casetrack_appends("".join(raw_lines))
     checks = compliance_checks(tree, raw_lines, config_iface, stoch_ops, inputs, outputs)
     findings = findings_from_compliance(checks)
 
@@ -1089,6 +1123,7 @@ def assemble(path, raw_lines, tree):
         "environment": {"python_packages": packages, "container": None},
         "organism_inferred":      None,
         "genome_build_declared":  declared,
+        "casetrack_appends":      casetrack_appends,
         "compliance_checks":      checks,
         "audit_findings_preview": findings,
         "unresolved": [{

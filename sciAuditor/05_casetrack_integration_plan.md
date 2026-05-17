@@ -237,19 +237,48 @@ Real multi-cohort scripts are rare in this lab; absent evidence,
 build for the common case. Revisit if/when a single script genuinely
 spans cohorts.
 
-## 5. New rule IDs (round 1 inventory)
+## 5. Rule IDs — round 1 inventory (as shipped 2026-05-17)
 
-| Rule ID | Severity | Source | Layer |
+Revised after implementation discovered that `casetrack.toml` does
+*not* pre-declare per-analysis columns (only `column_prefix` and
+`summary_tsv`); columns are added dynamically to the DB on first
+`append`. The original `casetrack-schema-drift` rule was therefore
+split into `casetrack-filename-mismatch` (compares against the
+declared `summary_tsv`) and `casetrack-prefix-collision` (checks
+the prefixed col against pre-declared level columns).
+
+| Rule ID | Severity | Source | Status |
 |---|---|---|---|
-| `casetrack-schema-drift` | BLOCKER (dtype) / WARNING (missing/extra col) | C2 | A |
-| `casetrack-untracked-output` | WARNING | C1 (defer to round 2) | A |
-| `casetrack-fk-mismatch` | BLOCKER | C1 (defer to round 2) | A |
-| `casetrack-results-drift` | WARNING | provenance.jsonl `results_checksum` vs disk | A |
-| `casetrack-orphan-analysis` | NOTE | TOML × provenance cross-check | A |
+| `casetrack-fk-mismatch` | BLOCKER | summary TSV col 1 vs level key | **Shipped (inert until dataframe→TSV col link added — round 2 polish)** |
+| `casetrack-filename-mismatch` | WARNING | `--results` basename vs `[analyses.X].summary_tsv` | **Shipped, firing** |
+| `casetrack-prefix-collision` | WARNING | `<prefix>_<col>` vs `[levels.X.columns]` declared cols | **Shipped (inert until dataframe→TSV col link added)** |
+| `casetrack-results-drift` | WARNING | disk md5 vs `provenance.jsonl` `results_checksum` | **Shipped, firing** |
+| `casetrack-results-missing` | NOTE | `--results` not on disk but was registered | **Shipped, firing** (bonus rule) |
+| `casetrack-orphan-analysis` | NOTE | `--analysis X` not in TOML and not in provenance | **Shipped, firing** |
+| `casetrack-untracked-output` | WARNING | script writes a TSV but never calls `casetrack append` | Deferred to round 2 (C1) |
 
-Round 1 ships `casetrack-schema-drift`, `casetrack-results-drift`,
-`casetrack-orphan-analysis`. Round 2 ships the C1 rules. Round 3
+**Confirmed against real cohorts:**
+- `casetrack_su2c_git` (schema_v=1, 1 declared analysis, 176 latest appends): loads cleanly.
+- `project_17424` (schema_v=3, 8 declared analyses, 76 latest appends): loads cleanly. Real example scripts from `casetrack/examples/giab_chr21/` correctly flagged as orphan-analysis (`flagstat` ≠ declared `samtools_flagstat`, etc.).
+
+**Round 2 will ship**: C1 rules (`casetrack-untracked-output` and
+the activation of `casetrack-fk-mismatch` + `casetrack-prefix-collision`
+once the dataframe→output linkage lands in parser YAMLs). **Round 3**
 ships C3 declared/inferred rules (IDs TBD).
+
+**Round 1 known limitations:**
+- R parser does NOT extract `casetrack_appends[]` yet — scripts that
+  call `casetrack append` from R (e.g. via `system2("casetrack", ...)`)
+  are silent on casetrack rules. Add to parser_r in round 2.
+- `resolve_results_cols()` always returns None — the inferred YAML
+  schema doesn't link an output file to the dataframe that wrote it.
+  `casetrack-fk-mismatch` and `casetrack-prefix-collision` are gated
+  on this resolution and are inert in round 1. The data they need
+  is already in `dataframes[]` + `outputs[]`; just no explicit link.
+- Per-script `audit_report.md` headline is NOT recomputed after
+  casetrack findings are appended. Per-script `audit_findings.tsv`
+  and the cohort report DO reflect them. Defer report-regeneration
+  to round 2 polish.
 
 ## 6. Out of scope
 

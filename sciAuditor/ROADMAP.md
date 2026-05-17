@@ -5,15 +5,21 @@ the start of each round.
 
 ## Near-term (would land in 1-2 rounds each)
 
-### 1. Casetrack manifest integration
-The schema v0.2 was designed to map onto a real manifest format
-later. Now that the inference half is solid, do the manifest pass:
-- Read the casetrack manifest schema (https://github.com/sahuno/casetrack)
-- Define how `inputs[]` / `outputs[]` / `dataframes[]` / `models[]`
-  in the auditor's YAML correspond to manifest entries
-- Add a `--manifest <path>` flag to the aggregator that loads the
-  expected contract and diffs against the inferred YAML
-- Each divergence becomes a finding (severity TBD per delta type)
+### 1. Casetrack integration  **(round 1 SHIPPED 2026-05-17 — see `05_casetrack_integration_plan.md`)**
+Plan + first round are in `05_casetrack_integration_plan.md`. Round 1
+shipped 5 firing rules + 2 inert rules against casetrack v0.3+ (TOML
++ SQLite + provenance.jsonl), not the v0.2 flat-manifest framing
+above. See STATUS.md for the rule inventory.
+
+**Open in this stream:**
+- Round 2 — C1 contract: `casetrack-untracked-output` (script writes
+  TSV but never calls `casetrack append`); activate
+  `casetrack-fk-mismatch` + `casetrack-prefix-collision` by adding a
+  dataframe→output linkage to parser YAMLs.
+- Round 2 polish — R parser `casetrack_appends[]` extractor; per-script
+  `audit_report.md` regeneration after casetrack findings are appended.
+- Round 3 — C3 declared/inferred per-script manifest diff (the
+  optional script-manifest contract independent of casetrack).
 
 ### 2. Layer B runtime trace
 Static analysis is fundamentally limited. Layer B actually executes

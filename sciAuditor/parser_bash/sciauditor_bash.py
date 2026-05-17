@@ -23,6 +23,44 @@ VAR_REF_RE    = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0
 INVOKER_HINTS = ("Rscript", "python3", "python", "snakemake", "nextflow")
 ABSOLUTE_PATH_RE = re.compile(r'^[/~]')
 
+# casetrack append extractor — used to populate casetrack_appends[] for
+# the shared aggregator/casetrack_check.py module. Same regex shape works
+# across bash / python / R source because the literal tokens ('casetrack',
+# 'append', '--analysis', '--results') appear identically in all three.
+CASETRACK_APPEND_RE = re.compile(
+    r"\bcasetrack\b[\s'\",)\]]{1,40}\bappend\b(?P<rest>[\s\S]{0,500}?)(?:\n\n|\Z|;;)",
+    re.IGNORECASE,
+)
+CT_ANALYSIS_RE    = re.compile(r"--analysis[=\s,\"'\]]+([^\s'\",)\]]+)")
+CT_RESULTS_RE     = re.compile(r"--results[=\s,\"'\]]+([^\s'\",)\]]+)")
+CT_PROJECT_DIR_RE = re.compile(r"--project[_-]dir[=\s,\"'\]]+([^\s'\",)\]]+)")
+
+
+def extract_casetrack_appends(source: str, *, assigns: dict | None = None) -> list[dict]:
+    """Scan source text for `casetrack append ...` invocations.
+    Returns a list of {analysis, results, project_dir, site} dicts.
+    Bash-specific: if `assigns` is provided, resolve $VAR / ${VAR} in
+    extracted values."""
+    out = []
+    for m in CASETRACK_APPEND_RE.finditer(source):
+        rest = m.group("rest")
+        am = CT_ANALYSIS_RE.search(rest)
+        rm = CT_RESULTS_RE.search(rest)
+        pm = CT_PROJECT_DIR_RE.search(rest)
+        if not am and not rm:
+            continue
+        def _resolve(v):
+            if v is None or assigns is None:
+                return v
+            return resolve_var_refs(v, assigns)
+        out.append({
+            "analysis":    _resolve(am.group(1)) if am else None,
+            "results":     _resolve(rm.group(1)) if rm else None,
+            "project_dir": _resolve(pm.group(1)) if pm else None,
+            "site":        source.count("\n", 0, m.start()) + 1,
+        })
+    return out
+
 
 def resolve_var_refs(text, assigns):
     """Substitute ${VAR} / $VAR with values from `assigns` (recursive, capped)."""
@@ -462,6 +500,7 @@ def assemble(path, raw_lines):
     invocation = detect_invocation(joined, starts, assigns)
     checks = compliance_checks(raw_lines, assigns, side_effects, invocation)
     findings = findings_from_checks(checks)
+    casetrack_appends = extract_casetrack_appends("".join(raw_lines), assigns=assigns)
 
     options = [
         {"name": name, "default": v["value"],
@@ -505,6 +544,7 @@ def assemble(path, raw_lines):
         "side_effects": side_effects,
         "environment": {"shell": "bash", "packages": None},
         "genome_build_declared": declared,
+        "casetrack_appends":      casetrack_appends,
         "compliance_checks":      checks,
         "audit_findings_preview": findings,
         "unresolved": [{

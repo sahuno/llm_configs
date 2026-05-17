@@ -30,6 +30,10 @@ from pathlib import Path
 
 import yaml
 
+# casetrack-integration check module (lives alongside this file)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from casetrack_check import load_index, check_script  # noqa: E402
+
 
 HERE = Path(__file__).resolve().parent
 PARSER_R    = HERE.parent / "parser_r"    / "sciauditor_r.R"
@@ -202,12 +206,31 @@ def audit_one_script(work: dict) -> dict:
     rscript_bin   = work["rscript_bin"]
     python_bin    = work["python_bin"]
     pair_launcher = Path(work["pair_launcher"]) if work["pair_launcher"] else None
+    casetrack_index = work.get("casetrack_index")  # CasetrackIndex | None
 
     res = run_parser(s, sub_out,
                      language=lang,
                      rscript_bin=rscript_bin,
                      python_bin=python_bin,
                      pair_launcher=pair_launcher if lang == "R" else None)
+
+    # ---- casetrack post-processing: append findings to the per-script TSV
+    # BEFORE computing severity counts, so the row totals reflect them.
+    if (casetrack_index is not None
+            and res["inferred_yaml"] is not None
+            and res["findings_tsv"] is not None):
+        try:
+            with res["inferred_yaml"].open() as f:
+                inferred = yaml.safe_load(f) or {}
+            ct_findings = check_script(inferred, casetrack_index)
+            if ct_findings:
+                with res["findings_tsv"].open("a") as f:
+                    for fd in ct_findings:
+                        f.write(fd.as_tsv_row() + "\n")
+        except Exception as e:
+            sys.stderr.write(f"[aggregate] WARN: casetrack check failed on "
+                             f"{s}: {e}\n")
+
     score, grade = headline_from_report(res["report_md"])
     counts = severity_counts(res["findings_tsv"])
     row = {
@@ -244,10 +267,21 @@ def aggregate(project_dir: Path, output_dir: Path,
               skip_consumed_launchers: bool = True,
               jobs: int = 1,
               include_globs: list[str] | None = None,
-              ignore_globs:  list[str] | None = None) -> dict:
+              ignore_globs:  list[str] | None = None,
+              casetrack_project: Path | None = None) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     per_dir = output_dir / "per_script"
     per_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load casetrack index once (re-used by every worker via pickling)
+    casetrack_index = None
+    if casetrack_project is not None:
+        casetrack_index = load_index(casetrack_project)
+        print(f"[sciauditor_aggregate] casetrack: {casetrack_index.project_id} "
+              f"(schema_v={casetrack_index.schema_v}, "
+              f"{len(casetrack_index.analyses)} declared analyses, "
+              f"{len(casetrack_index.appends_latest)} latest appends)",
+              flush=True)
 
     scripts = discover_scripts(project_dir)
     n_total = len(scripts)
@@ -280,13 +314,14 @@ def aggregate(project_dir: Path, output_dir: Path,
             if analysis == s.resolve():
                 pair_launcher = launcher; break
         work_items.append({
-            "script":        str(s),
-            "project_dir":   str(project_dir),
-            "sub_out":       str(sub_out),
-            "language":      lang,
-            "rscript_bin":   rscript_bin,
-            "python_bin":    python_bin,
-            "pair_launcher": str(pair_launcher) if pair_launcher else None,
+            "script":          str(s),
+            "project_dir":     str(project_dir),
+            "sub_out":         str(sub_out),
+            "language":        lang,
+            "rscript_bin":     rscript_bin,
+            "python_bin":      python_bin,
+            "pair_launcher":   str(pair_launcher) if pair_launcher else None,
+            "casetrack_index": casetrack_index,
         })
 
     per_script_rows = []
@@ -455,6 +490,11 @@ def main():
                     help="exclude paths matching this glob (relative to "
                          "--project-dir, or any path segment); repeatable; "
                          "applied after --include")
+    ap.add_argument("--casetrack-project", type=Path, default=None,
+                    metavar="DIR",
+                    help="path to a casetrack project (containing casetrack.toml "
+                         "and provenance.jsonl); when set, casetrack-* rules fire "
+                         "for any script that calls `casetrack append`")
     args = ap.parse_args()
 
     pd  = Path(args.project_dir).resolve()
@@ -462,11 +502,20 @@ def main():
     if not pd.exists():
         sys.exit(f"project dir not found: {pd}")
 
+    casetrack_dir = None
+    if args.casetrack_project is not None:
+        casetrack_dir = args.casetrack_project.resolve()
+        if not casetrack_dir.exists():
+            sys.exit(f"casetrack project dir not found: {casetrack_dir}")
+        if not (casetrack_dir / "casetrack.toml").exists():
+            sys.exit(f"no casetrack.toml in {casetrack_dir}")
+
     print(f"[sciauditor_aggregate] scanning {pd} (jobs={args.jobs}) ...")
     res = aggregate(pd, out, args.rscript, args.python,
                     jobs=args.jobs,
                     include_globs=args.include,
-                    ignore_globs=args.ignore)
+                    ignore_globs=args.ignore,
+                    casetrack_project=casetrack_dir)
     print(f"[sciauditor_aggregate] {res['n_scripts']} scripts audited "
           f"({res['n_pairs']} paired, {res['n_errors']} parser errors)")
     print(f"[sciauditor_aggregate]   totals: BLOCKER={res['totals']['BLOCKER']} "

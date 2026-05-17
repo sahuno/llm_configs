@@ -3,8 +3,8 @@
 Snapshot of where the framework is. Updated per work round so a new
 session can pick up without re-reading the full design docs.
 
-**Last update**: 2026-05-15 · commit `14b1758` on
-`claude/scientific-auditor-framework-wkKAi`.
+**Last update**: 2026-05-17 · ROADMAP #1 round 1 (casetrack integration)
+shipped on `claude/scientific-auditor-framework-wkKAi`.
 
 ## What works end-to-end
 
@@ -20,6 +20,7 @@ session can pick up without re-reading the full design docs.
 | CI gate (`--fail-on BLOCKER\|WARNING\|NOTE`) | aggregator |
 | Parallel per-script audit (`--jobs N`) | aggregator |
 | `--include` / `--ignore` glob filters | aggregator |
+| **casetrack integration** (`--casetrack-project DIR` on aggregator) | `aggregator/casetrack_check.py` + parser_{bash,py} extractor |
 
 ## Schema state
 
@@ -45,6 +46,28 @@ fields without updating doc 02.
 | NOTE | `set-strict-mode` | n/a | n/a | ✓ |
 | NOTE | `seed-policy` (auto, non-default seed) | ✓ | ✓ | n/a |
 | NOTE | `pair-binding-coverage` (auto) | ✓ | n/a | n/a |
+
+## Casetrack-integration rules (ROADMAP #1 round 1, ships 2026-05-17)
+
+Fires only when the aggregator is invoked with `--casetrack-project DIR`.
+Findings are computed by `aggregator/casetrack_check.py` and appended
+to each per-script `audit_findings.tsv` before severity counts roll
+up. Parsers (bash + Python) extract `casetrack_appends[]` into the
+inferred YAML. **R parser does NOT extract `casetrack_appends[]` yet
+— round 2 polish.**
+
+| Severity | Rule | Status |
+|---|---|---|
+| BLOCKER | `casetrack-fk-mismatch` (summary TSV col 1 ≠ level key) | Shipped, inert (gated on dataframe→TSV col link, round-2 polish) |
+| WARNING | `casetrack-filename-mismatch` (`--results` basename ≠ declared `summary_tsv`) | **Shipped, firing** |
+| WARNING | `casetrack-prefix-collision` (`<prefix>_<col>` collides with declared level col) | Shipped, inert (gated on same link) |
+| WARNING | `casetrack-results-drift` (disk md5 ≠ `provenance.jsonl` `results_checksum`) | **Shipped, firing** |
+| NOTE    | `casetrack-results-missing` (`--results` not on disk but registered) | **Shipped, firing** |
+| NOTE    | `casetrack-orphan-analysis` (`--analysis X` not declared, not registered) | **Shipped, firing** |
+
+**Verified against real cohorts:**
+- `casetrack_su2c_git` (schema_v=1): 1 declared analysis, 176 latest appends — index loads cleanly.
+- `project_17424` (schema_v=3): 8 declared analyses, 76 latest appends — index loads cleanly. Real example scripts (`flagstat` / `modkit_methylation` / `sniffles`) correctly flagged as orphan-analysis vs. declared (`samtools_flagstat` / `modkit_pileup` / `sniffles2`).
 
 ## Validated fixtures
 
@@ -91,6 +114,12 @@ full list. Headline results:
     --project-dir <project/scripts> --output-dir <cohort_out> \
     --jobs 8 --fail-on BLOCKER \
     --ignore 'archived' --ignore 'submit_*.sh'
+
+# Whole project + casetrack rules
+/home/ahunos/miniforge3/envs/snakemake/bin/python3 aggregator/sciauditor_aggregate.py \
+    --project-dir <project/scripts> --output-dir <cohort_out> \
+    --casetrack-project /data1/.../casetrack_cohort/ \
+    --jobs 8 --fail-on BLOCKER
 ```
 
 ## What's open
