@@ -63,12 +63,57 @@ class AppendRecord:
 @dataclass
 class CasetrackIndex:
     project_dir: Path
-    schema_v: int
+    schema_v: int                                # per-project revision counter (see feature_supported)
     project_id: str | None
     levels: dict[str, LevelDecl]                 # by level name
     analyses: dict[str, AnalysisDecl]            # by analysis name
     appends_latest: dict[tuple[str, str], AppendRecord]   # (analysis, results_file) -> latest
     analyses_seen: set[str]                      # union of declared + registered names
+    features: set[str] = field(default_factory=set)       # detected via TOML section presence
+
+
+# Feature → minimum casetrack tool version it implies (informational only).
+# The CHECK is always TOML-section presence, never schema_v.
+KNOWN_FEATURES = {
+    "qc":          "0.4+",   # [qc] section (QC/censoring subsystem)
+    "layout":      "0.5+",   # [layout] / [layout.path_templates] (tool-first results)
+    "project_id":  "0.6+",   # [project].project_id (project identity layer)
+    "id_pattern":  "0.6+",   # per-level [levels.<level>].id_pattern (regex validation)
+}
+
+
+def feature_supported(index: CasetrackIndex, feature: str) -> bool:
+    """True iff the casetrack project at `index` declares this feature in its
+    TOML. Use this for rule dispatch instead of `schema_v` — schema_v is a
+    per-project revision counter (bumps on every `schema apply`), not a
+    casetrack tool-version stamp. Two projects on the same casetrack version
+    can have wildly different schema_v values.
+
+    Feature names are in KNOWN_FEATURES. Future rules that only make sense
+    against e.g. v0.6+ id-pattern validation should gate on
+    `feature_supported(index, "id_pattern")`, not `index.schema_v >= 3`.
+    """
+    return feature in index.features
+
+
+def _detect_features(toml_data: dict, levels: dict[str, LevelDecl]) -> set[str]:
+    """Inspect a parsed casetrack.toml dict and return the set of feature
+    flags it implies (via section presence)."""
+    feats: set[str] = set()
+    if "qc" in toml_data:
+        feats.add("qc")
+    layout = toml_data.get("layout") or {}
+    if layout or layout.get("path_templates"):
+        feats.add("layout")
+    project = toml_data.get("project") or {}
+    if project.get("project_id"):
+        feats.add("project_id")
+    # id_pattern is per-level; trigger if ANY level declares one
+    for lname, ldata in (toml_data.get("levels") or {}).items():
+        if isinstance(ldata, dict) and ldata.get("id_pattern"):
+            feats.add("id_pattern")
+            break
+    return feats
 
 
 # ----- loader -------------------------------------------------------------
@@ -150,6 +195,7 @@ def load_index(project_dir: Path) -> CasetrackIndex:
                     appends_latest[key] = rec
 
     analyses_seen = set(analyses.keys()) | registered_names
+    features = _detect_features(toml_data, levels)
 
     return CasetrackIndex(
         project_dir=project_dir,
@@ -159,6 +205,7 @@ def load_index(project_dir: Path) -> CasetrackIndex:
         analyses=analyses,
         appends_latest=appends_latest,
         analyses_seen=analyses_seen,
+        features=features,
     )
 
 

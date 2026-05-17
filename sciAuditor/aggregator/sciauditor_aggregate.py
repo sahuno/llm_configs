@@ -277,8 +277,9 @@ def aggregate(project_dir: Path, output_dir: Path,
     casetrack_index = None
     if casetrack_project is not None:
         casetrack_index = load_index(casetrack_project)
+        feats = ",".join(sorted(casetrack_index.features)) or "(none)"
         print(f"[sciauditor_aggregate] casetrack: {casetrack_index.project_id} "
-              f"(schema_v={casetrack_index.schema_v}, "
+              f"(schema_v={casetrack_index.schema_v}, features={feats}, "
               f"{len(casetrack_index.analyses)} declared analyses, "
               f"{len(casetrack_index.appends_latest)} latest appends)",
               flush=True)
