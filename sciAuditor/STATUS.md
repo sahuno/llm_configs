@@ -161,6 +161,22 @@ Total round-1 budget per the plan: ~760 lines + verification, split
 across 5 work items. Order: snakemake_loader → workflow_check (D2,
 then D1) → per-rule dispatch → report+TSV → CLI+demo.
 
+## Round-after-next (ROADMAP #2 — Layer B)
+
+Runtime trace layer. Brainstorm committed:
+- `09_layer_b_runtime_trace_brainstorm.md` — 7 contracts (B1–B7), 3
+  big execution-model questions (E1/E2/E3 tracer; F1/F2/F3 fixture;
+  S1/S2/S3 sandbox), calibration discipline (per-fixture trust),
+  composition story with ROADMAP #3.
+
+Several §5 decisions deliberately OPEN at the brainstorm — needs
+another conversation round to lock before promotion to plan. Notable
+opens: Q4 trust model (default-off opt-in); Q2 fixture format (in-
+script comment vs companion file vs casetrack-pool); E1 vs E2 vs E3
+tracer mechanism. Layer B execution naturally *follows* ROADMAP #3
+in deployment (workflow audit produces the WorkflowIndex; Layer B
+traces each rule's script via that index).
+
 ## What's open
 
 See `ROADMAP.md`.

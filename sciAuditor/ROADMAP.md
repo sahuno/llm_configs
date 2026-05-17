@@ -22,7 +22,7 @@ STATUS.md for the rule inventory and current state.
   (e.g. `modkit_summary_v2.tsv` vs declared `modkit_summary.tsv`) if
   exact-match false-negative rate proves high in cohort runs.
 
-### 2. Layer B runtime trace
+### 2. Layer B runtime trace  **(brainstorm SHIPPED — see `09_layer_b_runtime_trace_brainstorm.md`)**
 Static analysis is fundamentally limited. Layer B actually executes
 a script on head-of-real (first N rows) data and ground-truths:
 - dynamic path resolution (when paths come from `$env`, `paste0()`,
@@ -33,6 +33,14 @@ a script on head-of-real (first N rows) data and ground-truths:
 - runtime values for `set.seed(varname)` cases
 Requires per-script `audit_fixture:` override in the manifest for
 balance-sensitive scripts (DE analysis, paired tests).
+
+**Status**: brainstorm doc
+[`09_layer_b_runtime_trace_brainstorm.md`](09_layer_b_runtime_trace_brainstorm.md)
+captures the 7 contracts (B1–B7), the three execution-model design
+questions (tracer mechanism, fixture mechanism, sandbox stance), the
+calibration discipline (Layer B trust is per-fixture), and the
+composition story with ROADMAP #3. Several §5 decisions deliberately
+left OPEN — needs another conversation round before promotion to plan.
 
 ### 3. Snakemake / Nextflow DAG audit  **(round 1 PLANNED — see `08_workflow_dag_audit_plan.md`)**
 The cross-script audit deferred in `01_first_principles_brainstorm.md`
