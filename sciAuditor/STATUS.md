@@ -3,7 +3,7 @@
 Snapshot of where the framework is. Updated per work round so a new
 session can pick up without re-reading the full design docs.
 
-**Last update**: 2026-05-17 · ROADMAP #1 round 1 (casetrack integration)
+**Last update**: 2026-05-17 · ROADMAP #1 rounds 1 + 2 (casetrack integration)
 shipped on `claude/scientific-auditor-framework-wkKAi`.
 
 ## What works end-to-end
@@ -20,7 +20,9 @@ shipped on `claude/scientific-auditor-framework-wkKAi`.
 | CI gate (`--fail-on BLOCKER\|WARNING\|NOTE`) | aggregator |
 | Parallel per-script audit (`--jobs N`) | aggregator |
 | `--include` / `--ignore` glob filters | aggregator |
-| **casetrack integration** (`--casetrack-project DIR` on aggregator) | `aggregator/casetrack_check.py` + parser_{bash,py} extractor |
+| **casetrack integration** (`--casetrack-project DIR` on aggregator) | `aggregator/casetrack_check.py` + parser_{bash,py,r} extractor |
+| **per-script report regen** after casetrack findings appended | `aggregator/sciauditor_aggregate.py::regenerate_findings_section` |
+| **feature-aware rule dispatch** (`feature_supported(index, name)`) | `aggregator/casetrack_check.py` |
 
 ## Schema state
 
@@ -47,27 +49,54 @@ fields without updating doc 02.
 | NOTE | `seed-policy` (auto, non-default seed) | ✓ | ✓ | n/a |
 | NOTE | `pair-binding-coverage` (auto) | ✓ | n/a | n/a |
 
-## Casetrack-integration rules (ROADMAP #1 round 1, ships 2026-05-17)
+## Casetrack-integration rules (ROADMAP #1 rounds 1 + 2, ships 2026-05-17)
 
 Fires only when the aggregator is invoked with `--casetrack-project DIR`.
 Findings are computed by `aggregator/casetrack_check.py` and appended
 to each per-script `audit_findings.tsv` before severity counts roll
-up. Parsers (bash + Python) extract `casetrack_appends[]` into the
-inferred YAML. **R parser does NOT extract `casetrack_appends[]` yet
-— round 2 polish.**
+up. Parsers (bash + Python + R) extract `casetrack_appends[]` into the
+inferred YAML. R was added in round 2; the raw-source regex shape is
+symmetric across all three.
 
 | Severity | Rule | Status |
 |---|---|---|
-| BLOCKER | `casetrack-fk-mismatch` (summary TSV col 1 ≠ level key) | Shipped, inert (gated on dataframe→TSV col link, round-2 polish) |
+| BLOCKER | `casetrack-fk-mismatch` (summary TSV col 1 ≠ level key) | **Shipped, firing** when cols resolvable; **NOTE-fallback** when cols can't be statically inferred |
 | WARNING | `casetrack-filename-mismatch` (`--results` basename ≠ declared `summary_tsv`) | **Shipped, firing** |
-| WARNING | `casetrack-prefix-collision` (`<prefix>_<col>` collides with declared level col) | Shipped, inert (gated on same link) |
+| WARNING | `casetrack-prefix-collision` (`<prefix>_<col>` collides with declared level col) | **Shipped, firing** when cols resolvable |
 | WARNING | `casetrack-results-drift` (disk md5 ≠ `provenance.jsonl` `results_checksum`) | **Shipped, firing** |
+| WARNING | `casetrack-untracked-output` (script writes a declared summary TSV but never calls `casetrack append`) | **Shipped, firing** (new in round 2) |
 | NOTE    | `casetrack-results-missing` (`--results` not on disk but registered) | **Shipped, firing** |
 | NOTE    | `casetrack-orphan-analysis` (`--analysis X` not declared, not registered) | **Shipped, firing** |
 
+**Activation mechanism (round 2):** parsers now emit `outputs[].written_by`
+linking each write call to the dataframe id that fed it (receiver heuristic
++ nearest-preceding-line fallback). `dataframes[].columns` are populated
+where statically inferable (`pd.DataFrame({...})`, `data.frame(a=..., b=...)`,
+`pd.read_csv(usecols=[...])`, `tibble(...)`). `resolve_results_cols()` then
+walks output → dataframe → columns to give `casetrack-fk-mismatch` and
+`casetrack-prefix-collision` real signal; when the chain doesn't resolve
+(dynamically-built dataframes), `casetrack-fk-mismatch` degrades to NOTE
+("couldn't infer") rather than silent skip.
+
+**Feature dispatch (round 2 §1 correction):** rule gating now uses
+`feature_supported(index, name)` rather than `schema_v`. The TOML section
+presence (`[qc]`, `[layout]`, `[project].project_id`, per-level
+`id_pattern`) is the real signal for what casetrack features the project
+declares; `schema_v` is just a per-project revision counter that bumps on
+every `schema apply`. No currently-shipped rule gates yet, but future
+v0.6+ id-pattern validation will gate on `feature_supported(index, "id_pattern")`.
+
+**Per-script report regen (round 2 Item 4):** after the aggregator appends
+casetrack findings to each per-script `audit_findings.tsv`, it rewrites
+the report's `## Findings` section in place using
+`regenerate_findings_section()`. Headline / By category / Inventory stay
+parser-owned (they're driven by `compliance_checks` and inferred structure,
+unaffected by appended casetrack rules).
+
 **Verified against real cohorts:**
-- `casetrack_su2c_git` (schema_v=1): 1 declared analysis, 176 latest appends — index loads cleanly.
-- `project_17424` (schema_v=3): 8 declared analyses, 76 latest appends — index loads cleanly. Real example scripts (`flagstat` / `modkit_methylation` / `sniffles`) correctly flagged as orphan-analysis vs. declared (`samtools_flagstat` / `modkit_pileup` / `sniffles2`).
+- `casetrack_su2c_git` (schema_v=1, features=layout,project_id,qc): 1 declared analysis, 176 latest appends — index loads cleanly.
+- `project_17424` (schema_v=3, features=layout,project_id,qc): 8 declared analyses, 76 latest appends — index loads cleanly. Real example scripts (`flagstat` / `modkit_methylation` / `sniffles`) correctly flagged as orphan-analysis vs. declared (`samtools_flagstat` / `modkit_pileup` / `sniffles2`). Validation/ aggregator regression: 4 bash launchers, BLOCKER=0 WARNING=4 NOTE=4 OK=20 across rounds 1 and 2 (unchanged — those launchers don't compose summary TSVs directly so the new rules don't fire on them).
+- Synthetic Python suite verifies all four round-2 paths: fk-mismatch BLOCKER (col1=wrong), fk-mismatch NOTE (cols-unresolvable), prefix-collision gate, untracked-output WARNING (writes summary, no append).
 
 ## Validated fixtures
 

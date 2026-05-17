@@ -5,21 +5,22 @@ the start of each round.
 
 ## Near-term (would land in 1-2 rounds each)
 
-### 1. Casetrack integration  **(round 1 SHIPPED 2026-05-17 — see `05_casetrack_integration_plan.md`)**
-Plan + first round are in `05_casetrack_integration_plan.md`. Round 1
-shipped 5 firing rules + 2 inert rules against casetrack v0.3+ (TOML
-+ SQLite + provenance.jsonl), not the v0.2 flat-manifest framing
-above. See STATUS.md for the rule inventory.
+### 1. Casetrack integration  **(rounds 1 + 2 SHIPPED 2026-05-17 — see `05_casetrack_integration_plan.md`, `06_casetrack_round_2_plan.md`)**
+Plan + first two rounds are in `05_casetrack_integration_plan.md` and
+`06_casetrack_round_2_plan.md`. Rounds 1 + 2 ship 7 firing rules
+against casetrack v0.3+ (TOML + SQLite + provenance.jsonl). See
+STATUS.md for the rule inventory and current state.
 
 **Open in this stream:**
-- Round 2 — C1 contract: `casetrack-untracked-output` (script writes
-  TSV but never calls `casetrack append`); activate
-  `casetrack-fk-mismatch` + `casetrack-prefix-collision` by adding a
-  dataframe→output linkage to parser YAMLs.
-- Round 2 polish — R parser `casetrack_appends[]` extractor; per-script
-  `audit_report.md` regeneration after casetrack findings are appended.
 - Round 3 — C3 declared/inferred per-script manifest diff (the
-  optional script-manifest contract independent of casetrack).
+  optional script-manifest contract independent of casetrack), now
+  that round-2's `written_by` linkage + `columns` extraction give a
+  workable base. May also tighten static column resolution for
+  `casetrack-fk-mismatch` BLOCKERs that currently emit as NOTE when
+  the column list can't be inferred (dynamically-built dataframes).
+- Round 3 polish — fuzzy basename matching for `casetrack-untracked-output`
+  (e.g. `modkit_summary_v2.tsv` vs declared `modkit_summary.tsv`) if
+  exact-match false-negative rate proves high in cohort runs.
 
 ### 2. Layer B runtime trace
 Static analysis is fundamentally limited. Layer B actually executes
