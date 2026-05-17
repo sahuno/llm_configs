@@ -570,6 +570,81 @@ job.
    timing data can calibrate.
 
 
+## 10c. Empirical base rates for §8 open questions
+
+Mechanical scans of the lab codebase (2026-05-17) ground the §8
+deeper open questions with real numbers, replacing my earlier
+estimates. The scan methodology + counts:
+
+### OQ2 — Drift / silent-failure rate
+**Scan**: `rules/*.md` corpus at
+`/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/`,
+grep for "silent", "drift", "upgrade", "version", "OOM" per file.
+**Result**: 15 files; **11 (73%) document at least one silent-
+failure incident**; 7 (47%) document OOM/cgroup-limit silent
+failures; 6 (40%) document version-pin/upgrade-driven regressions.
+Densest file: `parallel_r_oom.md` (4 silent + 7 OOM mentions).
+**Implication**: Layer B's value prop ("catch silent failures by
+execution") maps directly onto the lab's documented failure
+taxonomy. Each rules-file is a candidate Layer-B regression test
+case — if Layer B can't catch the failure mode documented in a
+rule, that's a coverage gap to log.
+
+### OQ3 — Intentional non-determinism (K-seed sweeps)
+**Scan**: 4,289 Python/R scripts under
+`/data1/greenbab/users/ahunos/projects/`, grep for any `set.seed(`,
+`np.random.seed(`, `random.seed(` call.
+**Result**: only **17 scripts (0.4%)** have any seed call;
+**0 scripts** have an in-script K-seed sweep signature.
+**Reframing**: the lab's actual K-seed pattern is NOT in-script —
+it's the SLURM-array-with-SLURM_JOB_NAME-suffix trick documented in
+`rules/slurm_mcp.md`. K-seed permutation work submits K identical
+sbatch jobs and reads the seed from the job-name suffix; each
+individual script invocation sees one seed.
+**Implication for B4**: single-seed-per-script is the right model.
+Layer B's B4 doesn't need to handle K-seed-in-loop; the K-seed
+nature is observable from SLURM job metadata, not the trace.
+
+### OQ4 — pair_unit launcher prevalence
+**Scan**: `find ... -name 'run_*.sh' -o -name 'submit_*.sh'` under
+projects/.
+**Result**: 23 launcher files; 19 wrap Rscript / python. After
+excluding pure tool-wrappers (e.g., L1EM's 3 wrappers with 0 env
+vars), the real pair_unit count is **~14–16**. Median launcher
+sets 5–8 env vars; some include `#SBATCH` directives (e.g.,
+CCV-neoquality with 7 #SBATCH).
+**Implication for phasing**: pair_unit support deserves round 2 of
+Layer B (not round 3). The launcher's env-var setting + `#SBATCH`
+config is non-trivial scaffolding that Layer A already audits
+(pair_unit composition shipped in Layer A); Layer B's natural
+extension is tracing the launched analysis with the launcher's
+resolved env in scope.
+
+### OQ5 — Analysis scripts that submit downstream SLURM jobs
+**Scan**: same 4,289 Py/R scripts, grep for sbatch references then
+filter to actual invocations (`subprocess.run([..., "sbatch", ...])`,
+`os.system("sbatch ...")`, R `system("sbatch ...")`).
+**Result**: 35 scripts reference sbatch (mostly comments /
+docstrings); **0 scripts actually invoke sbatch** via
+subprocess/os.system from inside their body.
+**Implication**: downgrade from "round 1 emits NOTE for downstream-
+submit attempts" to **out of scope for Layer B entirely**. The lab's
+orchestration lives in bash launchers, Snakemake, and Nextflow — not
+inside Python/R analysis bodies. Layer B doesn't need a hook for
+this failure class because it doesn't occur in the lab's idiom.
+Removes ~30 lines of design surface from round 1.
+
+### Joint headline finding
+**OQ2's 73% silent-failure ratio is the strongest single signal for
+Layer B's TAM.** The lab has already paid the price of 11 silent-
+failure incidents enough to write rules-files about them. Layer B
+isn't a nice-to-have — it's the natural automation of a failure
+class the lab keeps re-encountering by hand. The round-1 plan
+acceptance criteria should include "Layer B's hook set catches at
+least one of the silent-failure classes documented in
+rules/{dss,parallel_r_oom,clair3,vllm_iris,parser_r_oom}.md".
+
+
 ## 10. Calibration: how much do we trust Layer B?
 
 The high-stakes lens says: **trust is earned per-finding, per-script,
