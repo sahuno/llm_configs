@@ -307,6 +307,46 @@ def collect_inputs(tree: ast.Module, assigns: dict) -> list:
     return out
 
 
+def link_outputs_to_dataframes(outputs: list, dataframes: list) -> None:
+    """Round-2 post-pass: mutate each output to set `written_by` = the
+    dataframe id whose call form `<df_id>.to_csv(...)` produced the output.
+
+    Resolution shape: write_call.fn is a dotted name like 'pred_df.to_csv'.
+    The portion before the final '.' is the receiver. If that receiver is a
+    known dataframe id, we have a confident link. Falls back to nearest
+    preceding dataframe by `site` line when the receiver isn't a recognized
+    id (e.g. chained method calls). `written_by` stays None when we can't
+    link at all — `casetrack_check.resolve_results_cols()` treats None as
+    "unresolved" and emits NOTE rather than BLOCKER.
+    """
+    if not outputs:
+        return
+    df_ids = {d.get("id"): d for d in (dataframes or []) if d.get("id")}
+    df_by_site = sorted(
+        [(d.get("site") or 0, d.get("id")) for d in (dataframes or [])
+         if d.get("id")],
+        key=lambda t: t[0],
+    )
+    for o in outputs:
+        wc = o.get("write_call") or {}
+        fn = wc.get("fn") or ""
+        site = wc.get("site") or 0
+        # Receiver heuristic: 'pred_df.to_csv' → 'pred_df'
+        receiver = fn.rsplit(".", 1)[0] if "." in fn else None
+        if receiver and receiver in df_ids:
+            o["written_by"] = receiver
+            continue
+        # Fallback: nearest preceding dataframe by site (within 30 lines)
+        nearest_id = None
+        for s, did in df_by_site:
+            if s <= site and (site - s) <= 30:
+                nearest_id = did
+        if nearest_id is not None:
+            o["written_by"] = nearest_id
+        else:
+            o["written_by"] = None
+
+
 def collect_outputs(tree: ast.Module, assigns: dict) -> list:
     out = []
     for node, line in walk_calls(tree):
@@ -500,6 +540,41 @@ def _chain_root_call(call):
     return cur
 
 
+def _columns_from_df_call(rhs: ast.Call, fn: str | None) -> list[str] | None:
+    """Best-effort static recovery of column names for a dataframe-producing
+    call. Returns None when the columns can't be confidently inferred. Round 2
+    handles three common patterns; extend as new ones surface in real cohorts:
+
+    - `pd.DataFrame({"a": ..., "b": ...})`  → literal dict keys
+    - `pd.DataFrame(data, columns=["a", "b"])`  → explicit columns kwarg
+    - `pd.read_csv(..., usecols=["a", "b"])` (etc.) → literal usecols list
+    """
+    last = short_name(fn or "")
+    # pd.DataFrame(...) — check columns= kwarg first, then literal dict
+    if last == "DataFrame":
+        cols_kw = get_kw(rhs, "columns")
+        if isinstance(cols_kw, (ast.List, ast.Tuple)):
+            vals = [const_value(e) for e in cols_kw.elts]
+            if vals and all(isinstance(v, str) for v in vals):
+                return [v for v in vals if isinstance(v, str)]
+        data_arg = get_arg(rhs, 0)
+        if isinstance(data_arg, ast.Dict):
+            keys = [const_value(k) for k in data_arg.keys]
+            if keys and all(isinstance(k, str) for k in keys):
+                return [k for k in keys if isinstance(k, str)]
+        return None
+    # pd.read_csv / pd.read_table / etc. — only confident when usecols is literal
+    if last in ("read_csv", "read_table", "read_tsv", "read_parquet",
+               "read_excel", "read_feather", "read_stata"):
+        usecols_kw = get_kw(rhs, "usecols")
+        if isinstance(usecols_kw, (ast.List, ast.Tuple)):
+            vals = [const_value(e) for e in usecols_kw.elts]
+            if vals and all(isinstance(v, str) for v in vals):
+                return [v for v in vals if isinstance(v, str)]
+        return None
+    return None
+
+
 def df_classify(rhs, known):
     """Positive-allowlist classification of a Python AST node as a
     dataframe-producing operation. Handles direct reads, pd.* module
@@ -533,8 +608,12 @@ def df_classify(rhs, known):
         p_arg = (get_kw(rhs, "filepath_or_buffer") or get_kw(rhs, "path")
                  or get_arg(rhs, 0))
         tmpl, _ = path_template(p_arg, {})
-        return {"origin": tmpl, "origin_kind": "file",
-                "transform": {"op": "read", "fn": fn}}
+        entry = {"origin": tmpl, "origin_kind": "file",
+                 "transform": {"op": "read", "fn": fn}}
+        cols = _columns_from_df_call(rhs, fn)
+        if cols is not None:
+            entry["columns"] = cols
+        return entry
 
     # pd.merge / pd.concat / pd.DataFrame / pd.crosstab — module-level
     if fn in PD_MODULE_FNS:
@@ -543,8 +622,12 @@ def df_classify(rhs, known):
         for kw in ("on", "how", "axis"):
             v = const_value(get_kw(rhs, kw))
             if v is not None: params[kw] = v
-        return {"derived_from": list(dict.fromkeys(refs)) or None,
-                "transform": dict({"op": last}, **params)}
+        entry = {"derived_from": list(dict.fromkeys(refs)) or None,
+                 "transform": dict({"op": last}, **params)}
+        cols = _columns_from_df_call(rhs, fn)
+        if cols is not None:
+            entry["columns"] = cols
+        return entry
 
     # Method-call form. Could be:
     #   df.merge(...)              — receiver is a Name in `known`
@@ -1024,6 +1107,9 @@ def assemble(path, raw_lines, tree):
     stoch_ops, seed_pairs = collect_stochastic_ops(tree)
     hardcoded = collect_hardcoded_data(tree, raw_lines)
     dataframes_l = collect_dataframes(tree)
+    # Round-2: surface output → dataframe linkage so casetrack_check.py can
+    # recover written column lists when validating FK / prefix collisions.
+    link_outputs_to_dataframes(outputs, dataframes_l)
     models_l     = collect_models(tree)
     casetrack_appends = extract_casetrack_appends("".join(raw_lines))
     checks = compliance_checks(tree, raw_lines, config_iface, stoch_ops, inputs, outputs)

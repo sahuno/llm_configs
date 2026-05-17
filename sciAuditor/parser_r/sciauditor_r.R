@@ -361,6 +361,51 @@ collect_inputs <- function(calls_all, assigns) {
   out
 }
 
+link_outputs_to_dataframes <- function(outputs, dataframes, calls_all) {
+  # Round-2: set `written_by` on each output to the dataframe id whose
+  # value is being written. For R's WRITE_FNS the data is always at
+  # positional 1 (fwrite/write.csv/write.table/write_csv/write_tsv/saveRDS).
+  # Falls back to nearest-preceding dataframe by line when pos1 isn't a
+  # bare name. Returns the mutated outputs list.
+  if (!length(outputs)) return(outputs)
+  df_ids <- vapply(dataframes, function(d) d$id %||% NA_character_, character(1))
+  df_sites <- vapply(dataframes, function(d) d$site %||% NA_integer_, integer(1))
+  # Index calls_all by line for receiver lookup
+  call_by_line <- list()
+  for (item in calls_all) {
+    call_by_line[[as.character(item$line_start)]] <- item$call
+  }
+  for (i in seq_along(outputs)) {
+    o <- outputs[[i]]
+    wc <- o$write_call %||% list()
+    site <- wc$site %||% NA_integer_
+    fn <- wc$fn %||% ""
+    written_by <- NULL
+    # Try pos-1 of the call at that line
+    if (!is.na(site)) {
+      this_call <- call_by_line[[as.character(site)]]
+      if (!is.null(this_call) && is.call(this_call)) {
+        first <- arg_by(this_call, pos = 1)
+        if (is.name(first)) {
+          cand <- as.character(first)
+          if (cand %in% df_ids) written_by <- cand
+        }
+      }
+    }
+    # Fallback: nearest preceding dataframe within 30 lines
+    if (is.null(written_by) && !is.na(site)) {
+      cand_idx <- which(!is.na(df_sites) & df_sites <= site & (site - df_sites) <= 30)
+      if (length(cand_idx)) {
+        i_pick <- cand_idx[which.max(df_sites[cand_idx])]
+        written_by <- df_ids[i_pick]
+      }
+    }
+    outputs[[i]]$written_by <- if (is.null(written_by)) NA else written_by
+  }
+  outputs
+}
+
+
 collect_outputs <- function(calls_all, assigns) {
   out <- list()
   for (item in calls_all) {
@@ -650,6 +695,26 @@ df_classify <- function(rhs, known_frames) {
     refs <- intersect(extract_name_refs(rhs), known_frames)
     return(list(derived_from = if (length(refs)) as.list(unique(refs)) else NULL,
                 transform = list(op = "typecast", fn = fn)))
+  }
+  # Literal constructors — `data.frame(a=..., b=...)`, `tibble(...)`, `tribble(...)`.
+  # Round-2: surface the named-arg keys as columns when the call is purely
+  # named. This is the most common pattern for scripts that write a summary
+  # TSV directly with `fwrite(data.frame(sample_id=..., n_reads=...), ...)`.
+  if (fn %in% c("data.frame", "tibble", "tibble::tibble",
+                "as_tibble", "tibble::as_tibble", "tribble")) {
+    args <- as.list(rhs)[-1]
+    arg_names <- names(args)
+    if (!is.null(arg_names)) {
+      cols <- arg_names[nzchar(arg_names)]
+      # Drop common control kwargs that aren't columns
+      cols <- setdiff(cols, c("stringsAsFactors", "check.names", "row.names",
+                              "check.rows", "fix.empty.names"))
+      if (length(cols)) {
+        return(list(transform = list(op = "construct", fn = fn),
+                    columns   = as.list(cols)))
+      }
+    }
+    return(list(transform = list(op = "construct", fn = fn)))
   }
   # No generic fallback. Round-1 dataframes[] uses a positive allowlist of
   # dataframe-producing functions (READ_FNS, merge/joins, filter/subset,
@@ -1017,6 +1082,9 @@ stoch_ops      <- collect_stochastic_ops(calls_all)
 env_vars       <- collect_env_vars(calls_all)
 hardcoded_data <- collect_hardcoded_data(calls_all, raw_lines)
 dataframes_l   <- collect_dataframes(calls_all)
+# Round-2: surface output → dataframe linkage so casetrack_check.py can
+# recover written column lists when validating FK / prefix collisions.
+outputs        <- link_outputs_to_dataframes(outputs, dataframes_l, calls_all)
 models_l       <- collect_models(calls_all)
 checks         <- compliance_checks(parse_tree, calls_all, raw_lines,
                                     config_iface, stoch_ops, inputs, outputs)

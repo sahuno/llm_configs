@@ -225,10 +225,16 @@ class Finding:
 # ----- rules --------------------------------------------------------------
 
 def rule_fk_mismatch(append_info: dict, index: CasetrackIndex,
+                     matched_output: dict | None,
                      resolved_results_cols: list[str] | None) -> list[Finding]:
     """C2 BLOCKER: summary TSV col 1 must equal the level's key.
     Resolved when we can recover the TSV's written columns from the
-    inferred YAML (resolved_results_cols)."""
+    inferred YAML (resolved_results_cols).
+
+    Round-2: when an output for this --results IS found but the column
+    list can't be inferred (most non-trivial cases), emit NOTE rather than
+    silent-skip — that way the rule isn't invisible on un-resolvable cases.
+    """
     out: list[Finding] = []
     analysis = append_info.get("analysis") or ""
     if analysis not in index.analyses:
@@ -237,17 +243,31 @@ def rule_fk_mismatch(append_info: dict, index: CasetrackIndex,
     level = index.levels.get(decl.level)
     if level is None:
         return out
-    if not resolved_results_cols:
-        return out  # can't check; skip (NOTE emitted by rule_results_unresolved)
-    col1 = resolved_results_cols[0]
-    if col1 != level.key:
+    if resolved_results_cols:
+        col1 = resolved_results_cols[0]
+        if col1 != level.key:
+            out.append(Finding(
+                severity="BLOCKER",
+                rule="casetrack-fk-mismatch",
+                sites=f"analysis:{analysis}",
+                note=(f"Summary TSV first column '{col1}' != level key "
+                      f"'{level.key}' for level '{decl.level}'. "
+                      f"casetrack append will refuse the INSERT."),
+            ))
+        return out
+    # Cols unresolved. Emit NOTE only if we know the script does write to
+    # this --results file (matched_output is not None) — otherwise we have
+    # no business commenting on an unrelated --analysis.
+    if matched_output is not None:
         out.append(Finding(
-            severity="BLOCKER",
+            severity="NOTE",
             rule="casetrack-fk-mismatch",
             sites=f"analysis:{analysis}",
-            note=(f"Summary TSV first column '{col1}' != level key "
-                  f"'{level.key}' for level '{decl.level}'. "
-                  f"casetrack append will refuse the INSERT."),
+            note=(f"Couldn't infer column list for the summary TSV written "
+                  f"by this script. casetrack expects col 1 = "
+                  f"'{level.key}' (level '{decl.level}'); the auditor can't "
+                  f"verify that statically. Round-3 will tighten this when "
+                  f"more dataframe-write patterns are recognised."),
         ))
     return out
 
@@ -372,42 +392,46 @@ def rule_orphan_analysis(append_info: dict, index: CasetrackIndex) -> list[Findi
 
 # ----- per-script glue ----------------------------------------------------
 
-def resolve_results_cols(append_info: dict, inferred_yaml: dict) -> list[str] | None:
-    """Try to recover the column names the script writes to the summary TSV
-    named by append_info['results']. Heuristic — looks for an output whose
-    path_template / path matches the basename, then walks back to the
-    dataframe that fed the write_call.
-
-    Returns the list of column names if confidently resolved, else None.
-    """
+def find_output_for_append(append_info: dict, inferred_yaml: dict) -> dict | None:
+    """Return the inferred output whose path_template's basename matches the
+    append's --results, or None when no output matches."""
     results = append_info.get("results") or ""
     if not results:
         return None
     target_basename = Path(results).name
-
-    # Find a matching output by basename
-    matched_output = None
     for o in (inferred_yaml.get("outputs") or []):
         path_template = (o.get("path_template") or o.get("path") or "")
         if not path_template:
             continue
         if Path(path_template).name == target_basename:
-            matched_output = o
-            break
-        # Also accept a path_template that ends with the target basename
+            return o
         if path_template.endswith(target_basename):
-            matched_output = o
-            break
+            return o
+    return None
+
+
+def resolve_results_cols(matched_output: dict | None,
+                         inferred_yaml: dict) -> list[str] | None:
+    """Return the columns of the dataframe that fed `matched_output`, or None
+    when the link or columns can't be confidently inferred.
+
+    Round-2: relies on the parser-emitted `written_by` field linking each
+    output to a dataframe id. The dataframe must also carry a `columns`
+    field (set in the parser only where statically resolvable). When
+    `columns` is missing or `written_by` is None/missing, return None and
+    rule_fk_mismatch will emit NOTE instead of BLOCKER.
+    """
     if matched_output is None:
         return None
-
-    # Look for the dataframe that fed it. Several conservative shapes:
-    # - matched_output['write_call']['site'] near a dataframe[].site
-    # - dataframe whose id is referenced in write_call['fn']
-    # The current parsers don't write an explicit dataframe->output link
-    # so we conservatively return None when we can't be sure.
-    # TODO(round-2 polish): add a derived_from / written_by link in the
-    # parsers' inferred YAML to make this resolvable.
+    df_id = matched_output.get("written_by")
+    if not df_id:
+        return None
+    for df in (inferred_yaml.get("dataframes") or []):
+        if df.get("id") == df_id:
+            cols = df.get("columns")
+            if cols:
+                return [str(c) for c in cols]
+            return None
     return None
 
 
@@ -416,10 +440,11 @@ def check_script(inferred_yaml: dict, index: CasetrackIndex) -> list[Finding]:
     findings: list[Finding] = []
     appends = (inferred_yaml.get("casetrack_appends") or [])
     for ap in appends:
-        cols = resolve_results_cols(ap, inferred_yaml)
+        matched_output = find_output_for_append(ap, inferred_yaml)
+        cols = resolve_results_cols(matched_output, inferred_yaml)
         findings.extend(rule_orphan_analysis(ap, index))
         findings.extend(rule_filename_mismatch(ap, index))
-        findings.extend(rule_fk_mismatch(ap, index, cols))
+        findings.extend(rule_fk_mismatch(ap, index, matched_output, cols))
         findings.extend(rule_prefix_collision(ap, index, cols))
         findings.extend(rule_results_drift(ap, index))
     return findings
