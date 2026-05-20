@@ -37,5 +37,11 @@ out="$("$SCRIPT" --name python3.11 --version 1 --no-probe --catalog "$tmp2" 2>&1
 check "regex-no-falsematch" 0 "$?" "$out" "offline template"
 rm -f "$tmp2"
 
+# Case 6: forced-tag path prints ranked Galaxy-depot-PREFERRED block + verify reminders
+out="$(FORCE_TAG=1.21--h50ea8bc_0 "$SCRIPT" --name samtools --version 1.21 --no-probe --catalog /dev/null 2>&1)"
+check "ranked-preferred" 0 "$?" "$out" "Galaxy depot (direct SIF"
+check "verify-reminder"  0 "$?" "$out" "VERIFY on RHEL 8"
+check "glibc-reminder"   0 "$?" "$out" "GLIBC"
+
 [[ "$fail" -eq 0 ]] && echo "ALL PASS" || echo "SOME FAILED"
 exit $fail
