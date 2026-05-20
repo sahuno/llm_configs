@@ -13,9 +13,11 @@ description: |
   Also trigger when the user mentions: .def file, .sif file, apptainer build,
   singularity build, fakeroot build, container for dorado/samtools/modkit or
   any bioinformatics tool, or asks to install software that requires root.
-  Do NOT trigger for: running an existing container (apptainer exec/run),
-  pulling pre-built images (apptainer pull), or Docker/Podman workflows.
-version: 1.0.0
+  Once triggered, the skill triages pull-vs-build (Step 0): it tries to acquire
+  and verify a pre-built image before building from scratch.
+  Do NOT trigger for: running an existing container (apptainer exec/run) or
+  Docker/Podman build workflows (use the docker-hpc skill for those).
+version: 1.1.0
 author: Samuel Ahuno (ekwame001@gmail.com)
 ---
 
