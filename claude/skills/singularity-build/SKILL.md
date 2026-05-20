@@ -99,7 +99,9 @@ command not found).
 - Troubleshoot a failed apptainer/singularity build
 - Package a GitHub tool into a reproducible container
 
-**Do NOT use for**: running existing containers, Docker workflows, or pulling images.
+**Do NOT use for**: running an existing container (apptainer exec/run) or
+Docker/Podman build workflows (use the docker-hpc skill). Pulling a pre-built
+image IS in scope — it is the first thing Step 0 tries.
 
 ## Build Environment Constraints
 
