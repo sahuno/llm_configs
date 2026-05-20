@@ -47,16 +47,20 @@ fi
 # 2. Resolve the exact biocontainers tag (version + build suffix)
 TAG="${FORCE_TAG:-}"
 if [[ -z "$TAG" && "$PROBE" -eq 1 ]]; then
+  # NAME/VERSION assumed URL-safe ([a-z0-9_.-], typical for biocontainers tags)
   API="https://quay.io/api/v1/repository/biocontainers/${NAME}/tag/?onlyActiveTags=true&filter_tag_name=like:${VERSION}"
-  TAG="$(curl -sf "$API" 2>/dev/null | python3 -c '
-import sys, json
+  TAG="$(curl -sf --connect-timeout 5 --max-time 10 "$API" 2>/dev/null | VERSION="$VERSION" python3 -c '
+import sys, os, json
 try:
     d = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
+ver = os.environ.get("VERSION", "")
 tags = [t["name"] for t in d.get("tags", [])]
-tags = [t for t in tags if "--" in t] or tags
-print(tags[0] if tags else "")
+exact = [t for t in tags if t.startswith(ver + "--")]
+withbuild = [t for t in tags if "--" in t]
+chosen = exact or withbuild or tags
+print(chosen[0] if chosen else "")
 ' 2>/dev/null || true)"
 fi
 

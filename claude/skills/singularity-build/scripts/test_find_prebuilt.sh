@@ -42,6 +42,9 @@ out="$(FORCE_TAG=1.21--h50ea8bc_0 "$SCRIPT" --name samtools --version 1.21 --no-
 check "ranked-preferred" 0 "$?" "$out" "Galaxy depot (direct SIF"
 check "verify-reminder"  0 "$?" "$out" "VERIFY on RHEL 8"
 check "glibc-reminder"   0 "$?" "$out" "GLIBC"
+out="$(FORCE_TAG=1.21--h50ea8bc_0 "$SCRIPT" --name samtools --version 1.21 --no-probe --catalog /dev/null 2>&1)"
+check "quay-candidate" 0 "$?" "$out" "quay.io/biocontainers/samtools"
+# Note: the "probed but no tag found" path (exit 4) requires a live network call; not tested offline.
 
 [[ "$fail" -eq 0 ]] && echo "ALL PASS" || echo "SOME FAILED"
 exit $fail
