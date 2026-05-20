@@ -112,6 +112,48 @@ This HPC has specific constraints that shape every decision:
 These constraints mean: always use `condaforge/miniforge3` as the base image, install
 everything via `mamba`, and never touch `/tmp` broadly.
 
+## Step 0: Acquire-vs-build triage (do this FIRST)
+
+The goal is a **working SIF**, not necessarily a *built* one. Building from
+scratch is the fall-through, not the default. Before classifying a build tier,
+try to acquire a verified pre-built image.
+
+**Run the helper to get ranked candidates:**
+
+```bash
+scripts/find_prebuilt.sh --name <tool> --version <ver>
+```
+
+It checks the lab catalog first (exit 3 = already registered, reuse it), then
+resolves the exact biocontainers tag and prints ranked `apptainer pull`
+commands. Source priority (hard-won — see `rules/severus.md`):
+
+1. **Galaxy depot** `https://depot.galaxyproject.org/singularity/<tool>:<tag>` —
+   direct SIF, no auth, no rate-limit. **Preferred.**
+2. **nf-core module** container reference — canonical, version-pinned.
+3. **biocontainers** `docker://quay.io/biocontainers/<tool>:<tag>` — works, but
+   anonymous quay pulls are rate-limited.
+4. Tool's official Docker Hub / GHCR / vendor image.
+
+**Then VERIFY the pulled image on RHEL 8 — this is the step that makes pulling
+safe here, and the reason this skill still owns the easy path:**
+
+- Run `<tool> --version` **and** exercise one real code/network path (not just
+  `--help` — see `rules/apptainer_env_leak.md`).
+- A pull can still be broken two ways on this HPC:
+  - **GLIBC 2.28 mismatch** — `version 'GLIBC_2.xx' not found`. The image
+    assumes a newer glibc than RHEL 8 provides.
+  - **SSL/CA env-leak** — host `SSL_CERT_FILE`/`SSL_CERT_DIR` crash httpx-based
+    tools at first network call. Diagnose with `--cleanenv`: if
+    `apptainer exec --cleanenv` works where plain `exec` fails, it is an
+    env-leak, not a build defect.
+
+**Decide:**
+- Verifies clean → register in
+  `profiles/software_configs/softwares_containers_config.yaml`, done. **No build.**
+- No pre-built image, or verification fails → fall through to Step 1, building
+  from scratch and recording *why* the pull path was rejected.
+
 ## Step 1: Classify the Build Tier
 
 Every containerization request falls into one of four tiers. Classify first, then
