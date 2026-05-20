@@ -23,10 +23,19 @@ out="$("$SCRIPT" --name samtools --version 1.21 --no-probe --catalog /dev/null 2
 check "no-probe-template" 0 "$?" "$out" "depot.galaxyproject.org/singularity/samtools:<TAG>"
 
 # Case 3: catalog hit -> exit 3
-tmp="$(mktemp)"; printf 'samtools:\n  sif: /path/samtools_1.21.sif\n' >"$tmp"
+tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT; printf 'samtools:\n  sif: /path/samtools_1.21.sif\n' >"$tmp"
 out="$("$SCRIPT" --name samtools --version 1.21 --no-probe --catalog "$tmp" 2>&1)"
 check "catalog-hit" 3 "$?" "$out" "ALREADY REGISTERED"
 rm -f "$tmp"
+
+# Case 4: --name with no value -> exit 2 (not unbound-variable exit 1)
+out="$("$SCRIPT" --name 2>&1)"; check "name-missing-value" 2 "$?" "$out" ""
+
+# Case 5: regex safety — a dot in the name must not match a different catalog entry
+tmp2="$(mktemp)"; printf 'python3X11:\n  sif: /path/x.sif\n' >"$tmp2"
+out="$("$SCRIPT" --name python3.11 --version 1 --no-probe --catalog "$tmp2" 2>&1)"
+check "regex-no-falsematch" 0 "$?" "$out" "offline template"
+rm -f "$tmp2"
 
 [[ "$fail" -eq 0 ]] && echo "ALL PASS" || echo "SOME FAILED"
 exit $fail

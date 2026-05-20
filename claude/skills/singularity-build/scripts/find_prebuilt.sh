@@ -23,20 +23,23 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --name) NAME="$2"; shift 2;;
-    --version) VERSION="$2"; shift 2;;
+    --name)    [[ $# -lt 2 ]] && { echo "--name requires a value" >&2; usage; exit 2; };    NAME="$2"; shift 2;;
+    --version) [[ $# -lt 2 ]] && { echo "--version requires a value" >&2; usage; exit 2; }; VERSION="$2"; shift 2;;
     --no-probe) PROBE=0; shift;;
-    --catalog) CATALOG="$2"; shift 2;;
+    --catalog) [[ $# -lt 2 ]] && { echo "--catalog requires a value" >&2; usage; exit 2; }; CATALOG="$2"; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown arg: $1" >&2; usage; exit 2;;
   esac
 done
 [[ -z "$NAME" || -z "$VERSION" ]] && { usage; exit 2; }
 
+# Escape ERE metacharacters in the tool name before using it in grep -E
+NAME_ESCAPED="$(printf '%s' "$NAME" | sed 's/[][\\.^$*+?(){}|]/\\&/g')"
+
 # 1. Lab catalog first — never re-acquire a registered image
-if [[ -f "$CATALOG" ]] && grep -iqE "(^|[^a-z])${NAME}([^a-z]|$)" "$CATALOG"; then
+if [[ -f "$CATALOG" ]] && grep -iqE "(^|[^a-z])${NAME_ESCAPED}([^a-z]|$)" "$CATALOG"; then
   echo "ALREADY REGISTERED in catalog ($CATALOG):"
-  grep -inE "(^|[^a-z])${NAME}([^a-z]|$)" "$CATALOG" || true
+  grep -inE "(^|[^a-z])${NAME_ESCAPED}([^a-z]|$)" "$CATALOG" || true
   echo ">> Reuse the registered SIF; no pull/build needed."
   exit 3
 fi
@@ -47,7 +50,7 @@ TAG=""
 # 3. Emit candidates (offline template path; network-resolved path added in Task 2)
 echo "=== Pre-built image candidates for ${NAME} ${VERSION} ==="
 if [[ -z "$TAG" ]]; then
-  echo "(--no-probe) candidate templates (resolve <TAG> = version--buildhash via quay tags):"
+  echo "(TAG not yet resolved — offline template; resolve <TAG> = version--buildhash via quay tags):"
   echo "    apptainer pull https://depot.galaxyproject.org/singularity/${NAME}:<TAG>"
   echo "    apptainer pull docker://quay.io/biocontainers/${NAME}:<TAG>"
   exit 0
