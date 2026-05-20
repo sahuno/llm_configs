@@ -343,3 +343,36 @@ From: condaforge/miniforge3:latest
 %test
     <tool> --version
 ```
+
+## Acquire-vs-build: source priority and RHEL 8 verification
+
+Step 0 of the skill tries to pull a verified pre-built image before building.
+Use `scripts/find_prebuilt.sh --name <tool> --version <ver>` to generate ranked
+candidates. Reference detail below.
+
+### Source priority
+
+| Rank | Source | Pull form | Caveat |
+|------|--------|-----------|--------|
+| 1 | Galaxy depot | `apptainer pull https://depot.galaxyproject.org/singularity/<tool>:<tag>` | Direct SIF, no auth, no rate-limit. Preferred. |
+| 2 | nf-core module | container line in `modules/nf-core/<tool>/main.nf` | Canonical, version-pinned. |
+| 3 | biocontainers (quay) | `apptainer pull docker://quay.io/biocontainers/<tool>:<tag>` | Anonymous quay pulls are rate-limited. |
+| 4 | Official image | `apptainer pull docker://<vendor>/<tool>:<tag>` | Quality/maintenance varies; verify carefully. |
+
+The `<tag>` is `version--buildhash` (e.g. `1.21--h50ea8bc_0`). Resolve it from
+the quay tags API (what `find_prebuilt.sh` does):
+`https://quay.io/api/v1/repository/biocontainers/<tool>/tag/?onlyActiveTags=true&filter_tag_name=like:<version>`.
+
+### RHEL 8 verification checklist (run after every pull, before trusting a SIF)
+
+- [ ] `apptainer exec <sif> <tool> --version` succeeds.
+- [ ] Exercise one **real** path (a tiny conversion, an index, a network call) —
+      not just `--help`. httpx-based tools crash only at first client init.
+- [ ] No `version 'GLIBC_2.xx' not found` — if present, the image needs newer
+      glibc than RHEL 8 (2.28) has → build from scratch instead.
+- [ ] `--cleanenv` diagnostic: if `apptainer exec --cleanenv <sif> <cmd>`
+      succeeds where plain `exec` fails, it is the host SSL/CA env-leak
+      (`SSL_CERT_FILE`/`SSL_CERT_DIR`), not a build defect. See
+      `rules/apptainer_env_leak.md`.
+- [ ] On clean verification: register the SIF in
+      `profiles/software_configs/softwares_containers_config.yaml`.
