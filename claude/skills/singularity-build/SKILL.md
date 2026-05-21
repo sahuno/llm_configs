@@ -13,9 +13,11 @@ description: |
   Also trigger when the user mentions: .def file, .sif file, apptainer build,
   singularity build, fakeroot build, container for dorado/samtools/modkit or
   any bioinformatics tool, or asks to install software that requires root.
-  Do NOT trigger for: running an existing container (apptainer exec/run),
-  pulling pre-built images (apptainer pull), or Docker/Podman workflows.
-version: 1.0.0
+  Once triggered, the skill triages pull-vs-build (Step 0): it tries to acquire
+  and verify a pre-built image before building from scratch.
+  Do NOT trigger for: running an existing container (apptainer exec/run) or
+  Docker/Podman build workflows (use the docker-hpc skill for those).
+version: 1.1.0
 author: Samuel Ahuno (ekwame001@gmail.com)
 ---
 
@@ -97,7 +99,9 @@ command not found).
 - Troubleshoot a failed apptainer/singularity build
 - Package a GitHub tool into a reproducible container
 
-**Do NOT use for**: running existing containers, Docker workflows, or pulling images.
+**Do NOT use for**: running an existing container (apptainer exec/run) or
+Docker/Podman build workflows (use the docker-hpc skill). Pulling a pre-built
+image IS in scope — it is the first thing Step 0 tries.
 
 ## Build Environment Constraints
 
@@ -111,6 +115,48 @@ This HPC has specific constraints that shape every decision:
 
 These constraints mean: always use `condaforge/miniforge3` as the base image, install
 everything via `mamba`, and never touch `/tmp` broadly.
+
+## Step 0: Acquire-vs-build triage (do this FIRST)
+
+The goal is a **working SIF**, not necessarily a *built* one. Building from
+scratch is the fall-through, not the default. Before classifying a build tier,
+try to acquire a verified pre-built image.
+
+**Run the helper to get ranked candidates:**
+
+```bash
+scripts/find_prebuilt.sh --name <tool> --version <ver>
+```
+
+It checks the lab catalog first (exit 3 = already registered, reuse it), then
+resolves the exact biocontainers tag and prints ranked `apptainer pull`
+commands. Source priority (hard-won — see `rules/severus.md`):
+
+1. **Galaxy depot** `https://depot.galaxyproject.org/singularity/<tool>:<tag>` —
+   direct SIF, no auth, no rate-limit. **Preferred.**
+2. **nf-core module** container reference — canonical, version-pinned.
+3. **biocontainers** `docker://quay.io/biocontainers/<tool>:<tag>` — works, but
+   anonymous quay pulls are rate-limited.
+4. Tool's official Docker Hub / GHCR / vendor image.
+
+**Then VERIFY the pulled image on RHEL 8 — this is the step that makes pulling
+safe here, and the reason this skill still owns the easy path:**
+
+- Run `<tool> --version` **and** exercise one real code/network path (not just
+  `--help` — see `rules/apptainer_env_leak.md`).
+- A pull can still be broken two ways on this HPC:
+  - **GLIBC 2.28 mismatch** — `version 'GLIBC_2.xx' not found`. The image
+    assumes a newer glibc than RHEL 8 provides.
+  - **SSL/CA env-leak** — host `SSL_CERT_FILE`/`SSL_CERT_DIR` crash httpx-based
+    tools at first network call. Diagnose with `--cleanenv`: if
+    `apptainer exec --cleanenv` works where plain `exec` fails, it is an
+    env-leak, not a build defect.
+
+**Decide:**
+- Verifies clean → register in
+  `profiles/software_configs/softwares_containers_config.yaml`, done. **No build.**
+- No pre-built image, or verification fails → fall through to Step 1, building
+  from scratch and recording *why* the pull path was rejected.
 
 ## Step 1: Classify the Build Tier
 
