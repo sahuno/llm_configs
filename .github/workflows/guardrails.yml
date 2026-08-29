@@ -1,0 +1,59 @@
+name: guardrails
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  hooks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The hooks parse tool input with jq when present and python3 otherwise.
+        # Both paths must behave identically — a guardrail that silently stops
+        # guarding on a machine without jq is worse than no guardrail.
+        json_backend: [jq, python3-only]
+    name: hooks (${{ matrix.json_backend }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove jq to exercise the python3 fallback
+        if: matrix.json_backend == 'python3-only'
+        run: sudo rm -f "$(command -v jq)"
+
+      - name: Confirm which backend is under test
+        run: |
+          command -v jq >/dev/null && echo "jq: present" || echo "jq: absent"
+          command -v python3 >/dev/null && echo "python3: present" || echo "python3: absent"
+
+      - name: Run hook test suite
+        run: ./plugins/bio-guardrails/tests/test_hooks.sh
+
+  manifests:
+    runs-on: ubuntu-latest
+    name: plugin manifests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate marketplace and plugin manifests as JSON
+        run: |
+          for f in .claude-plugin/marketplace.json \
+                   plugins/*/.claude-plugin/plugin.json \
+                   plugins/bio-guardrails/hooks/hooks.json; do
+            python3 -c "import json,sys; json.load(open('$f'))" && echo "ok   $f"
+          done
+
+  skill-filenames:
+    runs-on: ubuntu-latest
+    name: SKILL.md casing
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject lowercase skill.md
+        # Case-insensitive macOS hides this; on Linux a lowercase skill.md
+        # simply does not load. Three skills shipped broken this way.
+        run: |
+          if bad=$(git ls-files 'plugins/*/skills/*' | grep -E '/skill\.md$'); then
+            echo "::error::lowercase skill.md will not load on Linux:"; echo "$bad"; exit 1
+          fi
+          echo "all SKILL.md correctly cased"
