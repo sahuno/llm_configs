@@ -44,7 +44,7 @@ Suite is 30 cases, green on both JSON backends.
 
 ### Task 1.2: Scrub identifiers from the public repo
 
-**Problem.** `hpc-site` is published as a worked example. `docs/FAQ.md:394` contains a real LDAP UID (`164079095`). Internal project names (`triplicates_epigenetics_diyva`, `/data1/collab001`) appear throughout. None are secrets; all are avoidable.
+**Problem.** `hpc-site` is published as a worked example. `docs/FAQ.md:394` contains a real LDAP UID (not repeated here — see the line). Internal project names (`triplicates_epigenetics_diyva`, `/data1/collab001`) appear throughout. None are secrets; all are avoidable.
 
 **Files:** `claude/docs/FAQ.md`, `README.md`, `plugins/hpc-site/**`
 
@@ -53,7 +53,8 @@ Suite is 30 cases, green on both JSON backends.
 
 **Verify:**
 ```bash
-grep -rn '164079095' --exclude-dir=.git . && echo "STILL PRESENT" || echo "clean"
+# substitute the actual UID from docs/FAQ.md:394
+grep -rn "$(sed -n '394p' claude/docs/FAQ.md | grep -oE '[0-9]{9}')" --exclude-dir=.git . && echo "STILL PRESENT" || echo "clean"
 ```
 
 ---
