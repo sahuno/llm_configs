@@ -5,6 +5,24 @@
 
 ---
 
+## 0. Site configuration
+
+Reference genomes, container images, and SLURM profiles are **not** hardcoded in
+this file. They live in the `hpc-site` plugin's `profiles/` directory, referred
+to below as `$SITE_CONFIG`.
+
+Set it once per machine — point it at the `profiles/` dir of your clone or of
+the installed plugin:
+
+```bash
+export SITE_CONFIG="$HOME/projects/llm_configs/plugins/hpc-site/profiles"
+```
+
+Whenever this file says `$SITE_CONFIG/...`, read the file at that path. If
+`$SITE_CONFIG` is unset, ask rather than guessing a path.
+
+---
+
 ## 1. Session Initialization
 
 On every new conversation, do the following in order:
@@ -13,7 +31,7 @@ On every new conversation, do the following in order:
    - **Aim**: Ask for a clear, numbered list of objectives
 2. **For analysis projects**, scaffold the directory structure automatically:
 
-- paths to genome references hg38:@/data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta; mm10@/data1/greenbab/database/mm10/mm10.fa; refer to @/data1/greenbab/users/ahunos/apps/llm_configs/claude/profiles/databases/databases_config.yaml for all other references
+- Genome reference paths: read `$SITE_CONFIG/databases/databases_config.yaml`. Never hardcode a fasta/gtf path in a script or config.
 - Preserve file headers; don't make up headers at runtime
 - Route long processes/jobs to compute node (default: componc_cpu) via slurm-mcp.  Use nexflow for pipelines on compute nodes
    ```
@@ -33,13 +51,13 @@ On every new conversation, do the following in order:
    ├── logs/                       # timestamped script logs
    └── docs/
    ```
-   Use `~/.claude/scripts/init_project.py` to scaffold projects:
+   Use the `/init-bio-project` command (bio-skills plugin) to scaffold projects:
    ```bash
    # Scaffold in current directory (default — uses cwd name as project name):
-   python ~/.claude/scripts/init_project.py --type analysis --genome hg38
+   /init-bio-project --type analysis --genome hg38
 
    # Create a new subdirectory:
-   python ~/.claude/scripts/init_project.py --name my_project --type pipeline --engine snakemake --genome mm10
+   /init-bio-project --name my_project --type pipeline --engine snakemake --genome mm10
    ```
    Project types: `analysis` (default workflow dirs), `pipeline` (engine-specific layout, requires `--engine snakemake|nextflow`), `ml` (adds notebooks, model dirs).
    A top-level `README.md` is generated with project metadata, directory tree, and aims. Additional READMEs only when the user requests them.
@@ -70,7 +88,7 @@ Every project file update must include:
 
 ### Genomics-Specific
 - **Never hardcode contig names or sizes.** Parse from genome sizes file or reference FASTA index. _(Enforced by `block-hardcoded-contigs.sh` hook.)_
-- **Reference data**: Load paths from `profiles/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37.
+- **Reference data**: Load paths from `$SITE_CONFIG/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37.
 
 ### Multi-Genome-Build Projects
 - Some integrative analyses require data from different genome builds (e.g., RNA in mm39, methylation in mm10).
@@ -198,25 +216,26 @@ Every analysis script must produce a **timestamped log file** that captures enou
 
 ## 2A. Tool gotchas
 
-Tool-specific lessons live in `/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/`. Refer to these whenever the matching tool is involved — they capture non-obvious failure modes, fixes, and verification steps that are easy to miss otherwise.
+Tool-specific failure modes are no longer `@`-imported here. They now live in
+skills shipped by this repo's plugins, and load **on demand** when the matching
+tool is in play:
 
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/snakemake.md — Snakemake 9 + SLURM executor pitfalls (mem_mb_per_cpu, srun memory conflict, cluster profile conflicts, stale locks)
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/dss.md — DSS Bioconductor silent corruption from `mclapply + detectCores()` ignoring SLURM cgroup limits; mandatory `ncores` arg, post-run verification
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/igv.md — IGV / igver hang on large ONT BAMs with `--methylation` preset; bigwig-mode autoscale fix via `setDataRange 0,100`; `modkit bedmethyl tobigwig` chrom.sizes mismatch (Rust SendError panic)
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/mskcc_partitions.md — partition selection on MSKCC HPC: prefer `cpushort` (50+ idle, same hardware) over saturated `componc_cpu`; always `--exclude=isca071` (slower CPU vintage that doesn't show in scontrol Features)
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/slurm_mcp.md — slurm-mcp `submit_batch` quirks: cmdline injection of `--mem 64G`/`--time 04:00:00` overrides script directives and conflicts with `--mem-per-cpu`; no `--array` support; logs redirected to `~/slurm_logs/`
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/gnu_time.md — `/usr/bin/time` is not installed on MSKCC HPC; install GNU time via conda (`mamba install -c conda-forge time`) and resolve dynamically as a sibling of the tool's binary in benchmark wrappers
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/apptainer_vs_conda.md — for short HTSlib/samtools jobs on MSKCC HPC, prefer the apptainer SIF over the NFS-backed conda binary; conda pays a 1-2 M page-fault cold-start tax (~2.5 µs/fault) absent from the SIF
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/apptainer_env_leak.md — host SSL/CA env vars (`SSL_CERT_FILE`, `SSL_CERT_DIR`) leak into apptainer SIFs on RHEL 8 and crash httpx-based clients (huggingface_hub, requests) at first HTTP-client init; fix with `unset` block in `%environment` and exercise the network path in `%test`
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/severus.md — Severus 1.7 viral integration: `--min-reference-flank=10000` default kills small contigs (<20 kb) silently; integrations emit as `SVTYPE=INS` with viral coord in `INFO/ALIGNED_POS=`, not BND; pull SIF from Galaxy depot (quay rate-limits, Seqera wave needs auth); apptainer not in PATH on compute nodes — hardcode absolute path
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/numerical_claims.md — disclose aggregation method (weighted vs simple-mean vs median) alongside any summary statistic; anchor verification when reproducing prior numbers; code is ground truth on doc-vs-code mismatch (process rule, not tool-specific)
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/cv_at_small_n.md — regularized CV at n<50: cv.glmnet seed-fragility (mandatory K≥5 seed reruns), K-permutation FDR q-floor (q_min ≈ 1/(N_null+1) × n_tests / 2, K=10 caps q at ~0.05), Pearson r degenerate on near-constant LOOCV preds, λ_GC sanity for pooled-null exchangeability
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/parallel_r_oom.md — `parallel::mclapply` silently drops OOM-killed forks as NULL; script writes `=== DONE ===` while result is incomplete. Fix: `gc(verbose=FALSE)` at end of per-iteration function + `--mem-per-cpu` (not `--mem`); always cross-check `sacct` State and stderr `oom_kill events`
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/fread_bed_quirks.md — `data.table::fread(skip="chr")` does NOT skip a `#chr\tstart...` BED comment header (the literal "chr" matches the comment line); use `skip=1L` with explicit `colClasses` or `comment.char="#"` instead
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/clair3.md — Clair3 v2.0.1 phasing flag footgun (`False` is truthy in argparse so whatshap can't be disabled via flags — call `/opt/bin/longphase phase` directly instead); missing `##FORMAT=<ID=PS,...>` header line; whatshap > longphase for per-read haplotag (96% vs 76% phase rate); ClairS SIF ships empty `/opt/models` — download `clairs_models.tar.gz` and pass `-P/-F/--clair3_model_path` explicitly; ssrs vs ss tradeoffs and contaminated-matched-N caveat for somatic undercalling
-- @/data1/greenbab/users/ahunos/apps/llm_configs/claude/rules/vllm_iris.md — serving local LLMs on iris (vllm-openai SIF on componc_gpu_batch): `componc_gpu` alone is not a valid partition; force `--gres=gpu:a100:1` (L40S 48GB can't hold 30B BF16); `huggingface-cli` is deprecated, use `hf` (no `[hf_transfer]` extra in hub 1.0 — hf-xet is bundled); vLLM SIF has `python3` not `python`, `--disable-log-requests` is now `--no-enable-log-requests`, multimodal models (Gemma 4) need `--max-num-batched-tokens ≥ 2496`; HF id `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` ≠ NIM id `nvidia/nemotron-3-nano-30b-a3b`; ready marker is `Application startup complete`; perf reference: Gemma 4 31B BF16 = 3.8 s/paper, Nemotron-3 30B-A3B MoE BF16 = 0.77 s/paper on A100 80GB
+| Skill | Plugin | Covers |
+|---|---|---|
+| `analysis-gotchas` | bio-skills | DSS, parallel R / mclapply OOM, small-n CV, `fread` on BED, Clair3/ClairS, Severus, reporting aggregated statistics |
+| `snakemake` → `references/gotchas.md` | bio-skills | Snakemake 9 + SLURM executor pitfalls |
+| `igv-screenshots` → `references/gotchas.md` | bio-skills | IGV / igver on large ONT BAMs, bigwig autoscale, chrom.sizes mismatch |
+| `singularity-build` → `references/env_leak.md` | bio-skills | Host SSL/CA env vars leaking into apptainer SIFs |
+| `mskcc-hpc` | hpc-site | Partition access, slurm-mcp quirks, GNU time, SIF-vs-conda, vLLM on iris |
 
-When you create a new rules file, add an entry here so it's loaded into every session.
+**Why the change.** The old block `@`-imported 15 absolute `/data1/...` paths.
+Those resolve only on the HPC — on any other machine every import silently
+failed — and where they did resolve they pulled ~15k tokens into *every*
+session regardless of topic. As skills they load only when relevant, and the
+paths travel with the plugin.
+
+To add a new gotcha: drop a file in the owning skill's `references/` and add a
+row to that skill's SKILL.md table. No edit here is needed.
 
 ---
 
@@ -226,7 +245,7 @@ When you create a new rules file, add an entry here so it's loaded into every se
 
 **Standard chain**: pod5 -> dorado basecall -> dorado align (or minimap2) -> samtools sort/index -> modkit pileup -> modkit dmr
 
-**Tool references**: Load containers from `~/.claude/profiles/software_configs/softwares_containers_config.yaml`.
+**Tool references**: Load containers from `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`.
 
 **QC checkpoints** (stop and report if any fail):
 1. After basecalling: Check read N50, total bases, pass/fail ratio from dorado summary.
@@ -237,14 +256,14 @@ When you create a new rules file, add an entry here so it's loaded into every se
 **Common pitfalls**:
 - Dorado models must match the chemistry/flowcell. Always confirm with the user.
 - modkit pileup `--ref` must match the alignment reference exactly.
-- For mouse samples, CpG islands from `profiles/databases/databases_config.yaml` are essential context for DMR interpretation.
+- For mouse samples, CpG islands from `$SITE_CONFIG/databases/databases_config.yaml` are essential context for DMR interpretation.
 
 **"Done" looks like**: bedMethyl files per sample, DMR bed file with statistics, summary plots of methylation distributions, and a manifest CSV linking sample metadata to output paths.
 
 **ONT Processing Infrastructure**:
 - **Chemistry detection**: ONT runs may have mixed chemistries (4kHz and 5kHz). Always check and process separately. Dorado model must match chemistry exactly — mismatches produce silent garbage.
 - **Apptainer cache**: Set `APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache` to avoid home directory quota issues on compute nodes.
-- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `profiles/software_configs/softwares_containers_config.yaml`.
+- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`.
 - **Methylation context**: Standard ONT methylation call string is `5mCG_5hmCG@latest,6mA@latest`.
 - **Multi-run samples**: Some patients have multiple sequencing runs. These must be basecalled independently, then merged after alignment — never concatenate raw pod5 files across runs.
 
@@ -322,8 +341,8 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 **Snakemake rules**:
 - There is no `--reason` argument for snakemake. Do not use it.
 - If a rule sets the `singularity:` directive, do NOT add `singularity exec -B ...` inside the shell block. The directive handles container binding.
-- Load SLURM profiles from `profiles/workflow_profiles/snakemakes/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
-- Load executor settings from `profiles/workflow_profiles/executor_config.yaml`.
+- Load SLURM profiles from `$SITE_CONFIG/workflow_profiles/snakemakes/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
+- Load executor settings from `$SITE_CONFIG/workflow_profiles/executor_config.yaml`.
 - Sample sheet format: TSV with columns `patient, sample, condition, assay, path, genome` (defined in `profiles/setup_preferences.yaml`).
 
 **Snakemake run organization**:
@@ -333,7 +352,7 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 - One config file per run, named to match the results directory.
 - Run naming convention: `{date}_{genome}_{description}` (e.g. `20260305_hg38_differential_methylation`, `20260310_mm10_v1`).
 
-**Nextflow**: Profiles are in `~/.claude/profiles/workflow_profiles/nextflow/`.
+**Nextflow**: Profiles are in `$SITE_CONFIG/workflow_profiles/nextflow/`.
 
 ### CLI Tools and Packages
 - Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
@@ -347,7 +366,7 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 - For Python packages: `pytest --tb=short` with coverage report.
 
 ### Snakemake Troubleshooting
-See §2A Tool gotchas → `rules/snakemake.md`.
+See §2A Tool gotchas → `snakemake` skill → `references/gotchas.md`.
 
 ---
 
@@ -385,7 +404,7 @@ When writing SLURM job headers or snakemake resource directives, use these as st
 - **Never** attempt recursive grep on directories containing BAM, pod5, fast5, or CRAM files without file-type filtering.
 
 ### Containers
-All container paths are in `profiles/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
+All container paths are in `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
 
 #### Container Build Rules (Apptainer / Singularity `%post`)
 
@@ -412,7 +431,7 @@ All container paths are in `profiles/software_configs/softwares_containers_confi
   base image yet, the build fails with a fatal mount error.
 
 ### Reference Genomes
-All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `profiles/databases/databases_config.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
+All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/databases/databases_config.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
 
 ---
 
@@ -431,10 +450,10 @@ All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `profiles/databas
 - **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). These are composited in Illustrator from the per-run figures above.
 
 ### Matplotlib Defaults
-Load from `profiles/programming_language_profiles/python/matplotlib/matplotlib_defaults`.
+Load from `$SITE_CONFIG/programming_language_profiles/python/matplotlib/matplotlib_defaults`.
 
 ### R / ggplot2
-Load theme and font settings from `profiles/programming_language_profiles/R/`.
+Load theme and font settings from `$SITE_CONFIG/programming_language_profiles/R/`.
 
 ### ggplot2 Font Size Scaling Reference
 The `theme()` element sizes are multiplied from `base_size`:

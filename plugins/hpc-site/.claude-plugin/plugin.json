@@ -1,0 +1,8 @@
+{
+  "name": "hpc-site",
+  "version": "1.0.0",
+  "description": "SLURM HPC site configuration: genome registry, container registry, executor profiles, and measured cluster knowledge.",
+  "author": {
+    "name": "Samuel Ahuno"
+  }
+}

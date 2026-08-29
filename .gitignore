@@ -1,7 +1,19 @@
 share/claude/tmp
-claude/tests/logs/*.log
 sandbox/
 setup/
+
+# Generated test-run artifacts (Snakemake state, timestamped logs, coordinator
+# scripts). The test workflow itself lives in claude/tests/scripts/.
+claude/tests/logs/
+.snakemake/
+
+# Packaged skill bundles. The skill directory is the source of truth; bundles
+# go stale against it (singularity-build.skill sat at v1.0.0 while the
+# directory moved to v1.1.0). Regenerate on demand instead of committing.
+*.skill
+
+# Editor/manual backups — use git history instead
+*.bak
 
 # Local Claude env vars (secrets) — template is committed, .local.sh is not
 claude/profiles/env/claude_env.local.sh

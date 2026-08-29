@@ -1,0 +1,37 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sahuno",
+  "description": "Computational biology plugins for Claude Code: genomics skills, safety guardrails, and HPC site configuration.",
+  "owner": {
+    "name": "Samuel Ahuno"
+  },
+  "plugins": [
+    {
+      "name": "bio-skills",
+      "description": "Genomics and computational-biology skills: Snakemake and nf-core pipeline authoring, Singularity/Apptainer container builds, IGV screenshots, publication-figure sizing, cohort overviews, chimeric-read validation, scatter-gather design, runtime/resource studies, journal club prep, and a catalogue of silent-failure gotchas across DSS, parallel R, small-n CV, Clair3 and Severus.",
+      "author": {
+        "name": "Samuel Ahuno"
+      },
+      "category": "science",
+      "source": "./plugins/bio-skills"
+    },
+    {
+      "name": "bio-guardrails",
+      "description": "Safety hooks for genomics work. Blocks writes to immutable raw data, cross-species and cross-build genome mixing, untagged genomic outputs, and destructive shell commands; warns on hardcoded contig lists, invalid YAML, and absolute paths in scripts.",
+      "author": {
+        "name": "Samuel Ahuno"
+      },
+      "category": "science",
+      "source": "./plugins/bio-guardrails"
+    },
+    {
+      "name": "hpc-site",
+      "description": "Site configuration for a SLURM HPC cluster: reference-genome registry, container image registry, Snakemake/Nextflow executor profiles, language plot defaults, and measured MSKCC cluster operational knowledge. Fork this one and swap in your own site.",
+      "author": {
+        "name": "Samuel Ahuno"
+      },
+      "category": "science",
+      "source": "./plugins/hpc-site"
+    }
+  ]
+}
