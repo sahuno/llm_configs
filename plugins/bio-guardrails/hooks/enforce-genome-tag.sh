@@ -5,8 +5,13 @@
 # Author: Samuel Ahuno
 # Date: 2026-02-17
 
+# Portable JSON parsing (prefers jq, falls back to python3, warns loudly
+# if neither exists rather than silently passing everything through).
+. "${BASH_SOURCE[0]%/*}/lib/json.sh"
+json_backend_check || exit 0
+
 INPUT=$(cat)
-TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+TOOL_NAME=$(json_get "$INPUT" tool_name)
 
 # Recognized genome build tags (case-insensitive matching)
 VALID_TAGS="mm10|mm39|GRCm39|hg38|GRCh38|hg19|GRCh37|t2t|chm13"
@@ -33,7 +38,7 @@ has_genome_tag() {
 # CHECK: Write/Edit tool — file being created/modified
 # ============================================================
 if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
-  FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+  FILE_PATH=$(json_get "$INPUT" tool_input.file_path)
   [ -z "$FILE_PATH" ] && exit 0
 
   # Only check genomic file types
@@ -49,7 +54,7 @@ fi
 # CHECK: Bash tool — output files in commands
 # ============================================================
 if [ "$TOOL_NAME" = "Bash" ]; then
-  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  COMMAND=$(json_get "$INPUT" tool_input.command)
   [ -z "$COMMAND" ] && exit 0
 
   # Extract output file paths: look for -o, --output, >, >> patterns

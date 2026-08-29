@@ -5,25 +5,48 @@
 # Author: Samuel Ahuno
 # Date: 2026-02-17
 
+# Portable JSON parsing (prefers jq, falls back to python3, warns loudly
+# if neither exists rather than silently passing everything through).
+. "${BASH_SOURCE[0]%/*}/lib/json.sh"
+json_backend_check || exit 0
+
 INPUT=$(cat)
-TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+TOOL_NAME=$(json_get "$INPUT" tool_name)
 
 # --- Helper: extract genome build indicators from a string ---
 extract_builds() {
   local text="$1"
   local builds=""
+  # Delimiters: the leading class MUST include '.' — the mandated filename
+  # convention is {sample}.{build}.{description}.{ext} (CLAUDE.md §2), so a
+  # leading class of (/|_|^) made every correctly-named file invisible to this
+  # check. `samtools merge o.bam s.hg38.bam s.mm10.bam` passed silently.
   # Mouse builds
-  echo "$text" | grep -qiE '(/|_|^)mm10(/|_|\.|$)' && builds="$builds mm10"
-  echo "$text" | grep -qiE '(/|_|^)mm39(/|_|\.|$)' && builds="$builds mm39"
-  echo "$text" | grep -qiE '(/|_|^)GRCm39(/|_|\.|$)' && builds="$builds mm39"
+  echo "$text" | grep -qiE '(/|_|\.|^)mm10(/|_|\.|$)' && builds="$builds mm10"
+  echo "$text" | grep -qiE '(/|_|\.|^)mm39(/|_|\.|$)' && builds="$builds mm39"
+  echo "$text" | grep -qiE '(/|_|\.|^)GRCm39(/|_|\.|$)' && builds="$builds mm39"
   # Human builds
-  echo "$text" | grep -qiE '(/|_|^)hg38(/|_|\.|$)' && builds="$builds hg38"
-  echo "$text" | grep -qiE '(/|_|^)GRCh38(/|_|\.|$)' && builds="$builds hg38"
-  echo "$text" | grep -qiE '(/|_|^)hg19(/|_|\.|$)' && builds="$builds hg19"
-  echo "$text" | grep -qiE '(/|_|^)GRCh37(/|_|\.|$)' && builds="$builds hg19"
-  echo "$text" | grep -qiE '(/|_|^)t2t(/|_|\.|$)|chm13' && builds="$builds t2t"
+  echo "$text" | grep -qiE '(/|_|\.|^)hg38(/|_|\.|$)' && builds="$builds hg38"
+  echo "$text" | grep -qiE '(/|_|\.|^)GRCh38(/|_|\.|$)' && builds="$builds hg38"
+  echo "$text" | grep -qiE '(/|_|\.|^)hg19(/|_|\.|$)' && builds="$builds hg19"
+  echo "$text" | grep -qiE '(/|_|\.|^)GRCh37(/|_|\.|$)' && builds="$builds hg19"
+  echo "$text" | grep -qiE '(/|_|\.|^)t2t(/|_|\.|$)|chm13' && builds="$builds t2t"
   echo "$text" | grep -qiE 'Homo_sapiens_assembly38' && builds="$builds hg38"
   echo "$builds" | xargs -n1 | sort -u | xargs
+}
+
+# --- Helper: is this a deliberate coordinate conversion? ---
+# CLAUDE.md §2 mandates liftOver for multi-build work and mandates naming the
+# output with BOTH builds ({sample}.mm39_to_mm10.lifted.bed). Without this
+# exemption, fixing the delimiter class above would block the exact workflow
+# the instructions require — and would keep blocking every later command that
+# touches the resulting file. Applies to SAME-SPECIES mixing only; mixing mouse
+# with human is never a legitimate liftOver.
+is_intentional_conversion() {
+  local text="$1"
+  echo "$text" | grep -qiE 'liftover|crossmap|\.chain\b|_to_|ALLOW_BUILD_MIX=1' && return 0
+  [ "${ALLOW_BUILD_MIX:-}" = "1" ] && return 0
+  return 1
 }
 
 # --- Helper: classify species from builds ---
@@ -39,7 +62,7 @@ get_species() {
 # CHECK 1 & 2: Build mixing + Cross-species (Bash commands)
 # ============================================================
 if [ "$TOOL_NAME" = "Bash" ]; then
-  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  COMMAND=$(json_get "$INPUT" tool_input.command)
   [ -z "$COMMAND" ] && exit 0
 
   BUILDS=$(extract_builds "$COMMAND")
@@ -50,10 +73,14 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     SPECIES_COUNT=$(echo "$SPECIES" | wc -w | xargs)
 
     if [ "$SPECIES_COUNT" -gt 1 ]; then
+      # Never exempt: no legitimate liftOver crosses species.
       echo "BLOCKED: Cross-species genome mixing detected. Found references to both MOUSE ($( echo "$BUILDS" | grep -oE 'mm10|mm39' | xargs )) and HUMAN ($( echo "$BUILDS" | grep -oE 'hg38|hg19|t2t' | xargs )) in the same command. This is almost certainly an error." >&2
       exit 2
+    elif is_intentional_conversion "$COMMAND"; then
+      echo "NOTE: multiple builds ($BUILDS) in one command, allowed as a coordinate conversion. Store both original and lifted coordinates, and verify unmapped regions before proceeding (CLAUDE.md §2)." >&2
+      exit 0
     else
-      echo "BLOCKED: Mixed genome builds detected in the same command: $BUILDS. All files in a single operation must use the same genome build. If this is intentional (e.g., liftover), re-run with explicit confirmation." >&2
+      echo "BLOCKED: Mixed genome builds detected in the same command: $BUILDS. All files in a single operation must use the same genome build. If this is a deliberate coordinate conversion, use liftOver/CrossMap, or re-run with ALLOW_BUILD_MIX=1 prefixed to the command." >&2
       exit 2
     fi
   fi
@@ -63,7 +90,7 @@ fi
 # CHECK 3: Config consistency (YAML edits)
 # ============================================================
 if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
-  FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+  FILE_PATH=$(json_get "$INPUT" tool_input.file_path)
   [ -z "$FILE_PATH" ] && exit 0
 
   # Only check YAML config files
@@ -99,7 +126,7 @@ fi
 # CHECK 4: Chr naming convention (BED/GTF referenced in commands)
 # ============================================================
 if [ "$TOOL_NAME" = "Bash" ]; then
-  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  COMMAND=$(json_get "$INPUT" tool_input.command)
   [ -z "$COMMAND" ] && exit 0
 
   # Extract .bed, .gtf, .gff, .vcf file paths from the command

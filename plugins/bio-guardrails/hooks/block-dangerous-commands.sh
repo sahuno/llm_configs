@@ -4,7 +4,13 @@
 # Author: Samuel Ahuno
 # Date: 2026-02-17
 
-COMMAND=$(cat | jq -r '.tool_input.command // empty')
+# Portable JSON parsing (prefers jq, falls back to python3, warns loudly
+# if neither exists rather than silently passing everything through).
+. "${BASH_SOURCE[0]%/*}/lib/json.sh"
+json_backend_check || exit 0
+
+INPUT=$(cat)
+COMMAND=$(json_get "$INPUT" tool_input.command)
 
 if [ -z "$COMMAND" ]; then
   exit 0

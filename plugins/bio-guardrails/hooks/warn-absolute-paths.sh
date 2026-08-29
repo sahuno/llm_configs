@@ -4,9 +4,14 @@
 # Author: Samuel Ahuno
 # Date: 2026-02-17
 
+# Portable JSON parsing (prefers jq, falls back to python3, warns loudly
+# if neither exists rather than silently passing everything through).
+. "${BASH_SOURCE[0]%/*}/lib/json.sh"
+json_backend_check || exit 0
+
 INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-NEW_STRING=$(echo "$INPUT" | jq -r '.tool_input.new_string // .tool_input.content // empty')
+FILE_PATH=$(json_get "$INPUT" tool_input.file_path)
+NEW_STRING=$(json_get "$INPUT" tool_input.new_string tool_input.content)
 
 if [ -z "$FILE_PATH" ] || [ -z "$NEW_STRING" ]; then
   exit 0
