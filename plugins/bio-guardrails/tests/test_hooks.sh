@@ -65,6 +65,22 @@ check validate-reference-genome.sh 0 "mandated _to_ filename"     "$(bash_cmd 'w
 check validate-reference-genome.sh 0 "explicit ALLOW_BUILD_MIX"   "$(bash_cmd 'ALLOW_BUILD_MIX=1 bedtools intersect -a x.mm10.bed -b y.mm39.bed')"
 check validate-reference-genome.sh 2 "cross-species NOT exempt by liftOver" "$(bash_cmd 'liftOver in.hg38.bed hg38ToMm10.chain out.mm10.bed')"
 
+echo "=== validate-reference-genome: config content (must judge the WRITE, not the disk) ==="
+TMPD=$(mktemp -d)
+printf 'fasta: /ref/hg38/g.fa\n' > "$TMPD/single.yaml"
+printf 'fasta: /ref/hg38/g.fa\ngtf: /ref/mm10/a.gtf\n' > "$TMPD/mixed.yaml"
+check validate-reference-genome.sh 2 "fresh Write of mixed-build config" \
+  "$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s/new.yaml","content":"fasta: /ref/hg38/g.fa\\ngtf: /ref/mm10/a.gtf\\n"}}' "$TMPD")"
+check validate-reference-genome.sh 2 "Edit introducing a second build" \
+  "$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/single.yaml","old_string":"fasta: /ref/hg38/g.fa","new_string":"fasta: /ref/hg38/g.fa\\ngtf: /ref/mm10/a.gtf"}}' "$TMPD")"
+check validate-reference-genome.sh 0 "Edit REMOVING a build (no false positive)" \
+  "$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/mixed.yaml","old_string":"gtf: /ref/mm10/a.gtf\\n","new_string":""}}' "$TMPD")"
+check validate-reference-genome.sh 0 "single-build Write still allowed" \
+  "$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s/ok.yaml","content":"fasta: /ref/hg38/g.fa\\n"}}' "$TMPD")"
+check validate-reference-genome.sh 0 "databases_config.yaml exempt" \
+  "$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s/databases_config.yaml","content":"hg38: x\\nmm10: y\\n"}}' "$TMPD")"
+rm -rf "$TMPD"
+
 echo "=== warn-only hooks (must never block) ==="
 check warn-absolute-paths.sh    0 "absolute path warns only"      "$(write_file 'src/a.py' 'p = \"/data1/x\"')"
 check block-hardcoded-contigs.sh 0 "hardcoded contigs warn only"  "$(write_file 'src/a.py' 'chroms = [\"chr1\",\"chr2\"]')"

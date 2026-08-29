@@ -95,8 +95,35 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
 
   # Only check YAML config files
   if echo "$FILE_PATH" | grep -qE '\.(yaml|yml)$'; then
-    if [ -f "$FILE_PATH" ]; then
-      FILE_CONTENT=$(cat "$FILE_PATH" 2>/dev/null)
+    # Validate the content being WRITTEN, not what is already on disk. Reading
+    # $FILE_PATH here meant a fresh Write checked nothing (the file does not
+    # exist yet) and an Edit checked the pre-edit state — so an edit that
+    # introduced a second build passed, and the hook only ever fired on damage
+    # that had already landed.
+    if [ "$TOOL_NAME" = "Write" ]; then
+      FILE_CONTENT=$(json_get "$INPUT" tool_input.content)
+    else
+      # Edit: reconstruct the post-edit text so the resulting file is judged.
+      # Falls back to the replacement fragment alone, which under-detects but
+      # never false-positives — this hook blocks, so a wrong block is costly.
+      NEW_STRING=$(json_get "$INPUT" tool_input.new_string)
+      OLD_STRING=$(json_get "$INPUT" tool_input.old_string)
+      FILE_CONTENT=""
+      if [ -f "$FILE_PATH" ] && command -v python3 >/dev/null 2>&1; then
+        FILE_CONTENT=$(python3 -c '
+import sys
+path, old, new = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    text = open(path).read()
+except Exception:
+    text = ""
+print(text.replace(old, new) if old else text + "\n" + new)
+' "$FILE_PATH" "$OLD_STRING" "$NEW_STRING" 2>/dev/null)
+      fi
+      [ -z "$FILE_CONTENT" ] && FILE_CONTENT="$NEW_STRING"
+    fi
+
+    if [ -n "$FILE_CONTENT" ]; then
       BUILDS=$(extract_builds "$FILE_CONTENT")
       BUILD_COUNT=$(echo "$BUILDS" | wc -w | xargs)
 
