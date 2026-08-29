@@ -31,20 +31,16 @@ claude plugin validate . && for p in bio-skills bio-guardrails hpc-site; do
 
 ## Phase 1 — Correctness, before this branch is committed
 
-### Task 1.1: CHECK 3 validates stale file content
+### Task 1.1: CHECK 3 validates stale file content — DONE 2026-08-29 (`ed2e7aa`)
 
-**Problem (unverified — verify first).** In `validate-reference-genome.sh` CHECK 3, the Write/Edit path reads the file at `$FILE_PATH` from disk. On a fresh `Write` the file does not exist yet, so nothing is checked; on an `Edit` it checks pre-edit content, not the content about to be written. `warn-absolute-paths.sh` already does this correctly by reading `tool_input.content`.
+**Confirmed a real bug**, and worse than the review described. CHECK 3 read the YAML from disk, so it judged the wrong state in both directions: a fresh `Write` of a mixed-build config saw no file and returned 0; an `Edit` introducing a second build saw pre-edit content and returned 0. It blocked only when the file was *already* mixed on disk — after the damage.
 
-**Files:** `plugins/bio-guardrails/hooks/validate-reference-genome.sh`, `plugins/bio-guardrails/tests/test_hooks.sh`
+- [x] Confirmed by test before changing anything.
+- [x] `Write` now validates `tool_input.content`; `Edit` reconstructs post-edit text via `old_string` → `new_string`.
+- [x] Edit path falls back to `new_string` alone when python3 is unavailable — under-detects rather than over-detects, deliberately, because this hook blocks. A removal-case test guards against false positives.
+- [x] `database|reference|genomes` exemption preserved and covered by a test.
 
-- [ ] **Step 1: Confirm the bug.** Add a failing case — a `Write` of a YAML naming both `hg38` and `mm10` to a path *not* matching `database|reference|genomes`. Expect exit 2; if it returns 0, the bug is real.
-- [ ] **Step 2:** Change CHECK 3 to read `json_get "$INPUT" tool_input.content tool_input.new_string` and fall back to the on-disk file only when both are empty.
-- [ ] **Step 3:** Keep the existing `database|reference|genomes` exemption — `databases_config.yaml` legitimately lists every build.
-
-**Verify:**
-```bash
-./plugins/bio-guardrails/tests/test_hooks.sh   # new case passes, 25 prior cases unchanged
-```
+Suite is 30 cases, green on both JSON backends.
 
 ### Task 1.2: Scrub identifiers from the public repo
 
