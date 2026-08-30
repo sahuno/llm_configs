@@ -29,11 +29,10 @@ On every new conversation, do the following in order:
 1. **Ask the user** to classify the session:
    - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering | Writing
    - **Aim**: Ask for a clear, numbered list of objectives
-2. **For analysis projects**, scaffold the directory structure automatically:
-
-- Genome reference paths: read `$SITE_CONFIG/databases/databases_config.yaml`. Never hardcode a fasta/gtf path in a script or config.
-- Preserve file headers; don't make up headers at runtime
-- Route long processes/jobs to compute node (default: componc_cpu) via slurm-mcp.  Use nexflow for pipelines on compute nodes
+2. **Check for existing project state.** If `~/projects/<project>.md` exists for this
+   work, read it before doing anything else and resume from its "Exact next steps"
+   rather than re-deriving context. Say what you resumed from.
+3. **For analysis projects**, scaffold the directory structure automatically:
    ```
    <project_root>/
    ├── config.yaml                 # project parameters, genome paths
@@ -61,7 +60,7 @@ On every new conversation, do the following in order:
    ```
    Project types: `analysis` (default workflow dirs), `pipeline` (engine-specific layout, requires `--engine snakemake|nextflow`), `ml` (adds notebooks, model dirs).
    A top-level `README.md` is generated with project metadata, directory tree, and aims. Additional READMEs only when the user requests them.
-6. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
+4. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
 
 ### Project File Content Requirements (minimum for resumption)
 Every project file update must include:
@@ -78,6 +77,7 @@ Every project file update must include:
 ### Data Integrity
 - **Never modify raw data.** _(Enforced by `block-raw-data-writes.sh` hook.)_
 - **Never overwrite input files.** Read from source, write to a new path.
+- **Preserve file headers.** Carry through the header that came with the data; never invent one at runtime.
 - **Set random seeds** for every stochastic operation (default seed: 42 unless user specifies otherwise).
 - **Use relative paths** in all scripts and configs. _(Enforced by `warn-absolute-paths.sh` hook.)_
 
@@ -88,7 +88,7 @@ Every project file update must include:
 
 ### Genomics-Specific
 - **Never hardcode contig names or sizes.** Parse from genome sizes file or reference FASTA index. _(Enforced by `block-hardcoded-contigs.sh` hook.)_
-- **Reference data**: Load paths from `$SITE_CONFIG/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37.
+- **Reference data**: Load paths from `$SITE_CONFIG/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37. Never hardcode a fasta/gtf path in a script or config.
 
 ### Multi-Genome-Build Projects
 - Some integrative analyses require data from different genome builds (e.g., RNA in mm39, methylation in mm10).
@@ -389,9 +389,10 @@ See §2A Tool gotchas → `snakemake` skill → `references/gotchas.md`.
 ## 6. Environment Reference
 
 ### Compute Awareness (SLURM)
+- Route long-running jobs to a compute node via slurm-mcp (default partition: `componc_cpu`; prefer `cpushort` for work under 2 h — see the `mskcc-hpc` skill). Use Nextflow or Snakemake for pipelines rather than raw sbatch chains.
 ###TODO: create a database of memory requirements for common workflows or create slurm templates, implement tags like `highCompute_highTime`, `lowTime_lowCompute`. slurm-mcp has snapshot of resource limitations like componc_onc <= 7days
 
-When writing SLURM job headers or snakemake resource directives, use these as starting estimates. Scale memory with data size — 2x safety margin for unknown inputs.
+When writing SLURM job headers or snakemake resource directives, scale memory with data size and allow a 2× safety margin for unknown inputs. (No per-workflow estimate table exists yet — see the TODO above. Query `slurm-mcp` for live partition limits rather than guessing.)
 
 ### SLURM GPU Jobs
 - GPU jobs (`--gres=gpu:N`) can conflict with explicit `--mem` requests on some partitions. If GPU jobs fail silently, try removing the `mem_mb` resource or use `--mem=0` (all available memory on the node).
@@ -438,9 +439,11 @@ All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/dat
 ## 7. Figures and Visualization
 
 ### Standard Requirements (All Figures)
-- **Output 3 formats**: Save every figure as PNG, PDF, and SVG under `results/{date}_{genome}_{description}/figures/{png,pdf,svg}/`. _(Dirs auto-created by `ensure_results_figures.sh` hook.)_
-- **Font**: Arial (fall back to Helvetica if Arial unavailable). Minimum size 20pt. Headers bold.
-- **Axes**: Must be legible at final print size. Minimum tick label size 16pt.
+- **Output 3 formats**: Save every figure as PNG, PDF, and SVG under `results/{date}_{genome}_{description}/figures/{png,pdf,svg}/`. Create these directories in the script; there is no hook that makes them.
+- **Font**: Arial (fall back to Helvetica if Arial unavailable). Headers bold.
+  - **Draft / analysis figures** (viewed on screen at full size): minimum 20pt.
+  - **Final manuscript figures** (reduced to journal column width): 5–7pt — see the Nature section below. 20pt at a 90 mm column is roughly 3.5× too large.
+- **Axes**: Must be legible at final print size. Minimum tick label 16pt on draft figures; scale down with the body text for final figures.
 - **Multi-panel figures**: Fix the y-axis range across panels to enable direct visual comparison.
 - **Statistical tests**: Always prompt the user about including statistical annotations (e.g., t-test with p-values for group comparisons).
 - **Figure size**: Default to the largest reasonable size for the context.
@@ -458,19 +461,20 @@ Load theme and font settings from `$SITE_CONFIG/programming_language_profiles/R/
 ### ggplot2 Font Size Scaling Reference
 The `theme()` element sizes are multiplied from `base_size`:
 
-| Element | Multiplier | For 20pt final text |
-|---------|-----------|---------------------|
-| `axis.text` | base_size × 0.8 | base_size = 25 |
-| `axis.title` | base_size × 1.0 | base_size = 20 |
-| `plot.title` | base_size × 1.2 | base_size = 17 |
-| `legend.text` | base_size × 0.8 | base_size = 25 |
+| Element | Multiplier | Draft (20pt target) | Nature final (6pt target) |
+|---------|-----------|---------------------|---------------------------|
+| `axis.text` | base_size × 0.8 | base_size = 25 | base_size = 7.5 |
+| `axis.title` | base_size × 1.0 | base_size = 20 | base_size = 6 |
+| `plot.title` | base_size × 1.2 | base_size = 17 | base_size = 5 |
+| `legend.text` | base_size × 0.8 | base_size = 25 | base_size = 7.5 |
 
-- **Key insight**: For 20pt axis labels at Nature final size, use `base_size = 25` (since 25 × 0.8 = 20pt).
+- **Key insight**: the multiplier, not the target, is the thing to remember — `axis.text` is `base_size × 0.8`, so solve for the size you actually want. Pick the target from where the figure will be *viewed*: a slide or a screen review wants 20pt; a 90 mm journal column wants ~6pt.
 - **Default colorblind-safe palette**: Okabe-Ito — `#0072B2` (blue), `#E69F00` (orange), `#D55E00` (vermillion), `#999999` (grey).
 
 ### Nature Magazine Specifications (Final Manuscript Figures Only)
 - Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.
-- Font: Arial or Helvetica, 20pt at final size.
+- Font: Arial or Helvetica, **5–7pt at final size** (lettering ≈ 2 mm tall, per Nature's guidance). This is the authoritative figure for manuscript submission; the 20pt default above applies to draft figures only.
+- The `scientific-illustrator` agent (bio-skills plugin) is the authority for final figures — it sizes panels so lettering survives reduction.
 - Apply these only when the user explicitly requests publication-quality or Nature-format figures.
 
 ---
@@ -481,8 +485,10 @@ The `theme()` element sizes are multiplied from `base_size`:
 |-----------|---------|
 | Significance threshold (p-value) | 0.05 |
 | Adjusted p-value threshold | 0.05 |
-| Multiple testing correction | Bonferroni |
+| Multiple testing correction | Benjamini–Hochberg (FDR) |
 | Effect size reporting | Always report alongside p-values |
+
+**Choosing a correction.** Default to Benjamini–Hochberg for discovery work — DMR/DEG calling, genome-wide scans, any analysis with thousands of tests. This matches what §3C already does in practice (DESeq2's `padj` is BH). Bonferroni is correct only for a small, pre-specified confirmatory set; applied genome-wide it returns ~0 hits at realistic n and silently converts a discovery analysis into a null result.
 
 Override any default when the user specifies different thresholds.
 
