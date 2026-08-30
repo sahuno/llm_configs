@@ -86,6 +86,28 @@ jobs:
       - name: Figures can be traced to the code that produced them
         run: python3 plugins/bio-skills/scripts/test_figure_manifest.py
 
+  science-skills:
+    runs-on: ubuntu-latest
+    name: science skills
+    steps:
+      - uses: actions/checkout@v4
+      - name: SKILL.md casing and frontmatter
+        run: |
+          fail=0
+          for d in science-skills/*/; do
+            n=$(basename "$d")
+            [ -f "$d/SKILL.md" ] || { echo "::error::$n has no SKILL.md"; fail=1; continue; }
+            fm=$(awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{exit} f&&/^name:/{sub(/^name: */,"");print;exit}' "$d/SKILL.md")
+            [ "$fm" = "$n" ] || { echo "::error::$n frontmatter name is '$fm'"; fail=1; }
+            grep -q '^description:' "$d/SKILL.md" || { echo "::error::$n has no description"; fail=1; }
+          done
+          # App metadata must never be committed: .sync-org carries the org UUID.
+          if find science-skills -name '.sync-org' -o -name '.catalog_stamp' | grep -q .; then
+            echo "::error::app metadata committed under science-skills/"; fail=1
+          fi
+          [ $fail -eq 0 ] && echo "all science skills valid"
+          exit $fail
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests
