@@ -50,6 +50,38 @@ claim. For a standalone figure, start at step 1.
   returned outline is vision-model-derived from its pixels. `data_vid` is
   forced to `None` on every panel — fill those in from your own data refs.
 
+## Where the files go
+
+`CLAUDE.md` gives composed figures their own home, distinct from per-run
+analysis output, and this skill writes only there:
+
+```
+docs/manuscript/figures/          final multi-panel publication figures
+├── png/fig01_methylation_shift.png
+├── pdf/fig01_methylation_shift.pdf        <- submit this
+├── svg/fig01_methylation_shift.svg
+└── _build/
+    └── fig01_methylation_shift/
+        ├── outline.json                   the producer
+        ├── panels/panel_a.{png,pdf,svg}
+        └── rounds/composite_r1.png
+```
+
+`figure_paths(stem)` is the single definition; `panel_path()` and `round_path()`
+address into it. Two reasons it is not a bare `figures/`:
+
+- `results/{run}/figures/{png,pdf,svg}` already means *per-run analysis output*
+  — that is `save_figure()`'s namespace, and a composed figure would collide
+  with whatever a run script put there.
+- `figure_manifest.py --check` scans a `results/<run>` tree, so a build
+  directory under `docs/manuscript/` never shows up as 24 unindexed figures.
+
+**The `<stem>` segment is load-bearing.** `panel_a.pdf` is a fixed name. Without
+it, a second figure's panels overwrite the first's, and `compose_all` rebuilds
+the first figure from them in silence — both figures share a 12-column grid, so
+the slot sizes match and `verify_panels` passes. Pass `stem=` to `verify_panels`
+and it also warns when a panel came from outside this figure's build directory.
+
 ## 1. Narrative → panel outline
 
 Produce a `panel_outline` (validate against `figure_outline_schema()`):
@@ -87,10 +119,16 @@ requests = [{"name": f"panel-{L}", "task": tasks[L],
                                "required":["figure_filename"]}}
             for L in letters]   # no "profile" key — default agent profile
 descs = host.delegate(requests, wait=False)
+panels = collect_panels(stem, {L: returned[L] for L in letters})   # -> _build/<stem>/panels/
 ```
 
+Sub-agents render in their own sandbox and hand back flat `panel_<L>.<fmt>`
+names. `collect_panels` is where those become this figure's panels and stop
+being able to collide with another figure's.
+
 Drawing a panel yourself instead of delegating? Use `save_panel(fig, letter,
-outline)` — it writes at the slot size and verifies it. **Do not use
+outline, stem)` — it writes into `_build/<stem>/panels/` at the slot size and
+verifies it. **Do not use
 `save_figure()` from `lab-figure-format` for a panel**: it is the right house
 export helper for a standalone figure, but it saves with `bbox_inches="tight"`,
 which resizes the canvas to its content and takes the panel off the grid.
@@ -98,8 +136,8 @@ which resizes the canvas to its content and takes the panel off the grid.
 ## 3. Compose
 
 ```python
-k = verify_panels(outline, png_paths)          # check before composing
-out, (W, H) = compose_figure(outline, png_paths, "fig.png")   # raster, for review
+verify_panels(outline, png_paths, stem=stem)                  # check before composing
+compose_figure(outline, png_paths, round_path(stem, 1))       # raster, for review
 ```
 
 `compose_figure` tiles PNGs onto the grid and stamps bold panel letters in the
@@ -157,7 +195,7 @@ loop (max 3 rounds, floor 5→4→3):
   regen = affected | set(fixb)              # only these panels regenerate
   re-delegate each L in regen with panel_task(outline, L) + fixb.get(L,"") +
       "do not over-correct: where the previous version was correct, keep it"
-  recompose
+  recompose into round_path(stem, round)   # keep each round; regression_vs_prev needs it
 ```
 
 Convergence: stop when `outline_revisions` is empty AND findings are carve-out
@@ -170,9 +208,10 @@ contract is *"submit the PDF; it is vector with the font embedded as a subset."*
 Once the loop accepts:
 
 ```python
-compose_all(outline, {L: {"png": …, "pdf": …, "svg": …} for L in letters},
-            "figure_1")            # -> figures/{png,pdf,svg}/figure_1.*
-verify_embedded_fonts("figures/pdf/figure_1.pdf")   # from lab-figure-format
+compose_all(outline, panels, "fig01_methylation_shift")
+# -> docs/manuscript/figures/{png,pdf,svg}/fig01_methylation_shift.*
+#  + docs/manuscript/figures/_build/fig01_methylation_shift/outline.json
+verify_embedded_fonts("docs/manuscript/figures/pdf/fig01_methylation_shift.pdf")
 # {"fonts": ["CECFXM+ArialMT", "FAGARN+Arial-BoldMT", …], "embedded_streams": 5}
 ```
 
@@ -198,6 +237,8 @@ than being referenced by name.
 | Panel letters | hardcoded `DejaVuSans-Bold.ttf` | resolved through `house_font_chain()` (Arial → Helvetica → DejaVu Sans), and reported when the house face is missing | the vendor stamps letters in a face that appears nowhere else in the figure. Walking the *chain* matters as much as resolving at all: matplotlib resolves rcParams through the whole chain, so a single-family lookup puts letters in DejaVu beside panels in Helvetica on any machine that has the fallback but not the house font |
 | Letter case | `"lower"` | `"upper"` (`figure-editor`, `CLAUDE.md` §7) | switchable per venue |
 | Output | PNG only | PNG + vector PDF + editable SVG | a raster composite is not submittable to a venue that requires vector |
+| Output location | caller's cwd, flat `panel_a.png` | `figure_paths(stem)` — deliverables in the house manuscript dir, intermediates under `_build/<stem>/` | a fixed `panel_a.pdf` lets a second figure overwrite the first's panels and be composed from them silently |
+| Producer | nothing on disk | `outline.json` beside the panels; each review round kept | the outline determines the whole figure; without it a composite has no runnable producer |
 | Panel saves | PNG only | PNG + PDF + SVG at exact slot size | `compose_vector` needs per-panel vector to tile |
 | Column widths | flooring every column | exact fractional edges, remainder distributed | the vendor leaves up to `ncol-1` px of extra white at the right edge — 11 px of a 2160 px page, an uneven margin at print size |
 | Reviewer | design rules only | plus a house-style pass (one typeface, the ladder, shared scales, true print width) | a figure could otherwise pass review in the wrong face |

@@ -491,7 +491,7 @@ inputs. `/figure-manifest --check <run>` before assembling a manuscript.
 
 ### Two Figure Locations
 - **`results/{run}/figures/{png,pdf,svg}/`** — individual analysis figures generated per run. This is where scripts save figures during analysis.
-- **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). These are composited in Illustrator from the per-run figures above.
+- **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). Composite them with the `lab-figure-composer` Claude Science skill, which writes `{png,pdf,svg}/<stem>.<fmt>` here and keeps panels, `outline.json` and each review round under `_build/<stem>/`; Illustrator remains the manual fallback. Nothing else writes here — analysis figures go to the per-run location above.
 
 ### Matplotlib Defaults
 Load from `$USER_CONFIG/matplotlib_defaults`.

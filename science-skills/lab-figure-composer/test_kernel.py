@@ -31,6 +31,9 @@ except ImportError as e:
     print(f"SKIP: {e.name} not installed"); sys.exit(0)
 
 WD = tempfile.mkdtemp(prefix="lfc-test-")
+ROOT = os.path.join(WD, "docs", "manuscript", "figures")
+STEM = "fig01_methylation_shift"
+os.makedirs(k.figure_paths(STEM, ROOT)["panels"], exist_ok=True)
 DPI, G = 300, 4
 fails = []
 def check(name, cond, detail=""):
@@ -81,12 +84,13 @@ with plt.rc_context({"font.family":"sans-serif",
         ax.set_xlabel(f"x label {L}"); ax.set_ylabel("y label")
         ax.set_title(f"Panel {L} takeaway", fontsize=9, loc="left")
         fig.subplots_adjust(left=0.12, right=0.98, top=0.86, bottom=0.18)
-        k.save_panel(fig, L, outline, DPI, G, ("pdf","svg"), WD, verbose=False)
+        k.save_panel(fig, L, outline, STEM, root=ROOT, dpi=DPI, gutter_mm=G,
+                     formats=("pdf","svg"), verbose=False)
         plt.close(fig)
         im = Image.new("RGBA", (w, h), (255,255,255,0))
         ImageDraw.Draw(im).rectangle([10,10,w-10,h-10], outline=(40,40,40,255), width=2)
-        im.save(f"{WD}/panel_{L}.png")
-paths = {f: {L: f"{WD}/panel_{L}.{f}" for L in "abcd"} for f in ("png","pdf","svg")}
+        im.save(k.panel_path(STEM, L, "png", ROOT))
+paths = {f: {L: k.panel_path(STEM, L, f, ROOT) for L in "abcd"} for f in ("png","pdf","svg")}
 check("save_panel wrote vector for every panel", all(os.path.exists(p) for f in ("pdf","svg") for p in paths[f].values()))
 rep = k.verify_panels(outline, paths["png"], DPI, G, verbose=False)
 check("verify_panels: all match their slot", rep["all_ok"])
@@ -102,7 +106,11 @@ except AssertionError as e:
 check("strict=False still composes (vendor behaviour, opt-in)",
       bool(k.compose_figure(outline, bad, f"{WD}/lax.png", DPI, G, strict=False, verbose=False)))
 try:
-    k.save_panel(plt.figure(figsize=(1,1)), "z", {**outline, "panels":[{"letter":"z","role":"primary","row":0,"col":0,"colspan":12,"chart_family":"x","message":"m","ask":"a"}]}, DPI, G, ("pdf",), WD, verbose=False)
+    k.save_panel(plt.figure(figsize=(1,1)), "z",
+                 {**outline, "panels":[{"letter":"z","role":"primary","row":0,"col":0,
+                                        "colspan":12,"chart_family":"x","message":"m","ask":"a"}]},
+                 "fig99_scratch", root=ROOT, dpi=DPI, gutter_mm=G,
+                 formats=("pdf",), verbose=False)
     check("save_panel tolerates vector-only formats", True)
 except Exception as e:
     check("save_panel tolerates vector-only formats", False, repr(e))
@@ -174,11 +182,43 @@ check("prefixing was necessary (panels shared raw ids)", len(shared) > 0, f"{len
 
 print("\n== 7. compose_all ==")
 allp = {L: {f: paths[f][L] for f in ("png","pdf","svg")} for L in "abcd"}
-out = k.compose_all(outline, allp, "figure_1", outdir=f"{WD}/figures", dpi=DPI, gutter_mm=G, verbose=False)
-check("wrote figures/{png,pdf,svg}/figure_1.*", set(out)=={"png","pdf","svg"} and all(os.path.exists(v) for v in out.values()), str(sorted(out)))
+out = k.compose_all(outline, allp, STEM, root=ROOT, dpi=DPI, gutter_mm=G, verbose=False)
+fp = k.figure_paths(STEM, ROOT)
+check("deliverables land in {png,pdf,svg}/<stem>.<fmt>",
+      out == fp["finals"] and all(os.path.exists(v) for v in out.values()), str(sorted(out)))
+check("finals are NOT under _build", all(k.BUILD_DIRNAME not in v for v in out.values()))
+check("outline.json written beside the panels", os.path.exists(fp["outline"]))
+import json as _json
+check("outline.json round-trips the producer",
+      _json.load(open(fp["outline"]))["claim"] == outline["claim"])
 partial = {L: {"png": paths["png"][L]} for L in "abcd"}
-out2 = k.compose_all(outline, partial, "figure_2", outdir=f"{WD}/figures", dpi=DPI, gutter_mm=G, verbose=False)
+out2 = k.compose_all(outline, partial, "fig02_other", root=ROOT, dpi=DPI, gutter_mm=G, verbose=False)
 check("skips formats no panel supplied", set(out2) == {"png"}, str(sorted(out2)))
+
+print("\n== 7b. layout and the collision it prevents ==")
+check("composer does not claim a bare figures/ dir",
+      k.HOUSE_FIGURE_ROOT == os.path.join("docs", "manuscript", "figures"), k.HOUSE_FIGURE_ROOT)
+a = k.figure_paths("fig01_x", ROOT); b = k.figure_paths("fig02_y", ROOT)
+check("two figures get separate panel dirs", a["panels"] != b["panels"],
+      f"{os.path.basename(os.path.dirname(a['panels']))} vs {os.path.basename(os.path.dirname(b['panels']))}")
+check("panel_a.pdf cannot collide across figures",
+      k.panel_path("fig01_x", "a", "pdf", ROOT) != k.panel_path("fig02_y", "a", "pdf", ROOT))
+check("build tree sits under the figure root, not results/",
+      a["build"].startswith(ROOT) and k.BUILD_DIRNAME in a["build"])
+check("round composites are kept per round",
+      k.round_path(STEM, 1, ROOT) != k.round_path(STEM, 2, ROOT))
+# the stray-panel warning: same slot size, wrong figure -- size checks alone pass it
+import io, contextlib
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    k.verify_panels(outline, {L: f"{WD}/panel_{L}.png" for L in "abcd"},
+                    DPI, G, stem=STEM, root=ROOT, verbose=True)
+check("panels from outside this figure's build dir are flagged", "WARNING" in buf.getvalue(),
+      buf.getvalue().strip().splitlines()[0][:70] if buf.getvalue().strip() else "(silent)")
+buf2 = io.StringIO()
+with contextlib.redirect_stdout(buf2):
+    k.verify_panels(outline, paths["png"], DPI, G, stem=STEM, root=ROOT, verbose=True)
+check("canonical panels raise no warning", "WARNING" not in buf2.getvalue())
 
 print("\n== 8. house defaults ==")
 fp, inst = k._resolve_letter_font(verbose=False)
@@ -199,11 +239,12 @@ check("resolution follows the requested family, not a hardcoded path",
 check("default letter case is upper (figure-editor convention)", k.HOUSE_LETTER_CASE == "upper")
 check("house widths match lab-figure-format", (k.house_width_mm("single"), k.house_width_mm("wide")) == (88.9, 182.88))
 check("ladder matches lab-figure-format", k.HOUSE_LADDER == {"title":9,"label":8,"tick":7,"dense":6})
-t = k.panel_task(outline, "b")
+t = k.panel_task(outline, "b", STEM)
 check("panel_task pins the call order", "apply_figure_style()" in t and "house_style()" in t and t.index("apply_figure_style()") < t.index("house_style()"))
 check("panel_task loads lab-figure-format", "lab-figure-format" in t)
 check("panel_task warns off save_figure's bbox_inches='tight'", "Do NOT call `save_figure()`" in t)
 check("panel_task asks for vector", "panel_b.pdf" in t and "panel_b.svg" in t)
+check("panel_task names the build dir the composer files into", f"_build/{STEM}/panels/" in t)
 check("panel_task states the exact slot", f"{wb}×" in t)
 r = k.composite_review_task("VID", outline, "RULES")
 check("reviewer checks the house typeface", "One typeface" in r and k.HOUSE_FONT in r)

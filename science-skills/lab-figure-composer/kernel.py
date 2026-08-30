@@ -48,12 +48,62 @@ HOUSE_LETTER_PT = 9
 # lowercase, which is Nature's own convention -- pass letter_case="lower" for
 # venues that use it.
 HOUSE_LETTER_CASE = "upper"
+# CLAUDE.md distinguishes two figure homes, and a composed figure belongs to the
+# second: `results/{run}/figures/{png,pdf,svg}` is per-run ANALYSIS output, which
+# is save_figure()'s territory, while `docs/manuscript/figures/` holds the final
+# multi-panel publication figures. Defaulting to a bare `figures/` would squat in
+# the analysis namespace and collide with whatever a run script already wrote
+# there. It also keeps the build tree outside `figure_manifest.py --check`, which
+# scans a results/<run> directory.
+HOUSE_FIGURE_ROOT = os.path.join("docs", "manuscript", "figures")
+BUILD_DIRNAME = "_build"
+
 # 3.50 in and 7.20 in exactly, the widths in lab-figure-format.figure_size().
 # Kept in mm to the full conversion (7.2 * 25.4 = 182.88): rounding to 182.9
 # lands the 300 dpi canvas a pixel off 2160 px, which is 7.20 in on the nose.
 HOUSE_WIDTH_MM = {"single": 88.9, "wide": 182.88}
 HOUSE_LADDER = {"title": 9, "label": 8, "tick": 7, "dense": 6}
 HOUSE_MIN_PT = 6
+
+
+def figure_paths(stem, root=None, formats=("png", "pdf", "svg")):
+    """Canonical locations for one composed figure -- the only definition of the
+    layout, so the panel writer, the fan-out prompt and the exporter cannot drift.
+
+        docs/manuscript/figures/
+          {png,pdf,svg}/<stem>.<fmt>        the deliverables
+          _build/<stem>/                    everything else, namespaced by figure
+            outline.json                    the producer
+            panels/panel_<L>.<fmt>
+            rounds/composite_r<n>.png
+
+    The `<stem>` segment is what makes a second figure safe: `panel_a.pdf` is a
+    fixed name, so without it Figure 2's panels overwrite Figure 1's and
+    `compose_all` rebuilds Figure 1 from them without complaint -- the slot sizes
+    match, because both figures share a grid.
+    """
+    root = HOUSE_FIGURE_ROOT if root is None else root
+    build = os.path.join(root, BUILD_DIRNAME, stem)
+    return {"root": root, "build": build,
+            "panels": os.path.join(build, "panels"),
+            "rounds": os.path.join(build, "rounds"),
+            "outline": os.path.join(build, "outline.json"),
+            "finals": {f: os.path.join(root, f, f"{stem}.{f}") for f in formats}}
+
+
+def panel_path(stem, letter, fmt, root=None):
+    """Canonical path of one panel file."""
+    return os.path.join(figure_paths(stem, root)["panels"], f"panel_{letter}.{fmt}")
+
+
+def round_path(stem, round_no, root=None):
+    """Canonical path of the composite for one review round.
+
+    Keeping each round is what gives the reviewer's `regression_vs_prev` field
+    something real to compare against; regenerating a panel otherwise overwrites
+    the only copy of what it replaced.
+    """
+    return os.path.join(figure_paths(stem, root)["rounds"], f"composite_r{round_no}.png")
 
 
 def house_font_chain(font=None):
@@ -151,8 +201,9 @@ def figure_px(outline, dpi=300, gutter_mm=4):
 
 # ----------------------------------------------------------------- fan-out
 
-def panel_task(outline, letter, fig_label="Figure", dpi=300, gutter_mm=4,
-               vector_formats=("pdf", "svg"), rules_ref="(load `figure-style`)"):
+def panel_task(outline, letter, stem="figure", fig_label="Figure", dpi=300,
+               gutter_mm=4, vector_formats=("pdf", "svg"),
+               rules_ref="(load `figure-style`)"):
     """Task string for one panel sub-agent.
 
     FORK vs the vendor prompt, in three places:
@@ -241,6 +292,9 @@ Your box is a final-print-size box -- do not author large and rely on reduction.
   each of them changes the pixel dimensions. Use `fig.subplots_adjust(...)` only.
 - Dense scatter (>2000 points)? Call `rasterize_dense(ax)` from `lab-figure-format`
   before saving, or the vector files balloon to tens of MB.
+- Save with these exact flat names in your own working directory. The composer
+  files them under `_build/{stem}/panels/` on receipt via `collect_panels()`;
+  do not create directories yourself.
 - Reserve top-left ~10×6 mm clear for the composer's panel letter. Do NOT draw your own.
 - **§9 Render-then-verify:** after savefig, (a) `from PIL import Image; assert
   Image.open('panel_{letter}.png').size==({w},{h})` -- if not, you used tight_layout/
@@ -252,37 +306,67 @@ Your box is a final-print-size box -- do not author large and rely on reduction.
 `save_artifacts([{', '.join(repr(s) for s in saved.split(', '))}], language='python')`; return `figure_filename` and `labels_used`."""
 
 
-def save_panel(fig, letter, outline, dpi=300, gutter_mm=4,
-               formats=("png", "pdf", "svg"), outdir=".", verbose=True):
+def save_panel(fig, letter, outline, stem, root=None, dpi=300, gutter_mm=4,
+               formats=("png", "pdf", "svg"), outdir=None, verbose=True):
     """Exact-size panel export, for panels drawn locally rather than by a sub-agent.
 
-    The house `save_figure()` cannot be used here: it saves with
-    bbox_inches="tight", which resizes the canvas to its content. This writes at
-    exactly the slot size and verifies it.
+    Writes into `_build/<stem>/panels/` unless `outdir` overrides it. The house
+    `save_figure()` cannot be used here: it saves with bbox_inches="tight", which
+    resizes the canvas to its content and takes the panel off the grid.
     """
     import matplotlib as mpl
     w, h = panel_px(outline, letter, dpi, gutter_mm)
+    dest = outdir if outdir is not None else figure_paths(stem, root)["panels"]
+    os.makedirs(dest, exist_ok=True)
     written = []
     for fmt in formats:
-        path = os.path.join(outdir, f"panel_{letter}.{fmt}")
+        path = os.path.join(dest, f"panel_{letter}.{fmt}")
         with mpl.rc_context({"savefig.bbox": None}):
             fig.savefig(path, dpi=dpi, transparent=True, bbox_inches=None)
         written.append(path)
-    png = os.path.join(outdir, f"panel_{letter}.png")
     if "png" in formats:
         from PIL import Image
-        got = Image.open(png).size
+        got = Image.open(os.path.join(dest, f"panel_{letter}.png")).size
         if got != (w, h):
             raise AssertionError(
                 f"panel {letter}: saved {got[0]}x{got[1]} px, slot is {w}x{h} px. "
                 f"Set figsize=({w/dpi:.4f},{h/dpi:.4f}) at dpi={dpi} and remove any "
                 f"tight_layout/constrained_layout/bbox_inches='tight'.")
     if verbose:
-        print(f"  panel {letter}: {w}x{h} px -> {', '.join(os.path.basename(p) for p in written)}")
-    return written
+        print(f"  panel {letter}: {w}x{h} px -> {dest}/panel_{letter}.{{{','.join(formats)}}}")
+    return {fmt: p for fmt, p in zip(formats, written)}
 
 
-def verify_panels(outline, panel_paths, dpi=300, gutter_mm=4, verbose=True):
+def collect_panels(stem, returned, root=None, formats=("png", "pdf", "svg"),
+                   verbose=True):
+    """Move what the panel sub-agents returned into this figure's build directory.
+
+    Sub-agents render in their own sandbox and hand back flat `panel_<L>.<fmt>`
+    names; this is where those become `_build/<stem>/panels/...` and stop being
+    able to collide with another figure's panels. `returned` is
+    {letter: path} or {letter: {fmt: path}}.
+    """
+    import shutil
+    dest = figure_paths(stem, root)["panels"]
+    os.makedirs(dest, exist_ok=True)
+    out = {}
+    for L, got in returned.items():
+        got = got if isinstance(got, dict) else {os.path.splitext(got)[1].lstrip("."): got}
+        out[L] = {}
+        for fmt, src in got.items():
+            if fmt not in formats or not src:
+                continue
+            tgt = os.path.join(dest, f"panel_{L}.{fmt}")
+            if os.path.abspath(src) != os.path.abspath(tgt):
+                shutil.copyfile(src, tgt)
+            out[L][fmt] = tgt
+    if verbose:
+        print(f"  collected {len(out)} panels into {dest}")
+    return out
+
+
+def verify_panels(outline, panel_paths, dpi=300, gutter_mm=4, stem=None,
+                  root=None, verbose=True):
     """Check every panel image against its slot BEFORE composing.
 
     FORK. Returns {letter: {"expected", "actual", "ok"}} plus "all_ok". The
@@ -291,6 +375,15 @@ def verify_panels(outline, panel_paths, dpi=300, gutter_mm=4, verbose=True):
     """
     from PIL import Image
     report, all_ok = {}, True
+    # A panel sourced from outside this figure's build dir is the collision case:
+    # same grid means same slot size, so the size check alone would pass it.
+    if stem is not None:
+        own = os.path.abspath(figure_paths(stem, root)["panels"])
+        stray = sorted(L for L, pth in panel_paths.items()
+                       if pth and os.path.abspath(os.path.dirname(pth)) != own)
+        if stray and verbose:
+            print(f"  WARNING: panel(s) {', '.join(stray)} are not from "
+                  f"{own} — check they belong to {stem!r} and not another figure.")
     for p in outline["panels"]:
         L = p["letter"]
         w, h = panel_px(outline, L, dpi, gutter_mm)
@@ -611,19 +704,34 @@ def compose_svg(outline, panel_svg_paths, out_path, dpi=300, gutter_mm=4,
     return out_path
 
 
-def compose_all(outline, panels, stem, outdir="figures", dpi=300, gutter_mm=4,
+def compose_all(outline, panels, stem, root=None, dpi=300, gutter_mm=4,
                 letter_pt=HOUSE_LETTER_PT, letter_case=HOUSE_LETTER_CASE,
-                font=None, verbose=True):
-    """Compose PNG + PDF + SVG in one call, mirroring `save_figure`'s contract.
+                font=None, write_outline=True, verbose=True):
+    """Compose PNG + PDF + SVG into the house manuscript layout, mirroring
+    `save_figure`'s contract but for a multi-panel figure.
+
+    Deliverables land in `<root>/{png,pdf,svg}/<stem>.<fmt>`; `outline.json` --
+    the thing that actually determines the figure -- is written beside the panels
+    in `<root>/_build/<stem>/`, so the composite has a producer on disk rather
+    than only in a session transcript.
 
     `panels` is {letter: {"png": path, "pdf": path, "svg": path}} -- whatever
-    formats the panel agents returned. Formats missing from every panel are
+    formats the panel agents returned. Formats missing from any panel are
     skipped rather than faked.
     """
+    import json
+    paths = figure_paths(stem, root)
     written = {}
 
     def have(fmt):
         return bool(panels) and all(v.get(fmt) for v in panels.values())
+
+    if write_outline:
+        os.makedirs(paths["build"], exist_ok=True)
+        with open(paths["outline"], "w", encoding="utf-8") as fh:
+            json.dump(outline, fh, indent=2, sort_keys=True)
+        if verbose:
+            print(f"  wrote {paths['outline']}")
 
     common = dict(dpi=dpi, gutter_mm=gutter_mm, letter_pt=letter_pt,
                   letter_case=letter_case, verbose=verbose)
@@ -632,16 +740,15 @@ def compose_all(outline, panels, stem, outdir="figures", dpi=300, gutter_mm=4,
             if verbose:
                 print(f"  skipping {fmt}: not every panel supplied one")
             continue
-        sub = os.path.join(outdir, fmt)
-        os.makedirs(sub, exist_ok=True)
-        path = os.path.join(sub, f"{stem}.{fmt}")
-        paths = {L: v[fmt] for L, v in panels.items()}
+        path = paths["finals"][fmt]
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        p = {L: v[fmt] for L, v in panels.items()}
         if fmt == "png":
-            compose_figure(outline, paths, path, letter_font=font, strict=True, **common)
+            compose_figure(outline, p, path, letter_font=font, strict=True, **common)
         elif fmt == "pdf":
-            compose_vector(outline, paths, path, font=font, **common)
+            compose_vector(outline, p, path, font=font, **common)
         else:
-            compose_svg(outline, paths, path, font=font, **common)
+            compose_svg(outline, p, path, font=font, **common)
         written[fmt] = path
     return written
 
