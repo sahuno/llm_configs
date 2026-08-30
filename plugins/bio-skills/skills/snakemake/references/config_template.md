@@ -70,7 +70,8 @@ set -euo pipefail
 # Prevent SLURM memory variable conflicts when coordinator is an sbatch job
 unset SLURM_MEM_PER_NODE
 
-export APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+# Read containers.cache_dir from the active site profile; never hardcode.
+export APPTAINER_CACHEDIR="$(site_path containers.cache_dir)"
 
 SNAKEFILE="/abs/path/to/workflows/{workflow_name}/Snakefile"
 CONFIGFILE="$(dirname "$0")/config.yaml"
@@ -81,7 +82,7 @@ snakemake \
     --configfile "$CONFIGFILE" \
     --workflow-profile "$PROFILE" \
     --use-singularity \
-    --singularity-args "--bind /data1/greenbab/,/data1/collab001/" \
+    --singularity-args "--bind <site bind_mounts.default, from paths.yaml>" \
     --rerun-incomplete \
     --jobs 4 \
     "$@"

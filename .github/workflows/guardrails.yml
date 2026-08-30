@@ -43,6 +43,17 @@ jobs:
         # so give it a value that matches a real user profile.
         run: USER=sahuno ./plugins/hpc-site/profiles/test_resolve.sh
 
+  site-paths:
+    runs-on: ubuntu-latest
+    name: site-path triage
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every site path is classified, and executables are converted
+        # Fails on an unreviewed occurrence or an EXECUTABLE one still holding
+        # a literal. EVIDENCE entries (citations backing dated claims) pass by
+        # design — rewriting those would destroy the record.
+        run: ./tools/audit_site_paths.sh
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

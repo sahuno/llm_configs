@@ -5,7 +5,13 @@
 # Author: Samuel Ahuno
 # Date: 2026-02-21
 
-LOG_FILE="${SLURM_JOB_LOG:-/data1/greenbab/users/ahunos/slurm_logs/claude_submissions.md}"
+# $SLURM_JOB_LOG, else the site profile, else a project-local log. The previous
+# absolute fallback existed on one machine; elsewhere the append silently failed.
+LOG_FILE="${SLURM_JOB_LOG:-}"
+if [ -z "$LOG_FILE" ] && [ -n "${SITE_CONFIG:-}" ]; then
+  LOG_FILE=$(grep -A2 '^logs:' "$SITE_CONFIG/paths.yaml" 2>/dev/null | awk '/slurm_submissions:/{print $2}')
+fi
+LOG_FILE="${LOG_FILE:-./slurm_logs/claude_submissions.md}"
 TOOL_INPUT=$(cat)
 
 # Ensure log directory exists

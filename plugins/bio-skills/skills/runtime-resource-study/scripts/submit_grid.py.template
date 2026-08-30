@@ -23,7 +23,7 @@ from pathlib import Path
 PROJECT_ROOT = Path("{{PROJECT_ROOT}}")
 INPUT        = "{{INPUT}}"
 TOOL_BIN     = "{{TOOL_BIN}}"
-ACCOUNT      = "greenbab"
+ACCOUNT      = "{{SLURM_ACCOUNT}}"   # executor.yaml: account
 PARTITION    = "cpushort"
 EXCLUDE_NODES = "isca071"   # see mskcc-hpc skill, references/mskcc_partitions.md
 

@@ -48,7 +48,7 @@ Suite is 30 cases, green on both JSON backends.
 
 **Files:** `claude/docs/FAQ.md`, `README.md`, `plugins/hpc-site/**`
 
-- [ ] **Step 1:** Replace the literal UID with a placeholder (`<your-uid>`) and keep the explanation — the LDAP/SSSD/`getpwuid()` mechanism is the valuable part, not the number.
+- [x] **Step 1:** Replace the literal UID with a placeholder (`<your-uid>`) and keep the explanation — the LDAP/SSSD/`getpwuid()` mechanism is the valuable part, not the number.
 - [ ] **Step 2:** Decide per-name whether internal project paths stay. Bind-mount examples in the `sclaude` function need *a* path; a generic one teaches the same thing.
 
 **Verify:**
@@ -112,7 +112,7 @@ grep -n 'ensure_results_figures' claude/CLAUDE.md plugins/bio-guardrails/hooks/*
 
 **Files:** `plugins/bio-skills/scripts/init_project.py`, `claude/CLAUDE.md`, optionally a SessionStart hook
 
-- [ ] **Step 1:** Add project-CLAUDE.md generation to `init_project.py`.
+- [x] **Step 1:** Add project-CLAUDE.md generation to `init_project.py`.
 - [ ] **Step 2:** Shrink §1 to: if no project CLAUDE.md exists, offer `/init-bio-project`.
 - [ ] **Step 3 (optional):** Wire the SessionStart hook already drafted in `claude/inDevelopment/hooks_suggestions.md` (#1) and never implemented.
 
@@ -163,7 +163,7 @@ dangling for every other user since it was committed.
 `$SITE_CONFIG/nextflow/`. No such directory has ever been tracked. Same class as
 the Task 2.4 phantom-hook claim.
 
-### Task 3.3: `/data1` triage — scrub scripts, keep receipts
+### Task 3.3: `/data1` triage — DONE 2026-08-29 (all 181 classified, 0 unconverted)
 
 **Problem.** 195 site-path occurrences across `plugins/`. They are three different things that look identical to grep:
 
@@ -177,10 +177,10 @@ the Task 2.4 phantom-hook claim.
 
 **Mechanism.** `tools/audit_site_paths.sh` enumerates every occurrence line by line and requires each to be classified in `docs/site-path-allowlist.tsv`. Entries are keyed by **file + content hash**, so moving a line is fine but editing it forces re-review — correct, because a changed claim is a new claim. (Hash alone is insufficient: `export APPTAINER_CACHEDIR=...` appears verbatim in 4 files.)
 
-- [ ] **Step 1:** `tools/audit_site_paths.sh --bootstrap` — seeds 95 occurrences as `UNREVIEWED` (the 100 registry ones are excluded automatically).
-- [ ] **Step 2:** Classify all 95 as `EVIDENCE` or `EXECUTABLE`.
-- [ ] **Step 3:** Convert every `EXECUTABLE` line to resolve from the path registry. Note that identical lines recur across files — the `APPTAINER_CACHEDIR` line needs 4 edits, in `config_template.md`, `build_guide.md`, `generate_build_script.sh`, and `singularity-build/SKILL.md`.
-- [ ] **Step 4:** Add a "measured on MSKCC HPC; paths are evidence" banner to files with `EVIDENCE` lines.
+- [x] **Step 1:** `tools/audit_site_paths.sh --bootstrap` — seeds 95 occurrences as `UNREVIEWED` (the 100 registry ones are excluded automatically).
+- [x] **Step 2:** Classify all 95 as `EVIDENCE` or `EXECUTABLE`.
+- [x] **Step 3:** Convert every `EXECUTABLE` line to resolve from the path registry. Note that identical lines recur across files — the `APPTAINER_CACHEDIR` line needs 4 edits, in `config_template.md`, `build_guide.md`, `generate_build_script.sh`, and `singularity-build/SKILL.md`.
+- [x] **Step 4:** Add a "measured on MSKCC HPC; paths are evidence" banner to files with `EVIDENCE` lines.
 
 **Verify:**
 ```bash

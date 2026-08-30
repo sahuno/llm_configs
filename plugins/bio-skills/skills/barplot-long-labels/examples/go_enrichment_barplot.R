@@ -13,7 +13,9 @@ library(dplyr)
 library(stringr)
 
 # Source the dimension calculator
-source("/data1/greenbab/users/ahunos/apps/llm_configs/claude/skills/barplot-long-labels/calc_barplot_dimensions.R")
+# The helper ships with this skill. ${CLAUDE_PLUGIN_ROOT} is substituted
+# when the skill loads; substitute the skill directory if running standalone.
+source("${CLAUDE_PLUGIN_ROOT}/skills/barplot-long-labels/calc_barplot_dimensions.R")
 
 #############################################
 ## Parameters

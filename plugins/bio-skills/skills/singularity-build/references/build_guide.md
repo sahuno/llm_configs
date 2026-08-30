@@ -157,12 +157,12 @@ export CONDA_PREFIX="/opt/conda/envs/envname"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # CORRECT:
-PROJECT_DIR="/data1/greenbab/users/ahunos/path/to/project"
+PROJECT_DIR="<project-dir>"
 ```
 
 5.3. **Always `unset APPTAINER_BIND SINGULARITY_BIND`** before building. These environment variables are applied during `%post`. If a bind source path doesn't exist inside the base image, the build fails with a fatal mount error.
 
-5.4. **Always set `APPTAINER_CACHEDIR`** to a path on the shared filesystem (e.g., `/data1/greenbab/users/ahunos/apptainer_cache`). The default cache goes to `~/.apptainer/cache` which may exceed home directory quota, especially on compute nodes.
+5.4. **Always set `APPTAINER_CACHEDIR`** to a path on the shared filesystem — read `containers.cache_dir` from `$SITE_CONFIG/paths.yaml` rather than hardcoding one. The default cache goes to `~/.apptainer/cache` which may exceed home directory quota, especially on compute nodes.
 
 5.5. **The build command template is:**
 ```bash
@@ -308,7 +308,8 @@ When containerizing a bioinformatics tool, classify it into one of three tiers:
 ```bash
 # ALWAYS before building:
 unset APPTAINER_BIND SINGULARITY_BIND
-export APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+# Read containers.cache_dir from the active site profile; never hardcode.
+export APPTAINER_CACHEDIR="$(site_path containers.cache_dir)"
 
 # The build:
 apptainer build --fakeroot --ignore-fakeroot-command \

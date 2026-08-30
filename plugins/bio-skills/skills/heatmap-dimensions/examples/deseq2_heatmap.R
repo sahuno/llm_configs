@@ -15,7 +15,9 @@ library(viridis)
 library(dplyr)
 
 # --- Source dimension calculation functions -----------------------------------
-source("/data1/greenbab/users/ahunos/apps/llm_configs/claude/skills/heatmap-dimensions/calc_heatmap_dimensions.R")
+# The helper ships with this skill. ${CLAUDE_PLUGIN_ROOT} is substituted
+# when the skill loads; substitute the skill directory if running standalone.
+source("${CLAUDE_PLUGIN_ROOT}/skills/heatmap-dimensions/calc_heatmap_dimensions.R")
 
 # --- Example with airway dataset ----------------------------------------------
 library(airway)

@@ -185,7 +185,7 @@ EOF
 
 All directories containing input files, output, and config must be bind-mounted:
 ```bash
---bind /data1/project,/data1/references,/home
+--bind <site bind_mounts.default from $SITE_CONFIG/paths.yaml>,/home
 ```
 
 igver auto-binds BAM directories and output, but additional paths (BED files, igv-config) may need explicit mounting.
@@ -206,5 +206,5 @@ igver auto-binds BAM directories and output, but additional paths (BED files, ig
 - **Genome aliases:** See `references/genome-aliases.md`
 - **IGV batch commands:** See `references/igv-batch-commands.md`
 - **Examples:** See `examples/`
-- **igver source:** `/data1/greenbab/users/ahunos/apps/igver/`
+- **igver source:** `tools.igver_src` in `$SITE_CONFIG/paths.yaml`
 - **igver GitHub:** https://github.com/sahuno/igver
