@@ -114,12 +114,10 @@ The `profiles/` directory is copied to `~/.claude/profiles/` alongside `CLAUDE.m
 ### What happens at the start of every session?
 
 Claude is instructed to:
-1. Ask you to classify the session (domain, fresh vs continuation, objectives)
-2. Read the relevant project file from `~/projects/` if continuing
-3. Create a new project file if fresh
-4. Search `~/memories/` for relevant context
-5. Scaffold `data/raw/`, `data/processed/`, `src/`, `results/`, `figures/`, `workflows/`, `docs/` for analysis projects
-6. Append progress to the project file as work proceeds
+1. Ask you to classify the session (domain, objectives)
+2. Read `~/projects/<project>.md` if this continues earlier work, and resume from its "Exact next steps"
+3. Scaffold the project layout for analysis projects (`/init-bio-project`)
+4. Append progress to the project file as work proceeds
 
 ---
 
