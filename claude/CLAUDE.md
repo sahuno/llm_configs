@@ -354,7 +354,7 @@ Before writing `workflow.smk`, `Snakefile`, `main.nf`, or any pipeline scaffold 
 3. **Lab-internal pipelines** — `ls ~/code/ pipelines/ workflows/` for an existing implementation in this lab.
 4. **Other community sources** — `snakemake-wrappers`, Galaxy ToolShed, published workflow repositories.
 
-**REPORT what you found before scaffolding new code.** Build from scratch ONLY when:
+Run **`/preflight`** to do this search. **REPORT what you found before scaffolding new code.** Build from scratch ONLY when:
 - No suitable existing solution exists, OR
 - The user explicitly says "build from scratch", OR
 - The existing solution has a deal-breaking gap (document the gap)
@@ -561,6 +561,10 @@ Override any default when the user specifies different thresholds.
 - Reference genome paths validated (`validate-reference-genome.sh`)
 
 ### Manual checks (still required)
+
+Run **`/gates`** to work through these with evidence. Run **`/verify-run`**
+before trusting any long parallel job — a completion marker is not success.
+
 - [ ] All output files exist and are non-empty
 - [ ] Random seeds are set where applicable
 - [ ] Figures saved in all 3 formats under `results/{run}/figures/{png,pdf,svg}/`
