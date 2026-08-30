@@ -62,6 +62,14 @@ jobs:
       - name: Scaffolded projects carry a project-level CLAUDE.md
         run: python3 plugins/bio-skills/scripts/test_init_project.py
 
+  verify-run:
+    runs-on: ubuntu-latest
+    name: run verification
+    steps:
+      - uses: actions/checkout@v4
+      - name: A run that exits 0 but dropped work must still FAIL
+        run: python3 plugins/bio-skills/scripts/test_verify_run.py
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

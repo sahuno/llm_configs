@@ -201,8 +201,8 @@ tools/audit_site_paths.sh    # exit 0 only when unreviewed = 0 AND executable-un
 
 The material for all of these already exists as prose. `prompts/PROMPTS.md` is referenced by **zero** files.
 
-### Task 4.1: `/review`
-- [ ] Port the 7-category "Bioinformatics Code Review" from `claude/prompts/PROMPTS.md` (data integrity, genome safety, pipeline correctness, statistical rigor, ONT, reproducibility, forbidden patterns) into `plugins/bio-skills/commands/review.md`, keeping the severity levels and report table.
+### Task 4.1: `/review` — DONE 2026-08-29
+- [x] Port the 7-category "Bioinformatics Code Review" from `claude/prompts/PROMPTS.md` (data integrity, genome safety, pipeline correctness, statistical rigor, ONT, reproducibility, forbidden patterns) into `plugins/bio-skills/commands/review.md`, keeping the severity levels and report table.
 
 ### Task 4.2: Adversarial reviewer roles
 - [ ] `reviewer-2` — attack the claim before submission (ammunition: `analysis-gotchas/references/numerical_claims.md`).
@@ -210,17 +210,17 @@ The material for all of these already exists as prose. `prompts/PROMPTS.md` is r
 - [ ] `repro-auditor` — could a stranger rerun this from the repo alone.
 - [ ] Consider routing one through the installed Codex plugin for a genuinely independent second model.
 
-### Task 4.3: `/verify-run` — a script, not a prompt
+### Task 4.3: `/verify-run` — DONE 2026-08-29 (script + 13 tests)
 The single highest-leverage command here, and it has no gstack analogue. Everything it needs is already specified: `analysis-gotchas`' rule (`sacct` state, `grep -c 'oom_kill events'`), the DSS row-count parity check, and CLAUDE.md's logging spec (`=== DONE ===` marker, before/after filter counts).
 
-- [ ] Write `plugins/bio-skills/scripts/verify_run.py` taking a job ID or log path, emitting pass/fail per check.
-- [ ] Wrap in `commands/verify-run.md`.
+- [x] Write `plugins/bio-skills/scripts/verify_run.py` taking a job ID or log path, emitting pass/fail per check.
+- [x] Wrap in `commands/verify-run.md`.
 
 **Verify:** run against a known-good log and a known-OOM log; must disagree between them.
 
-### Task 4.4: `/gates` and `/preflight`
-- [ ] `/gates` — CLAUDE.md §10's manual pre-completion checklist, run before declaring anything done.
-- [ ] `/preflight` — §4's "search nf-core/modules before scaffolding" rule, which already documents what skipping it cost on 2026-05-01.
+### Task 4.4: `/gates` and `/preflight` — DONE 2026-08-29
+- [x] `/gates` — CLAUDE.md §10's manual pre-completion checklist, run before declaring anything done.
+- [x] `/preflight` — §4's "search nf-core/modules before scaffolding" rule, which already documents what skipping it cost on 2026-05-01.
 
 ### Task 4.5: `/wrapup`
 The README's protected `CLAUDE: DONOT DELETE` block explicitly requests "Logging of tasks completed and pending; logging of daily tasks done". §1's "Project File Content Requirements" already defines the 5-field schema.
