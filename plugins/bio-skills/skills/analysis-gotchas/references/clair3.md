@@ -1,3 +1,11 @@
+---
+tool: clair3
+version_observed: "2.0.1"
+date: 2026-05-05
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  apptainer exec $SIF run_clair3.sh --help | grep -c use_whatshap_for_final_output_phasing
+---
 # Clair3 / ClairS — gotchas for ONT germline + somatic SNV calling on the cohort
 
 ## Clair3 (germline + WhatsHap/LongPhase phasing)

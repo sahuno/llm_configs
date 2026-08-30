@@ -70,6 +70,14 @@ jobs:
       - name: A run that exits 0 but dropped work must still FAIL
         run: python3 plugins/bio-skills/scripts/test_verify_run.py
 
+  gotchas:
+    runs-on: ubuntu-latest
+    name: gotcha records
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every incident record carries version, date, status and a detector
+        run: python3 tools/gotcha_audit.py
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

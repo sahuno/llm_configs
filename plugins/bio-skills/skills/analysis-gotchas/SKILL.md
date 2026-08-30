@@ -35,6 +35,17 @@ Read the reference file that matches the tool in play before trusting results.
 | Severus (SV / viral integration) | `references/severus.md` | `--min-reference-flank` default silently zeroes out every contig < 20 kb; integrations emit as `INS`, not `BND`, so CHROM/ALT filters miss all of them. |
 | Reporting any mean / median / rate | `references/numerical_claims.md` | Aggregation method changes the value 5–20 %; an unstated method is not reproducible. |
 
+## Adding to this collection
+
+Use `/add-gotcha` — it writes the reference file, the row above, and the
+frontmatter in one pass. Capture it in the session where the failure happened;
+the version and exact error are only cheap then.
+
+Every record carries `tool`, `version_observed`, `date`, `status` and
+`detect_cmd`. `/gotcha-audit` reports records missing any of these, and records
+whose version was never captured — those cannot be checked against an upstream
+release. **A gotcha without a detection command is an opinion.**
+
 ## The general rule
 
 For any long parallel job on SLURM, exit code 0 is not evidence of success.

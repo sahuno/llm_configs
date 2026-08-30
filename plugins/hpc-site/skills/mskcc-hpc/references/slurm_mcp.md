@@ -1,3 +1,11 @@
+---
+tool: slurm-mcp
+version_observed: "unrecorded"
+date: 2026-04-29
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  submit a job with #SBATCH --mem-per-cpu and check scontrol show job for an injected --mem
+---
 - **`mcp__slurm__slurm_submit_batch` injects fixed defaults on the sbatch cmdline** that override `#SBATCH` directives in the script: `--account greenbab`, `--nodes 1`, `--ntasks-per-node 1`, `--cpus-per-task 8` (default), `--mem 64G` (default), `--time 04:00:00` (default), `--output /home/ahunos/slurm_logs/<jobname>_%j.out` (default), `--error` analogous. To override, pass them explicitly to the mcp tool (`cpus`, `mem`, `time`, `partition`, `job_prefix`).
 - **Fatal `--mem` vs `--mem-per-cpu` conflict**: if the script has `#SBATCH --mem-per-cpu=4G` and mcp adds `--mem 64G` on cmdline, sbatch refuses with `--mem, --mem-per-cpu, and --mem-per-gpu are mutually exclusive`. Fix: remove `--mem-per-cpu` from the script and pass `mem` explicitly to the mcp tool, OR submit via direct `sbatch` for full control.
 - **`--exclusive` is NOT exposed by mcp's submit_batch** but `#SBATCH --exclusive` in the script *is* honoured (mcp doesn't override what it doesn't set). Same for `#SBATCH --exclude=<nodelist>`.

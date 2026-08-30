@@ -1,3 +1,11 @@
+---
+tool: R parallel::mclapply
+version_observed: "unrecorded"
+date: unrecorded
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  verify_run.py --job-id $JOB --log $LOG
+---
 # Parallel R (mclapply) silent OOM and the per-iteration gc() pattern
 
 Generalizes the DSS-specific lesson in `references/dss.md` to any large parallel-R workload (cv.glmnet sweeps, BSseq smoothing, Seurat per-sample loops, anything `parallel::mclapply`-driven on SLURM with cgroup memory limits).

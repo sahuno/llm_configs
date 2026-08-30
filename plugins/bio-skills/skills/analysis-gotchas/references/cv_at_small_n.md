@@ -1,3 +1,11 @@
+---
+tool: glmnet::cv.glmnet
+version_observed: "unrecorded"
+date: 2026-04-29
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  rerun with K>=5 seeds; compare selected lambda and per-gene Q2 across seeds
+---
 # Regularized CV at small n (n < 50): seed instability, q-floors, degenerate r
 
 These bite together when running cv.glmnet (or any nested-CV regularized regressor) at small n. Confirmed during the SU2C DNAme × RNA modelling sweep (n=36, 2026-04-29) — same data, same code, same nominal seed, very different "results" depending on which knob you trusted.

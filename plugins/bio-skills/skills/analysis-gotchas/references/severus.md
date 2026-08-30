@@ -1,3 +1,11 @@
+---
+tool: severus
+version_observed: "1.7"
+date: 2026-05-01
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  awk '$8 ~ /ALIGNED_POS=/' severus_all.vcf | wc -l   # 0 with default --min-reference-flank
+---
 - **`--min-reference-flank` default 10000 silently filters out all small viral contigs**: For any contig shorter than 2 × 10000 = 20 kb, every position is within 10 kb of both ends, so no breakpoint anywhere on it can satisfy the filter. HTLV-1 (8507 bp), HBV (~3 kb), HHV-8 (~138 kb is on the edge) — all silently return 0 calls. Confirmed 2026-05-01 on HTLV-1 in ATLL ONT data: default-flag run returned 0 HTLV1 entries in `somatic_SVs/severus_somatic.vcf`, `all_SVs/severus_all.vcf`, AND raw `breakpoints_double.csv`. Fix: `--min-reference-flank 100` (effectively disable). Worked: same data, same BAM → 1 high-confidence integration call at chr9:34913979 with 21 supporting reads.
 - **`--min-aligned-length` default 7000 drops chimeric reads with short viral side**: Chimeric reads spanning host↔LTR junctions often have <7 kb aligned to the small viral side, especially when the integrated provirus is partial or clipping shortens the viral aligned segment. Compounds the small-contig filter. Set to 500 for viral integration work; default is right for genomic SV calling.
 - **Severus emits viral integrations as `SVTYPE=INS`, not `SVTYPE=BND`**: The full proviral sequence is encoded as a multi-kbase literal DNA string in the ALT field. CHROM is the host chromosome. The viral coordinate appears in the `INFO/ALIGNED_POS=<viral_contig>:start-end` field. End coordinate can exceed the viral contig length when the integration spans the linearized contig end and wraps to start (e.g. `HTLV1:7926-16956` on an 8507-bp contig means 7926 → 8507 → wrap → 8449). **Filters keying on CHROM or ALT alone miss every integration call.** Match against `INFO` instead — awk pattern that works: `$8 ~ /ALIGNED_POS=HTLV1:|ALIGNED_POS=EBV:/`.

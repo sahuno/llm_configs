@@ -1,3 +1,11 @@
+---
+tool: DSS
+version_observed: "unrecorded"
+date: 2026-04-24
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  grep -c 'oom_kill events' <stderr>; sacct -j $JOB --format=State | grep -c OUT_OF_MEMORY
+---
 - **`DSS::DMLtest` silently corrupts results under SLURM memory pressure**: `DMLtest` defaults `ncores = max(detectCores() - 3, 1)` and `detectCores()` returns physical cores on the node (64 on componc_cpu), **ignoring the SLURM cgroup cpu allocation**. `DSS:::dispersion.shrinkage.BSseq` then calls `mclapply(..., mc.cores=ncores)`. When fork workers exceed the cgroup memory limit the kernel OOM-kills them; `mclapply` returns NULLs for their tasks; `unlist(shrk.phi2)` silently drops NULLs; the subsequent assignment `shrk.phi[ix] <- shrk.phi2` **recycles** the short phi vector R-style, mis-assigning dispersion estimates to wrong CpGs. The script continues to `=== DONE ===` and writes outputs — easy to miss. DMR counts can inflate 10–20× over the true value. Confirmed 2026-04-24 on mm10 ONT data: a 40-DMR "result" on chr19 collapsed to 4 DMRs once ncores was bounded. **Fix**: always pass explicit `ncores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", "1"))` to `DMLtest(..., ncores = ncores)`. Never rely on DSS's default.
 - **Detection**: any DSS run where any of the following are true must be re-run, not trusted:
     - `sacct -j <id>` shows `OUT_OF_MEMORY`

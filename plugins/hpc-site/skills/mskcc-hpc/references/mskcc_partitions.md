@@ -1,3 +1,11 @@
+---
+tool: slurm
+version_observed: "unrecorded"
+date: 2026-05-05
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  scontrol show partition cpu | tr ' ' '\n' | grep DenyAccounts | grep -c greenbab
+---
 - **The cluster default partition `cpu` is DENIED for the `greenbab` account.** Confirmed 2026-05-05: `scontrol show partition cpu` lists `DenyAccounts=preemptable,core001,pashaa,carrotj,greenbab,papaemme,reznike,shahs3,soldatr,tanseyw,schultzn,mcphera1,sanchezf,bergerm1,donoghum,shahr2,mauraf,lukszam`. Practical impact: `sbatch script.sh` with no `-p` flag falls back to `cpu` and immediately fails with `allocation failure: Invalid account or account/partition combination specified`. There is no working cluster-wide default for greenbab. Fix: either (a) `export SLURM_DEFAULT_PARTITION=componc_cpu` (or `cpushort`) in `~/.bashrc`, plus `SBATCH_PARTITION=` for raw sbatch — slurm-mcp picks up `SLURM_DEFAULT_PARTITION`; or (b) always pass `--partition=...` explicitly per job. Greenbab's actually-allowed partitions: `cpushort`, `componc_cpu`, `componc_gpu_int`, `componc_gpu_batch`, `componc_gpu_preem`, plus `gpushort` and `interactive`.
 - **Use `cpushort` for short benchmark/exploration/per-sample jobs**, not `componc_cpu`. componc_cpu is project-specific and frequently saturated (~47/62 nodes allocated routinely; new --exclusive jobs may sit pending for 24+ h). cpushort routinely has 50+ idle nodes, the same Xeon Gold 6348 (Ice Lake-SP) hardware, ~1 TB RAM and 56 cpus per node, and a 2 h time limit that comfortably covers any per-sample bioinformatics step. Account `greenbab` works on cpushort.
 - **Always `#SBATCH --exclude=isca071`** for any benchmarking on cpushort. Confirmed 2026-04-28 during samtools sort threads-32 sweep: isca071 ran 35 % slower than other cpushort nodes (CPU% 1134 vs 1771-1836) despite identical SLURM-visible attributes — a slower CPU vintage that doesn't surface in `scontrol show node` Features. Once excluded, the cpushort pool is hardware-homogeneous on Intel Xeon Gold 6348 @ 2.60 GHz across 48+ jobs.

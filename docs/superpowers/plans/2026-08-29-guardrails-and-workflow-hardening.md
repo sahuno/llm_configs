@@ -238,19 +238,19 @@ The README's protected `CLAUDE: DONOT DELETE` block explicitly requests "Logging
 
 **Principle to adopt:** *a gotcha without a detection command is an opinion.* `references/dss.md` already ends with a verification recipe — make that mandatory.
 
-### Task 5.1: Gotcha frontmatter schema
+### Task 5.1: Gotcha frontmatter schema — DONE 2026-08-29
 Nearly every entry is version-bound ("modkit 0.6.1", "Snakemake 9", RHEL 8 GLIBC 2.28). Without metadata this becomes folklore.
 
-- [ ] Add per-entry frontmatter: `tool`, `version_observed`, `date`, `status: active|fixed-upstream|superseded`, `detect_cmd`.
-- [ ] Backfill the 15 existing entries.
+- [x] Add per-entry frontmatter: `tool`, `version_observed`, `date`, `status: active|fixed-upstream|superseded`, `detect_cmd`.
+- [x] Backfill the 15 existing entries.
 
-### Task 5.2: `/add-gotcha` and `/gotcha-audit`
-- [ ] `/add-gotcha` must write **three places**: the reference file, the owning SKILL.md routing table, and the frontmatter. Capture friction is why `rules/` were manual file drops. It should draft from the current session transcript — the moment of failure is when details are cheapest.
-- [ ] `/gotcha-audit` lists entries whose tool has since changed major version.
-- [ ] Keep skill *descriptions* categorical ("silent failure modes; consult before trusting any long job that exited 0"), not tool enumerations — the enumeration is the trigger mechanism and will not scale past ~50 entries. At that point split by category (parallel-R, callers, file-format, statistics).
+### Task 5.2: `/add-gotcha` and `/gotcha-audit` — DONE 2026-08-29
+- [x] `/add-gotcha` must write **three places**: the reference file, the owning SKILL.md routing table, and the frontmatter. Capture friction is why `rules/` were manual file drops. It should draft from the current session transcript — the moment of failure is when details are cheapest.
+- [x] `/gotcha-audit` lists entries whose tool has since changed major version.
+- [x] Keep skill *descriptions* categorical ("silent failure modes; consult before trusting any long job that exited 0"), not tool enumerations — the enumeration is the trigger mechanism and will not scale past ~50 entries. At that point split by category (parallel-R, callers, file-format, statistics).
 
-### Task 5.3: Finish `log-slurm-submission.sh`
-- [ ] Convert its 10 jq calls, including the `.jobs[]?` array interpolation, to the `json_get` helper or a python3 block.
+### Task 5.3: Finish `log-slurm-submission.sh` — DONE 2026-08-29
+- [x] Convert its 10 jq calls, including the `.jobs[]?` array interpolation, to the `json_get` helper or a python3 block.
 
 ---
 
