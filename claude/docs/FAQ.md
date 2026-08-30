@@ -33,15 +33,20 @@ A copy lives in the repo at `claude/profiles/bash_profiles/bashrc_container`.
 
 ### How do I sync config changes from the repo to my local machine?
 
+You don't copy files any more. The config ships as plugins:
+
 ```bash
-cp claude/CLAUDE.md ~/.claude/CLAUDE.md
-cp claude/settings.json ~/.claude/settings.json
-cp -r claude/hooks/*.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/*.sh
-cp -r claude/profiles ~/.claude/profiles
+claude plugin marketplace update sahuno
+claude plugin update bio-skills@sahuno      # and bio-guardrails, hpc-site
 ```
 
-Do not blindly overwrite `~/.claude/settings.json` on a machine that already has plugins or model settings. Merge the `hooks` object from `claude/settings.json` instead.
+Installing merges into your Claude Code config — it never overwrites
+`settings.json`, which the old `cp` recipe did. On your own machine you can point
+the marketplace at your working clone (`claude plugin marketplace add ./`) so
+edits are one `marketplace update` away rather than a copy.
+
+`claude/CLAUDE.md` is the exception: it is personal memory, not a plugin
+component. Copy it to `~/.claude/CLAUDE.md`, or symlink it.
 
 ### Where are my API keys stored?
 
@@ -53,7 +58,7 @@ API keys are exported in `~/.bashrc` and passed into the container via `--env` f
 
 ### What are hooks and how do they work?
 
-Hooks are shell scripts that Claude Code runs automatically before or after tool calls. They are defined in `settings.json` and live in `~/.claude/hooks/`. Each hook receives the tool input as JSON on stdin.
+Hooks are shell scripts that Claude Code runs automatically before or after tool calls. They ship in the `bio-guardrails` plugin, wired by its `hooks/hooks.json` and resolved through `${CLAUDE_PLUGIN_ROOT}` — nothing is copied into `~/.claude/`. Each hook receives the tool input as JSON on stdin.
 
 - **PreToolUse hooks** fire _before_ the action executes. Exit code 2 = BLOCK (prevents execution). Exit code 0 = allow.
 - **PostToolUse hooks** fire _after_ the action executes. Exit code 0 with stderr output = WARN (show message but don't block).
@@ -81,11 +86,18 @@ Every job submitted through the SLURM MCP server is automatically logged to `/da
 Hooks are safety rails, not walls. If a block is a false positive:
 1. Tell Claude what you're doing and why the hook is wrong in this case.
 2. Claude can adjust the command to satisfy the hook (e.g., add a genome tag to the filename).
-3. If the hook is genuinely incorrect, edit the script in `~/.claude/hooks/` or temporarily remove it from `settings.json`.
+3. If the hook is genuinely incorrect, fix it in `plugins/bio-guardrails/hooks/` and add a case to `plugins/bio-guardrails/tests/test_hooks.sh` so the fix is pinned. To disable it entirely: `claude plugin disable bio-guardrails@sahuno`.
 
-### Why do hooks need `jq`?
+### Do the hooks need `jq`?
 
-The bash hooks parse their input as JSON (Claude Code passes tool parameters as JSON on stdin). Without `jq`, those hooks silently fail and provide no protection. Make sure `jq` is installed in your container.
+No, not any more. They parse tool input with `jq` when it is present and fall
+back to `python3` otherwise, and if neither exists they print a loud warning
+instead of passing everything through in silence.
+
+That silent pass-through was the old behaviour, and it was the worse failure:
+every hook returned an empty field, took its early-out, and allowed everything —
+while looking installed. A guardrail that quietly stops guarding is worse than
+no guardrail, because it buys false confidence.
 
 ### How do I save the last assistant reply to a file?
 
@@ -115,15 +127,32 @@ predated the builtins and no longer does anything they don't.
 
 ### Where does CLAUDE.md live?
 
-Two copies that must stay in sync:
-- **Repo**: `claude/CLAUDE.md` — version-controlled, edit here first
-- **Local**: `~/.claude/CLAUDE.md` — what Claude Code actually reads at runtime
+Three levels, and they compose:
 
-After editing the repo copy, sync with `cp claude/CLAUDE.md ~/.claude/CLAUDE.md`.
+| Level | Path | Holds |
+|---|---|---|
+| Project | `<project>/CLAUDE.md` | Domain, genome build, aims, status. Written by `/init-bio-project`, auto-loaded from the project root. |
+| Personal | `~/.claude/CLAUDE.md` | Your global config. Copy or symlink from `claude/CLAUDE.md` in this repo. |
+| Plugin | skills, commands, agents, hooks | Installed, not copied. |
 
-### How does Claude Code find the profiles directory?
+Prefer putting project-specific facts in the project file — it travels with the
+work and means a session does not have to ask what it is working on.
 
-The `profiles/` directory is copied to `~/.claude/profiles/` alongside `CLAUDE.md`. Relative path references in `CLAUDE.md` (e.g., `profiles/databases/databases_config.yaml`) resolve from `~/.claude/`. If profiles are only in the repo, Claude Code won't find them.
+### How do I choose which site and user profile is active?
+
+```bash
+source plugins/hpc-site/profiles/resolve.sh
+export SITE_PROFILE=mskcc-greenbaum   # cluster facts: genomes, containers, partitions
+export USER_PROFILE=$USER             # personal: plot defaults, conventions
+profiles_export                       # sets $SITE_CONFIG and $USER_CONFIG
+```
+
+Both auto-select when exactly one real profile exists, and `USER_PROFILE` falls
+back to `$USER`. When the choice is ambiguous, resolution fails and lists the
+candidates rather than guessing a path.
+
+Two axes because they compose differently: genome paths change when you change
+cluster, plot defaults do not.
 
 ### What happens at the start of every session?
 

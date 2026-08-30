@@ -254,15 +254,15 @@ Nearly every entry is version-bound ("modkit 0.6.1", "Snakemake 9", RHEL 8 GLIBC
 
 ---
 
-## Phase 6 — Hygiene
+## Phase 6 — Hygiene — DONE 2026-08-29
 
-- [ ] **`save-llm-response` exists in three places** — `claude/prompts/save-{last,response}.md`, untracked `claude/commands/` + `claude/scripts/save_llm_response.py`, and untracked `cli_coding_agents_setups/save-llm-response/` with a *diverging* copy — while `docs/FAQ.md:92` declares the feature superseded by the builtin `/copy`. Keep only the `cli_coding_agents_setups` copy (its stated purpose is non-Claude agents); delete the rest.
-- [ ] **`examples/examples.md` and `claude/examples/examples.md` are byte-identical**, and their content uses a deprecated container invocation superseded by `sclaude`. Delete one or both.
-- [ ] **`claude/inDevelopment/CLAUDE.md.dev`** is a stale near-fork of the live file (already missing §0) that will silently drift.
-- [ ] **`claude/hooks/hooks.yaml`** is self-described dead, wired to nothing, and references a path that does not exist.
-- [ ] **`claude/skills/` stragglers** — the `igv-reports` moved-out stub, `paper-digest/`, `ideas/`, and the snakemake brainstorm remain in a directory the README says was fully migrated.
-- [ ] **FAQ restructure pass** — lines 34–44 and 113–123 still teach the pre-plugin `cp` sync workflow and `~/.claude/hooks/` paths, contradicting the install story the README now tells.
-- [ ] **Move the README's protected FEATURE REQUEST block to GitHub issues.** It is a backlog buried in a README behind a plea not to delete it. (Its UV item is a one-line §4 edit; the Nextflow transition is real work.)
+- [x] **`save-llm-response` exists in three places** — `claude/prompts/save-{last,response}.md`, untracked `claude/commands/` + `claude/scripts/save_llm_response.py`, and untracked `cli_coding_agents_setups/save-llm-response/` with a *diverging* copy — while `docs/FAQ.md:92` declares the feature superseded by the builtin `/copy`. Keep only the `cli_coding_agents_setups` copy (its stated purpose is non-Claude agents); delete the rest.
+- [x] **`examples/examples.md` and `claude/examples/examples.md` are byte-identical**, and their content uses a deprecated container invocation superseded by `sclaude`. Delete one or both.
+- [x] **`claude/inDevelopment/CLAUDE.md.dev`** is a stale near-fork of the live file (already missing §0) that will silently drift.
+- [x] **`claude/hooks/hooks.yaml`** is self-described dead, wired to nothing, and references a path that does not exist.
+- [x] **`claude/skills/` stragglers** — the `igv-reports` moved-out stub, `paper-digest/`, `ideas/`, and the snakemake brainstorm remain in a directory the README says was fully migrated.
+- [x] **FAQ restructure pass** — lines 34–44 and 113–123 still teach the pre-plugin `cp` sync workflow and `~/.claude/hooks/` paths, contradicting the install story the README now tells.
+- [x] **Move the README's protected FEATURE REQUEST block to GitHub issues.** It is a backlog buried in a README behind a plea not to delete it. (Its UV item is a one-line §4 edit; the Nextflow transition is real work.)
 
 ---
 
@@ -278,3 +278,28 @@ Nearly every entry is version-bound ("modkit 0.6.1", "Snakemake 9", RHEL 8 GLIBC
 ## Correction to the record
 
 The Fable 5 review's top-ranked finding claimed `validate-reference-genome.sh` **over-blocks**: that every `liftOver` was refused and the mandated `_to_` filename tripped the hook permanently. Both cases were tested and returned exit 0 — not blocked. The failure ran the opposite way (under-detection, Phase 0). The review pointed at the right file for the wrong reason. Its remaining findings held up on the five that were checked: the jq dependency, the LDAP UID, the §1 numbering gap, the figure-font contradiction, and the Bonferroni/BH contradiction.
+
+
+---
+
+## Status 2026-08-29: all six phases complete
+
+Shipped across PRs #3–#12. Ten CI jobs gate the repo, each one added because
+something here had already failed that way silently:
+
+| Job | Guards against |
+|---|---|
+| hooks (jq) / hooks (python3-only) | A guardrail that stops guarding when jq is absent |
+| SKILL.md casing | A skill invisible on Linux but working on macOS |
+| profile resolution | A path that resolves to a guess instead of failing |
+| site-path triage | An unclassified site path, or an unconverted literal |
+| project scaffolder | A project that cannot self-identify |
+| run verification | A run that exits 0 having dropped work |
+| gotcha records | An incident record with no version or detector |
+| figure manifest | A figure that cannot be traced to its code |
+| plugin manifests | A manifest that fails at install time |
+
+Not done, deliberately: the `research-core`/`genomics` split (rejected — skills
+are trigger-gated, so it buys taxonomy not function; revisit by extracting a
+`scholarship` plugin when there is an external consumer), and growing §5 AI
+Engineering, which should grow from incidents or be deleted rather than padded.

@@ -41,6 +41,12 @@ they were measured on.
 `scientific-illustrator` — assembles raw plots into publication-ready
 multipart figures.
 
+## Lives elsewhere
+
+`igv-reports` was split into its own repository once it grew a driver, cohort
+mode, verifiers and CI: **https://github.com/sahuno/igv-reports-skill**. Clone it
+and symlink into `~/.claude/skills/` if you want it.
+
 ## Site-dependent bits
 
 Most skills are site-neutral. These reference a specific cluster's paths and

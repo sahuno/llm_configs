@@ -214,7 +214,7 @@ Every analysis script must produce a **timestamped log file** that captures enou
 
 9. **Session footer** (last lines of log):
    - Total runtime: `"Completed in 4m 32s"`
-   - `sessionInfo()` (R) or `pip freeze` equivalent (Python) for full reproducibility
+   - `sessionInfo()` (R) or `uv pip freeze` / the `uv.lock` file (Python) for full reproducibility
 
 10. **End-of-script marker** (mandatory — the very last line of every script):
     - Every script must end with an explicit completion message so it is unambiguous whether the script ran to the end or died silently mid-execution.
@@ -389,6 +389,12 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 - Include a `--version` flag. Use semantic versioning.
 - Write unit tests with `pytest` (Python) or `testthat` (R). Minimum: test each public function with at least one normal case and one edge case.
 - Package structure: `pyproject.toml` for Python, `DESCRIPTION` for R packages.
+- **Python environments: use `uv`.** `uv venv` + `uv pip install`, or `uv sync`
+  against `pyproject.toml`. It resolves in seconds where pip takes minutes, and
+  the lockfile is what makes a rerun reproducible. Reserve conda/mamba for
+  packages with non-Python system dependencies that only bioconda ships
+  (samtools, bcftools, htslib-linked tools) — that is a real constraint, not a
+  preference.
 
 ### Testing and CI
 - Run tests before declaring any task complete.

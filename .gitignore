@@ -30,3 +30,6 @@ __pycache__/
 # project-shared settings.json (keep an escape hatch for future shared config).
 .claude/*
 !.claude/settings.json
+
+# Local SLURM audit log (the hook writes here when no site profile is set)
+slurm_logs/
