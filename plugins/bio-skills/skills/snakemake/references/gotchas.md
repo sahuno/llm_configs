@@ -1,3 +1,11 @@
+---
+tool: snakemake
+version_observed: "9"
+date: 2026-04-25
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  snakemake -n 2>&1 | grep -c 'mem_mb.*srun'
+---
 - **"No rule to produce" for valid targets**: Check for whitespace in sample names or paths in the sample sheet. As a workaround, extract the failing step into a standalone shell script.
 - **Double-container invocation**: If a rule sets the `singularity:` directive, do NOT also add `singularity exec -B` inside the `shell:` block. The directive handles container execution automatically.
 - **Config access**: When using `--configfile`, values are accessed as `config["key"]`, not `config.key`.

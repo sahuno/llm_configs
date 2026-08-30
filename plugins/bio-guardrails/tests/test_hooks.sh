@@ -81,6 +81,20 @@ check validate-reference-genome.sh 0 "databases_config.yaml exempt" \
   "$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s/databases_config.yaml","content":"hg38: x\\nmm10: y\\n"}}' "$TMPD")"
 rm -rf "$TMPD"
 
+echo "=== log-slurm-submission (logger: never blocks, must actually write) ==="
+LOGD=$(mktemp -d)
+PAYLOAD='{"tool_name":"mcp__slurm__slurm_submit_job","cwd":"/proj","tool_input":{},"tool_response":"{\"result\":\"{\\\"submitted\\\":true,\\\"job_id\\\":\\\"999\\\",\\\"job_name\\\":\\\"t\\\",\\\"dry_run\\\":false}\"}"}'
+SLURM_JOB_LOG="$LOGD/s.md" check log-slurm-submission.sh 0 "logger never blocks" "$PAYLOAD"
+printf '%s' "$PAYLOAD" | SLURM_JOB_LOG="$LOGD/s.md" "$HOOKS/log-slurm-submission.sh" >/dev/null 2>&1
+if grep -q '999' "$LOGD/s.md" 2>/dev/null; then
+  PASS=$((PASS+1)); printf '  \033[32mok\033[0m   %-58s\n' "logger writes the job id"
+else
+  FAIL=$((FAIL+1)); FAILED_NAMES+=("logger writes the job id")
+  printf '  \033[31mFAIL\033[0m %-58s\n' "logger writes the job id"
+fi
+check log-slurm-submission.sh 0 "malformed payload does not crash" '{"tool_response":"not json"}'
+rm -rf "$LOGD"
+
 echo "=== warn-only hooks (must never block) ==="
 check warn-absolute-paths.sh    0 "absolute path warns only"      "$(write_file 'src/a.py' 'p = \"/data1/x\"')"
 check block-hardcoded-contigs.sh 0 "hardcoded contigs warn only"  "$(write_file 'src/a.py' 'chroms = [\"chr1\",\"chr2\"]')"

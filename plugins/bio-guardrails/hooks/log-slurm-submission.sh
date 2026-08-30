@@ -12,6 +12,11 @@ if [ -z "$LOG_FILE" ] && [ -n "${SITE_CONFIG:-}" ]; then
   LOG_FILE=$(grep -A2 '^logs:' "$SITE_CONFIG/paths.yaml" 2>/dev/null | awk '/slurm_submissions:/{print $2}')
 fi
 LOG_FILE="${LOG_FILE:-./slurm_logs/claude_submissions.md}"
+# Portable JSON parsing (prefers jq, falls back to python3, warns loudly
+# if neither exists rather than silently passing everything through).
+. "${BASH_SOURCE[0]%/*}/lib/json.sh"
+json_backend_check || exit 0
+
 TOOL_INPUT=$(cat)
 
 # Ensure log directory exists
@@ -34,22 +39,22 @@ fi
 #   .tool_response = JSON string containing {"result": "<JSON string of actual data>"}
 # So we need: .tool_response | fromjson | .result | fromjson -> actual fields
 
-PARSED=$(echo "$TOOL_INPUT" | jq -r '.tool_response' | jq -r '.result' | jq '.' 2>/dev/null)
+# The payload is double-encoded: .tool_response is a JSON string whose .result
+# is another JSON string. Flattened by a helper so this hook needs no jq — the
+# safety hooks dropped that dependency and a logger that silently stops logging
+# has the same problem for the audit trail.
+FIELDS=$(printf '%s' "$TOOL_INPUT" | python3 "${BASH_SOURCE[0]%/*}/lib/parse_slurm_response.py" 2>/dev/null)
+[ -z "$FIELDS" ] && exit 0
 
-if [ -z "$PARSED" ] || [ "$PARSED" = "null" ]; then
-    exit 0
-fi
-
-# Extract fields
-JOB_ID=$(echo "$PARSED" | jq -r '.job_id // empty')
-JOB_NAME=$(echo "$PARSED" | jq -r '.job_name // empty')
-COMMAND=$(echo "$PARSED" | jq -r '.command // empty')
-DRY_RUN=$(echo "$PARSED" | jq -r '.dry_run // false')
-ERROR=$(echo "$PARSED" | jq -r '.error // empty')
-SUBMITTED=$(echo "$PARSED" | jq -r '.submitted // empty')
+JOB_ID=$(sed -n '1p'  <<< "$FIELDS")
+JOB_NAME=$(sed -n '2p' <<< "$FIELDS")
+COMMAND=$(sed -n '3p'  <<< "$FIELDS")
+DRY_RUN=$(sed -n '4p'  <<< "$FIELDS")
+ERROR=$(sed -n '5p'    <<< "$FIELDS")
+SUBMITTED=$(sed -n '6p' <<< "$FIELDS")
 
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-SESSION_DIR=$(echo "$TOOL_INPUT" | jq -r '.cwd // empty')
+SESSION_DIR=$(json_get "$TOOL_INPUT" cwd)
 
 # Log dry-run
 if [ "$DRY_RUN" = "true" ]; then
@@ -80,8 +85,8 @@ fi
 
 # Log batch submissions
 if [ -n "$SUBMITTED" ] && [ "$SUBMITTED" != "null" ]; then
-    TOTAL=$(echo "$PARSED" | jq -r '.total // 0')
-    JOBS=$(echo "$PARSED" | jq -r '.jobs[]? | "  - Job \(.job_id // "?") — \(.script // "unknown") (step \(.step // "?"))"' 2>/dev/null)
+    TOTAL=$(sed -n '7p' <<< "$FIELDS")
+    JOBS=$(sed -n '8,$p' <<< "$FIELDS")
     cat >> "$LOG_FILE" << EOF
 ### Batch Submission — ${SUBMITTED}/${TOTAL} jobs
 - **Submitted:** ${TIMESTAMP}

@@ -1,3 +1,11 @@
+---
+tool: igver/modkit
+version_observed: "0.6.1"
+date: 2026-04-24
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  modkit bedmethyl tobigwig --help | grep -c chrom.sizes
+---
 ## IGV / igver — gotchas for ONT methylation visualisation
 
 ### IGV with BAM (per-read methylation)

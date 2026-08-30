@@ -1,3 +1,11 @@
+---
+tool: data.table::fread
+version_observed: "1.14"
+date: 2026-04-30
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  Rscript -e 'x<-data.table::fread(f,skip="chr"); stopifnot(is.numeric(x[[2]]))'
+---
 # data.table::fread quirks for BED-style files
 
 ## `skip = "chr"` does NOT skip a `#chr\tstart\t...` comment header

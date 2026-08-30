@@ -1,3 +1,10 @@
+---
+tool: process rule
+version_observed: "n/a"
+date: 2026-05-02
+status: active   # active | fixed-upstream | superseded
+detect_cmd: ""   # process rule, not tool-specific — nothing to probe
+---
 # numerical_claims.md — disclosing aggregation method, anchor verification, and doc-vs-code consistency
 
 When citing any aggregated numerical value (mean %, median, mean coverage, mutation rate, summary statistic across CpGs / genes / cells / samples / regions) in a doc, figure caption, manuscript, or project log, the **aggregation method must be stated explicitly alongside the number**. The same data aggregated by different methods can differ by 5–20 %; an implicit method is not reproducible by a reviewer, a collaborator, or future-you in 6 months.

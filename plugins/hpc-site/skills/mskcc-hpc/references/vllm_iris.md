@@ -1,3 +1,11 @@
+---
+tool: vllm
+version_observed: "unrecorded"
+date: 2026-05-11
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  sinfo -p componc_gpu 2>&1 | grep -c 'invalid partition'
+---
 # Serving local LLMs on iris (vLLM in apptainer on componc_gpu_batch)
 
 Lessons from the 2026-05-11 antVacDBCancer pubmed-vaccine-agent session, where 5 sbatch retries (~25 min wasted) chased problems that show up in a predictable order. Captured so the same checklist runs first next time.

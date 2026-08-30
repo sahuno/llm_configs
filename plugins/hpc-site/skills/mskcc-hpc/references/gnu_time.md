@@ -1,3 +1,11 @@
+---
+tool: GNU time
+version_observed: "1.10"
+date: 2026-04-28
+status: active   # active | fixed-upstream | superseded
+detect_cmd: |
+  command -v /usr/bin/time || echo absent; $GTIME -v -- true | grep -c 'Maximum resident set size'
+---
 - **`/usr/bin/time` does not exist on MSKCC HPC** (login node or compute nodes). Confirmed 2026-04-28 on cpushort. Only the bash builtin `time` is available, which does not support the `-v` flag needed for peak RSS, page faults, or FS in/out — i.e. all the metrics any serious benchmark needs.
 - **Install GNU time via conda alongside the tool being benchmarked**: `mamba install -n <env_name> -c conda-forge -y time`. Provides `time-1.10` at `<conda_prefix>/bin/time`, full `-v` support.
 - **Don't hardcode `/usr/bin/time` in benchmark wrappers.** Resolve dynamically: prefer a sibling of the tool's binary (`$(dirname "$(command -v <tool>)")/time`), fallback to `/usr/bin/time`, error if neither. Sanity check with `<gtime_path> -v -- true` — if it doesn't print "Maximum resident set size" etc., it's not GNU time. See `/data1/greenbab/users/ahunos/projects/biotoolsBenchmarks/samtools/sort/src/03_run_one.sh` (`GTIME_BIN` resolution block) for the reference pattern.
