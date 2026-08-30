@@ -1,0 +1,3 @@
+# Conventions you want assumed without being asked each session.
+sample_sheet_preference: "tsv file with the columns (patient,sample,condition,path,genome)"
+sample_yaml_preference: "sampleName: path/to/file"

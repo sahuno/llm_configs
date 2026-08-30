@@ -8,7 +8,15 @@
 set -euo pipefail
 
 NAME=""; VERSION=""; PROBE=1
-CATALOG="${SOFTWARES_CONTAINERS_CONFIG:-/data1/greenbab/users/ahunos/apps/llm_configs/claude/profiles/software_configs/softwares_containers_config.yaml}"
+# Container catalog. Resolution order: explicit --catalog, then
+# $SOFTWARES_CONTAINERS_CONFIG, then the active site profile's containers.yaml
+# (hpc-site plugin). The previous default was an absolute /data1 literal that
+# existed on exactly one machine and silently resolved to "no catalog"
+# everywhere else, so the catalog-first check quietly never fired.
+CATALOG="${SOFTWARES_CONTAINERS_CONFIG:-}"
+if [[ -z "$CATALOG" && -n "${SITE_CONFIG:-}" && -f "$SITE_CONFIG/containers.yaml" ]]; then
+  CATALOG="$SITE_CONFIG/containers.yaml"
+fi
 
 usage() {
   cat <<EOF
@@ -16,7 +24,8 @@ Usage: find_prebuilt.sh --name TOOL --version VER [--no-probe] [--catalog FILE]
   --name      tool name as known to bioconda/biocontainers (required)
   --version   version string, e.g. 1.21 (required)
   --no-probe  skip network calls; print candidate templates only (offline/testable)
-  --catalog   path to softwares_containers_config.yaml (default: lab config)
+  --catalog   path to the container catalog (default: \$SOFTWARES_CONTAINERS_CONFIG,
+              else \$SITE_CONFIG/containers.yaml)
 Exit codes: 0 candidates printed | 2 usage error | 3 already in catalog | 4 no candidates
 EOF
 }

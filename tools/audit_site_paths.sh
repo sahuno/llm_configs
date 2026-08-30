@@ -9,7 +9,8 @@
 #               else. Must resolve from the path registry instead.
 #               e.g. `export APPTAINER_CACHEDIR=/data1/.../apptainer_cache`
 #
-#   REGISTRY    the path lives in hpc-site/profiles/ — that directory IS the
+#   REGISTRY    the path lives in a site profile (hpc-site/profiles/sites/) —
+#               that IS the
 #               site layer, so real paths are its purpose, not a leak. Swapping
 #               this file out is how another cluster is onboarded.
 #               Auto-classified; not part of the manual triage burden.
@@ -54,7 +55,7 @@ if [ "$BOOTSTRAP" -eq 1 ]; then
     echo "# class: EXECUTABLE (must be converted to the path registry) | EVIDENCE (citation, keep)"
     echo "# Keyed by content hash — editing the line forces re-review."
     printf '#file\tclass\thash\texcerpt\n'
-    collect | grep -v '^plugins/hpc-site/profiles/' | while IFS=$'\t' read -r f h c; do
+    collect | grep -v '^plugins/hpc-site/profiles/sites/' | while IFS=$'\t' read -r f h c; do
       printf '%s\tUNREVIEWED\t%s\t%s\n' "$f" "$h" "$c"
     done
   } > "$ALLOWLIST"
@@ -72,7 +73,7 @@ while IFS=$'\t' read -r file hash excerpt; do
   TOTAL=$((TOTAL+1))
   # The site layer is meant to hold real paths — that is what it is for.
   case "$file" in
-    plugins/hpc-site/profiles/*) REGISTRY=$((REGISTRY+1)); continue ;;
+    plugins/hpc-site/profiles/sites/*) REGISTRY=$((REGISTRY+1)); continue ;;
   esac
   # Key on file+hash, not hash alone: identical lines recur across files
   # (`export APPTAINER_CACHEDIR=...` appears in 4), so a hash-only lookup

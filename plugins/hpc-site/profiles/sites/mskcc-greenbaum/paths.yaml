@@ -1,0 +1,60 @@
+# Site paths for MSKCC HPC / Greenbaum Lab (account: greenbab).
+#
+# These are the paths that did not fit the existing per-category files
+# (databases.yaml, containers.yaml, executor.yaml) and were therefore
+# hardcoded across skills and scripts. Every entry here was found by
+# tools/audit_site_paths.sh in an EXECUTABLE position — a path that gets run
+# or pasted into a command, as opposed to a citation backing a dated claim.
+#
+# Reference these by NAME, never by literal. Resolution order:
+#   1. an explicit environment variable, where one is named below
+#   2. this file
+#   3. fail loudly, naming the key that was not found — never a silent default
+#
+# Another cluster: copy ../example/ rather than editing this file.
+
+site:
+  name: mskcc-greenbaum
+  institution: MSKCC
+  scheduler: slurm
+  account: greenbab
+  os: rhel8
+  container_runtime: apptainer
+
+roots:
+  # Lab-wide shared root. Most other paths hang off this.
+  data_root: /data1/greenbab
+  # Per-user working area.
+  user_root: /data1/greenbab/users/ahunos
+  # Collaboration share.
+  collab_root: /data1/collab001
+
+containers:
+  # Where built/pulled SIF images live. Read image names from containers.yaml;
+  # this is only the directory they sit in.
+  image_dir: /data1/greenbab/software/images
+  # APPTAINER_CACHEDIR. Must be on the shared filesystem, not $HOME — this
+  # exact literal was repeated in 4 files before it lived here.
+  cache_dir: /data1/greenbab/users/ahunos/apptainer_cache
+  # Container definition files.
+  def_dir: /data1/greenbab/users/ahunos/apps/containers
+
+tools:
+  # igver checkout used by the igv-screenshots skill.
+  igver_src: /data1/greenbab/users/ahunos/apps/igver
+
+logs:
+  # Audit log written by the log-slurm-submission hook.
+  # Override with $SLURM_JOB_LOG.
+  slurm_submissions: /data1/greenbab/users/ahunos/slurm_logs/claude_submissions.md
+
+bind_mounts:
+  # Default apptainer -B set for the sclaude() shell. Order matters only for
+  # readability. Add project dirs per-invocation rather than editing this.
+  default:
+    - /data1/greenbab
+    - /data1/collab001
+    - /data1/greenbab/database
+    - /data1/greenbab/software/images
+    - /data1/greenbab/users/ahunos
+    - /data1/greenbab/users/ahunos/apptainer_cache

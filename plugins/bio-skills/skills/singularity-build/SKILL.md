@@ -154,7 +154,7 @@ safe here, and the reason this skill still owns the easy path:**
 
 **Decide:**
 - Verifies clean → register in
-  `profiles/software_configs/softwares_containers_config.yaml`, done. **No build.**
+  `$SITE_CONFIG/containers.yaml`, done. **No build.**
 - No pre-built image, or verification fails → fall through to Step 1, building
   from scratch and recording *why* the pull path was rejected.
 
@@ -400,4 +400,4 @@ After a successful build:
 - [ ] SIF named with version: `toolname_vX.Y.Z.sif`
 - [ ] .def file kept alongside (or version-controlled) — the recipe must survive
 - [ ] Build log kept for reproducibility audit trail
-- [ ] Container registered in `profiles/software_configs/softwares_containers_config.yaml` if production
+- [ ] Container registered in `$SITE_CONFIG/containers.yaml` if production

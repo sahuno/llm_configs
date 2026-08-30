@@ -5,21 +5,40 @@
 
 ---
 
-## 0. Site configuration
+## 0. Site and user profiles
 
-Reference genomes, container images, and SLURM profiles are **not** hardcoded in
-this file. They live in the `hpc-site` plugin's `profiles/` directory, referred
-to below as `$SITE_CONFIG`.
+Reference genomes, container images, SLURM profiles, and personal plot defaults
+are **not** hardcoded in this file. They live in the `hpc-site` plugin under
+`profiles/`, split across two independent axes:
 
-Set it once per machine — point it at the `profiles/` dir of your clone or of
-the installed plugin:
+- **`$SITE_CONFIG`** — the active *site* profile. Cluster facts: genomes,
+  containers, partitions, bind mounts. Changes when the cluster changes.
+- **`$USER_CONFIG`** — the active *user* profile. Person facts: plot defaults,
+  sample-sheet conventions, `DO_NOT` rules. Travels with me between clusters.
+
+Set once per machine:
 
 ```bash
-export SITE_CONFIG="$HOME/projects/llm_configs/plugins/hpc-site/profiles"
+source ~/projects/llm_configs/plugins/hpc-site/profiles/resolve.sh
+export SITE_PROFILE=mskcc-greenbaum   # selects by name
+export USER_PROFILE=sahuno            # defaults to $USER
+profiles_export                       # resolves $SITE_CONFIG and $USER_CONFIG
 ```
 
-Whenever this file says `$SITE_CONFIG/...`, read the file at that path. If
-`$SITE_CONFIG` is unset, ask rather than guessing a path.
+Both auto-select when exactly one real profile exists. When either is unset and
+ambiguous, resolution **fails and lists the candidates** — it never guesses a
+path. If a key or file is missing from a profile, add it there; never fall back
+to a literal path in a script.
+
+| Read this | From |
+|---|---|
+| Reference genomes | `$SITE_CONFIG/databases.yaml` |
+| Container images | `$SITE_CONFIG/containers.yaml` |
+| Scheduler defaults | `$SITE_CONFIG/executor.yaml` |
+| Roots, caches, bind mounts | `$SITE_CONFIG/paths.yaml` |
+| Sample-sheet conventions | `$USER_CONFIG/setup_preferences.yaml` |
+| Prohibited actions | `$USER_CONFIG/DO_NOT.md` |
+| Plot defaults | `$USER_CONFIG/matplotlib_defaults`, `$USER_CONFIG/.Rprofile` |
 
 ---
 
@@ -31,7 +50,7 @@ On every new conversation, do the following in order:
    - **Aim**: Ask for a clear, numbered list of objectives
 2. **For analysis projects**, scaffold the directory structure automatically:
 
-- Genome reference paths: read `$SITE_CONFIG/databases/databases_config.yaml`. Never hardcode a fasta/gtf path in a script or config.
+- Genome reference paths: read `$SITE_CONFIG/databases.yaml`. Never hardcode a fasta/gtf path in a script or config.
 - Preserve file headers; don't make up headers at runtime
 - Route long processes/jobs to compute node (default: componc_cpu) via slurm-mcp.  Use nexflow for pipelines on compute nodes
    ```
@@ -88,7 +107,7 @@ Every project file update must include:
 
 ### Genomics-Specific
 - **Never hardcode contig names or sizes.** Parse from genome sizes file or reference FASTA index. _(Enforced by `block-hardcoded-contigs.sh` hook.)_
-- **Reference data**: Load paths from `$SITE_CONFIG/databases/databases_config.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37.
+- **Reference data**: Load paths from `$SITE_CONFIG/databases.yaml`. Supported genomes: mm10, mm39, hg38, T2T-CHM13, GRCh37.
 
 ### Multi-Genome-Build Projects
 - Some integrative analyses require data from different genome builds (e.g., RNA in mm39, methylation in mm10).
@@ -245,7 +264,7 @@ row to that skill's SKILL.md table. No edit here is needed.
 
 **Standard chain**: pod5 -> dorado basecall -> dorado align (or minimap2) -> samtools sort/index -> modkit pileup -> modkit dmr
 
-**Tool references**: Load containers from `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`.
+**Tool references**: Load containers from `$SITE_CONFIG/containers.yaml`.
 
 **QC checkpoints** (stop and report if any fail):
 1. After basecalling: Check read N50, total bases, pass/fail ratio from dorado summary.
@@ -256,14 +275,14 @@ row to that skill's SKILL.md table. No edit here is needed.
 **Common pitfalls**:
 - Dorado models must match the chemistry/flowcell. Always confirm with the user.
 - modkit pileup `--ref` must match the alignment reference exactly.
-- For mouse samples, CpG islands from `$SITE_CONFIG/databases/databases_config.yaml` are essential context for DMR interpretation.
+- For mouse samples, CpG islands from `$SITE_CONFIG/databases.yaml` are essential context for DMR interpretation.
 
 **"Done" looks like**: bedMethyl files per sample, DMR bed file with statistics, summary plots of methylation distributions, and a manifest CSV linking sample metadata to output paths.
 
 **ONT Processing Infrastructure**:
 - **Chemistry detection**: ONT runs may have mixed chemistries (4kHz and 5kHz). Always check and process separately. Dorado model must match chemistry exactly — mismatches produce silent garbage.
 - **Apptainer cache**: Set `APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache` to avoid home directory quota issues on compute nodes.
-- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`.
+- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `$SITE_CONFIG/containers.yaml`.
 - **Methylation context**: Standard ONT methylation call string is `5mCG_5hmCG@latest,6mA@latest`.
 - **Multi-run samples**: Some patients have multiple sequencing runs. These must be basecalled independently, then merged after alignment — never concatenate raw pod5 files across runs.
 
@@ -341,9 +360,9 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 **Snakemake rules**:
 - There is no `--reason` argument for snakemake. Do not use it.
 - If a rule sets the `singularity:` directive, do NOT add `singularity exec -B ...` inside the shell block. The directive handles container binding.
-- Load SLURM profiles from `$SITE_CONFIG/workflow_profiles/snakemakes/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
-- Load executor settings from `$SITE_CONFIG/workflow_profiles/executor_config.yaml`.
-- Sample sheet format: TSV with columns `patient, sample, condition, assay, path, genome` (defined in `profiles/setup_preferences.yaml`).
+- Load SLURM profiles from `$SITE_CONFIG/snakemake/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
+- Load executor settings from `$SITE_CONFIG/executor.yaml`.
+- Sample sheet format: TSV with columns `patient, sample, condition, assay, path, genome` (defined in `$USER_CONFIG/setup_preferences.yaml`).
 
 **Snakemake run organization**:
 - Pipeline code (Snakefile, rules, profiles) is versioned and reusable. Never write outputs into the pipeline directory.
@@ -352,7 +371,7 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 - One config file per run, named to match the results directory.
 - Run naming convention: `{date}_{genome}_{description}` (e.g. `20260305_hg38_differential_methylation`, `20260310_mm10_v1`).
 
-**Nextflow**: Profiles are in `$SITE_CONFIG/workflow_profiles/nextflow/`.
+**Nextflow**: no site profile exists yet — `$SITE_CONFIG/nextflow/` has never been created. Write `nextflow.config` per project until one does, and add it to the site profile when a reusable set emerges. (The README's feature-request block tracks the Nextflow transition.)
 
 ### CLI Tools and Packages
 - Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
@@ -404,7 +423,7 @@ When writing SLURM job headers or snakemake resource directives, use these as st
 - **Never** attempt recursive grep on directories containing BAM, pod5, fast5, or CRAM files without file-type filtering.
 
 ### Containers
-All container paths are in `$SITE_CONFIG/software_configs/softwares_containers_config.yaml`. Always load paths from this file rather than hardcoding image locations.
+All container paths are in `$SITE_CONFIG/containers.yaml`. Always load paths from this file rather than hardcoding image locations.
 
 #### Container Build Rules (Apptainer / Singularity `%post`)
 
@@ -431,7 +450,7 @@ All container paths are in `$SITE_CONFIG/software_configs/softwares_containers_c
   base image yet, the build fails with a fatal mount error.
 
 ### Reference Genomes
-All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/databases/databases_config.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
+All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/databases.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
 
 ---
 
@@ -450,10 +469,10 @@ All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/dat
 - **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). These are composited in Illustrator from the per-run figures above.
 
 ### Matplotlib Defaults
-Load from `$SITE_CONFIG/programming_language_profiles/python/matplotlib/matplotlib_defaults`.
+Load from `$USER_CONFIG/matplotlib_defaults`.
 
 ### R / ggplot2
-Load theme and font settings from `$SITE_CONFIG/programming_language_profiles/R/`.
+Load theme and font settings from `$USER_CONFIG/.Rprofile`.
 
 ### ggplot2 Font Size Scaling Reference
 The `theme()` element sizes are multiplied from `base_size`:

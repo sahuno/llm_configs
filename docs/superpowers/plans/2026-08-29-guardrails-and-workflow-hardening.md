@@ -122,30 +122,46 @@ cd $(mktemp -d) && python3 <repo>/plugins/bio-skills/scripts/init_project.py --t
 test -f CLAUDE.md && head -20 CLAUDE.md
 ```
 
-### Task 3.2: The path registry (`$SITE_CONFIG` is only half of it)
+### Task 3.2: The path registry — DONE 2026-08-29
 
-**Problem.** `$SITE_CONFIG` as a per-machine env var must be exported in every shell (laptop, container, IDE), and CLAUDE.md §0 currently says "if unset, ask" — per-session friction. Worse, it only covers what already happens to live in `hpc-site/profiles/`: genomes, containers, executor settings. The `EXECUTABLE` paths found in Task 3.3 are a broader set — `apptainer_cache`, the `igver` source tree, `~/code`, project roots, bind-mount lists — and have no home today, which is why they ended up hardcoded in 95 places.
+Implemented as **two-axis profiles** rather than a flat `paths.yaml`, on the
+author's proposal that profiles give drop-in replacement. The file inventory
+showed the existing `profiles/` was mixing two things that compose differently:
 
-**Direction (author's intent, 2026-08-29):** a single `paths.md` / personal-knowledge registry holding these. That is the right shape, and it subsumes this task. Design notes:
+- **`sites/`** — cluster facts (genomes, containers, partitions, bind mounts).
+  Change when you change institution.
+- **`users/`** — person facts (plot defaults, sample-sheet conventions,
+  `DO_NOT`). Follow you across institutions. The `.Rprofile` already did
+  macOS/Linux/Windows font detection: it was written to travel.
 
-- **One resolvable name per path**, referenced everywhere as a name rather than a literal. `apptainer_cache` beats `/data1/greenbab/users/ahunos/apptainer_cache` in all 4 files that currently repeat it verbatim.
-- **Machine-scoped, not global.** The same name resolves differently on the laptop, on HPC, and inside the container. A flat `paths.md` will not survive that — key by machine/profile, or accept that it is HPC-only and say so.
-- **Split it from the second brain.** A path registry is machine-resolvable config that scripts read; a second brain is prose the model reads. They decay differently and want different formats. Notes *about* a path (why this cache dir, what broke last time) belong with the gotchas; the path itself belongs in something a script can parse — YAML/TSV, not prose.
-- **It already half-exists.** `profiles/databases/databases_config.yaml` and `softwares_containers_config.yaml` are exactly this pattern for two categories. Extending them is likely cheaper than starting a new file — and keeps one lookup mechanism rather than two.
-- **Precedence:** env var override → registry entry → fail loudly with the name that was not found. Never silently fall back to a literal.
+Keeping them on one axis would mean moving institution forces you to rebuild
+your plot defaults, and a labmate adopting your site profile inherits your
+personal conventions. Adding a cluster is now adding a profile, **not forking
+the plugin** — which serves the shareability goal better than the previous
+"fork hpc-site" story.
 
-- [ ] **Step 1:** Decide registry format and scope (extend `profiles/` vs new `paths.yaml`), and whether it is machine-keyed.
-- [ ] **Step 2:** Default `$SITE_CONFIG` to `${CLAUDE_PLUGIN_ROOT}/profiles` so the common case needs no export; keep the env var as an override only.
-- [ ] **Step 3:** Populate the registry from the `EXECUTABLE` set produced by Task 3.3 — the audit output *is* the requirements list.
-- [ ] **Step 4:** Update CLAUDE.md §0 to describe resolution and the loud-failure rule.
+- [x] `profiles/{sites,users}/<name>/`, with `example/` templates on both axes.
+- [x] `profiles/resolve.sh`: `SITE_PROFILE`/`USER_PROFILE` select by name,
+      `profiles_export` sets the resolved `$SITE_CONFIG`/`$USER_CONFIG`.
+      Auto-selects when exactly one real profile exists (templates ignored);
+      `USER_PROFILE` falls back to `$USER`; ambiguity **fails and lists
+      candidates** rather than guessing.
+- [x] `sites/mskcc-greenbaum/paths.yaml` populated from the audit's EXECUTABLE
+      set — roots, `APPTAINER_CACHEDIR`, image dir, igver checkout, bind mounts.
+- [x] Missing key or file fails loudly naming what to add; never a literal
+      fallback. 10-case suite in `profiles/test_resolve.sh`, wired into CI.
+- [x] All `$SITE_CONFIG` references repointed; every one verified to resolve.
+- [x] `find_prebuilt.sh` catalog default was an absolute `/data1` literal that
+      existed on one machine, so its catalog-first check silently never fired
+      elsewhere. Now `$SOFTWARES_CONTAINERS_CONFIG` → `$SITE_CONFIG/containers.yaml`.
 
-**Verify:**
-```bash
-# no export set: the common path still resolves
-env -u SITE_CONFIG bash -c 'tools/audit_site_paths.sh' >/dev/null && echo "resolves without export"
-```
+**Also found and removed:** `profiles/bash_profiles/bashrc_iris_link`, a tracked
+symlink to `/home/ahunos/.bashrc` — a file never in the repo, so it had been
+dangling for every other user since it was committed.
 
-**Note:** Task 3.3 depends on this — there is no point converting `EXECUTABLE` lines until there is something to convert them *to*. Do 3.3 Steps 1–2 (inventory and classify) first; they are independent and produce this task's requirements.
+**Also corrected:** CLAUDE.md claimed Nextflow profiles live in
+`$SITE_CONFIG/nextflow/`. No such directory has ever been tracked. Same class as
+the Task 2.4 phantom-hook claim.
 
 ### Task 3.3: `/data1` triage — scrub scripts, keep receipts
 

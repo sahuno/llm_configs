@@ -293,7 +293,7 @@ When containerizing a bioinformatics tool, classify it into one of three tiers:
 
 10.1. **Name SIF files with version**: `toolname_vX.Y.Z.sif`, not `toolname.sif`. Multiple versions should coexist.
 
-10.2. **Store production containers** in `softwares/containers/` under the project, and register them in `profiles/software_configs/softwares_containers_config.yaml`.
+10.2. **Store production containers** in `softwares/containers/` under the project, and register them in `$SITE_CONFIG/containers.yaml`.
 
 10.3. **Keep the .def file alongside the .sif** (or in a version-controlled directory). The def file is the recipe — without it the container is a black box.
 
@@ -375,4 +375,4 @@ the quay tags API (what `find_prebuilt.sh` does):
       (`SSL_CERT_FILE`/`SSL_CERT_DIR`), not a build defect. See
       `references/env_leak.md`.
 - [ ] On clean verification: register the SIF in
-      `profiles/software_configs/softwares_containers_config.yaml`.
+      `$SITE_CONFIG/containers.yaml`.
