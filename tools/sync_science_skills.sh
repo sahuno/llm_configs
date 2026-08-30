@@ -62,7 +62,7 @@ mkdir -p "$REPO_DIR"
 # `pull <name>`. Absence from the release bundle is a useful hint that a skill
 # was authored rather than shipped, but it is only a hint — org-synced product
 # skills also fail that test, and vendoring those would be wrong.
-tracked() { ls "$REPO_DIR" 2>/dev/null | sort; }
+tracked() { find "$REPO_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort; }
 
 # Candidates: in the app, not shipped by the release, not yet tracked.
 candidates() {
@@ -83,7 +83,10 @@ case "$cmd" in
       [ -d "$APP_DIR/$s" ] && in_app=1
       if   [ $in_repo -eq 1 ] && [ $in_app -eq 0 ]; then
         printf '%-34s \033[31mMISSING FROM APP\033[0m — an upgrade may have removed it; run push\n' "$s"; CHANGED=1
-      elif diff -rq "$REPO_DIR/$s" "$APP_DIR/$s" >/dev/null 2>&1; then
+      # .sync-org and .catalog_stamp are stripped on pull, so a raw diff always
+      # reports them as differences. Exclude them or every skill reads as drifted
+      # and the signal this tool exists to give becomes noise.
+      elif diff -rq -x '.sync-org' -x '.catalog_stamp' "$REPO_DIR/$s" "$APP_DIR/$s" >/dev/null 2>&1; then
         printf '%-34s in sync\n' "$s"
       else
         newer=$([ "$APP_DIR/$s" -nt "$REPO_DIR/$s" ] && echo "app is newer — pull" || echo "repo is newer — push")
@@ -119,8 +122,7 @@ case "$cmd" in
     echo "Review with 'git diff' before committing."
     ;;
   push)
-    for s in $(ls "$REPO_DIR" 2>/dev/null); do
-      [ -d "$REPO_DIR/$s" ] || continue
+    for s in $(tracked); do
       rm -rf "${APP_DIR:?}/$s"; cp -R "$REPO_DIR/$s" "$APP_DIR/$s"
       echo "  pushed $s"
     done

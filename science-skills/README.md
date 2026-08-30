@@ -50,8 +50,9 @@ stripped on pull and gitignored. The app regenerates both.
 | `pinned-reference-snapshot` | Pins an external reference resource to a vendored, checksummed snapshot so results cannot shift under a database release |
 | `lab-figure-format` | Lab figure formatting, with `operon_arial.mplstyle` |
 
-The first two are close cousins of work in `plugins/bio-skills` — the
-`repro-auditor` agent asks the same question as `artifact-provenance-audit`, and
-`pinned-reference-snapshot` is the reference-data analogue of the version
-pinning that `gotcha_audit.py` enforces on incident records. Worth keeping the
-wording aligned when either changes.
+These overlap with work in `plugins/`, `tools/` and `CLAUDE.md`. That overlap is
+audited with citations in [`../docs/skill-overlap-audit.md`](../docs/skill-overlap-audit.md):
+one genuine conflict (resolved), one gap in this repo that
+`pinned-reference-snapshot` exposed (partly closed — checksums still need the
+cluster), and one clean complement. Re-read it when either side changes a shared
+concept.
