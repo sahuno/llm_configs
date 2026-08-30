@@ -41,6 +41,8 @@ chmod +x ~/.claude/hooks/*.sh
 cp -r claude/profiles ~/.claude/profiles
 ```
 
+Do not blindly overwrite `~/.claude/settings.json` on a machine that already has plugins or model settings. Merge the `hooks` object from `claude/settings.json` instead.
+
 ### Where are my API keys stored?
 
 API keys are exported in `~/.bashrc` and passed into the container via `--env` flags in `sclaude()`. They are **never** committed to the repo. The `~/.bashrc_container` file references them with `export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"` — it inherits the value, it does not hardcode it.
@@ -83,7 +85,19 @@ Hooks are safety rails, not walls. If a block is a false positive:
 
 ### Why do hooks need `jq`?
 
-All hooks parse their input as JSON (Claude Code passes tool parameters as JSON on stdin). Without `jq`, every hook silently fails and provides no protection. Make sure `jq` is installed in your container.
+The bash hooks parse their input as JSON (Claude Code passes tool parameters as JSON on stdin). Without `jq`, those hooks silently fail and provide no protection. Make sure `jq` is installed in your container.
+
+### How do I save the last assistant reply to a file?
+
+Use the harness builtin. Every CLI agent ships one now, so there is nothing to
+install and no hook to run on every turn:
+
+- **Claude Code:** `/copy` (or `/copy 2` for the reply before it), then `w` and a
+  filename. `/export file.md` dumps the whole conversation.
+- **Grok:** `/copy docs/llm_responses/last.md`, or `/copy 2 path.md`.
+
+The custom `save-llm-response` CLI that used to live here has been removed — it
+predated the builtins and no longer does anything they don't.
 
 ---
 
