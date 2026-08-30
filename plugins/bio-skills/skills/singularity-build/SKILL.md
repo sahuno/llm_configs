@@ -69,10 +69,10 @@ guarded smoke tests, and tier-appropriate SLURM resource recommendations.
 
 ```bash
 scripts/generate_build_script.sh --name samtools --version 1.21 --tier 1 \
-  --project-dir /data1/greenbab/users/ahunos/project
+  --project-dir <project-dir>
 
 scripts/generate_build_script.sh --name dorado --version v1.4.0 --tier 3 \
-  --project-dir /data1/greenbab/users/ahunos/project \
+  --project-dir <project-dir> \
   --build-args "DORADO_VERSION=v1.4.0 BUILD_THREADS=8" --gpu
 ```
 
@@ -318,7 +318,8 @@ LOG_FILE="${PROJECT_DIR}/build_<tool>_$(date '+%Y%m%d_%H%M%S').log"
 unset APPTAINER_BIND SINGULARITY_BIND 2>/dev/null || true
 
 # Set cache dir to avoid home quota issues on compute nodes
-export APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache
+# Read containers.cache_dir from the active site profile; never hardcode.
+export APPTAINER_CACHEDIR="$(site_path containers.cache_dir)"
 mkdir -p "${APPTAINER_CACHEDIR}"
 
 echo "=== Building <tool> container ===" | tee "$LOG_FILE"

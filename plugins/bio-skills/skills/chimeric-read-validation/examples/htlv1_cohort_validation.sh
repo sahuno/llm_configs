@@ -19,10 +19,10 @@ SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS="${SKILL_DIR}/scripts"
 
 # ---- Inputs -----------------------------------------------------------
-PROJECT_ROOT="/data1/greenbab/projects/ont/Project_17424"
+PROJECT_ROOT="${PROJECT_ROOT:?set PROJECT_ROOT to your cohort root}"
 TABLE1="${PROJECT_ROOT}/docs/manuscript/tables/Table1_htlv1_integrations.tsv"
 BAM_DIR="${PROJECT_ROOT}/analysis/htlv1_offshelf_eval/20260501_hg38plusHTLV1EBV_cohort/realign"
-RMSK_BED="/data1/greenbab/database/RepeatMaskerDB/repeatmasker_dot_org/hg38/RepLibrary20140131/rmsk_all_repeats_hg38.bed.gz"
+RMSK_BED="${RMSK_BED:-$(python3 -c "import yaml,os,sys; print(yaml.safe_load(open(os.environ['SITE_CONFIG']+'/databases.yaml'))['reference_genomes']['local']['hg38']['repMaskerBed'])" 2>/dev/null)}"
 MOSDEPTH_PATTERN="${PROJECT_ROOT}/results/20260502_hg38plusHTLV1EBV_cohort_host_qc/mosdepth_host/{patient}_tumor.mosdepth.summary.txt"
 
 # ---- Run dir ----------------------------------------------------------

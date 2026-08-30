@@ -161,7 +161,7 @@ if echo "$COMBINED" | grep -q "Permission denied.*\.log\|Permission denied.*buil
   # WRONG:
   SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE[0]}\")\" && pwd)\"
   # CORRECT:
-  PROJECT_DIR=\"/data1/greenbab/users/ahunos/path/to/project\""
+  PROJECT_DIR=\"<project-dir>\""
 fi
 
 # ── Pattern: setgroups / apt-get failure ──

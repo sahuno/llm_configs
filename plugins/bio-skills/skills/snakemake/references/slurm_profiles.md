@@ -21,7 +21,7 @@ executor: slurm
 
 default-resources:
     slurm_partition: "cpushort"
-    slurm_account: "greenbab"
+    slurm_account: "<your-slurm-account>"   # executor.yaml: account
     mem_mb: 0
     mem_mb_per_cpu: 8000
     cpus_per_task: 4
@@ -51,7 +51,7 @@ latency-wait: 120             # faster feedback
 max-status-checks-per-second: 1
 
 use-singularity: true
-singularity-args: "--bind /data1/greenbab/,/data1/collab001/"
+singularity-args: "--bind <site bind_mounts.default, from paths.yaml>"
 ```
 
 ## Tier 2: Production (slurmConfig)
@@ -64,7 +64,7 @@ executor: slurm
 
 default-resources:
     slurm_partition: "componc_cpu"
-    slurm_account: "greenbab"
+    slurm_account: "<your-slurm-account>"   # executor.yaml: account
     mem_mb: 0
     mem_mb_per_cpu: 32000
     cpus_per_task: 8
@@ -92,7 +92,7 @@ max-status-checks-per-second: 1
 # NOTE: no keep-going, no rerun-incomplete — fail explicitly in production
 
 use-singularity: true
-singularity-args: "--bind /data1/greenbab/,/data1/collab001/"
+singularity-args: "--bind <site bind_mounts.default, from paths.yaml>"
 ```
 
 ## Tier 3: Workflow-Specific (per-workflow)
@@ -105,7 +105,7 @@ executor: slurm
 
 default-resources:
     slurm_partition: "componc_cpu"
-    slurm_account: "greenbab"
+    slurm_account: "<your-slurm-account>"   # executor.yaml: account
     mem_mb: 0
     mem_mb_per_cpu: 4000
     cpus_per_task: 1
@@ -136,7 +136,7 @@ latency-wait: 360
 max-status-checks-per-second: 1
 
 use-singularity: true
-singularity-args: "--bind /data1/greenbab/,/data1/collab001/"
+singularity-args: "--bind <site bind_mounts.default, from paths.yaml>"
 ```
 
 ## Snakemake 9 + SLURM Pitfall Table
@@ -145,7 +145,7 @@ singularity-args: "--bind /data1/greenbab/,/data1/collab001/"
 |---|---------|---------|-----|
 | 1 | Built-in `mem_mb: 1000` conflicts with `mem_mb_per_cpu` | `SLURM_MEM_PER_NODE` vs `SLURM_MEM_PER_CPU` fatal error | Add `mem_mb: 0` to `default-resources` in every profile |
 | 2 | `mem:` in profile sets `SLURM_MEM_PER_NODE` | Same fatal conflict with any `mem_mb_per_cpu` | Never use `mem:` — always use `mem_mb_per_cpu` |
-| 3 | Missing `slurm_account` in default-resources | Silent job rejection (no error in Snakemake log) | Always set `slurm_account: "greenbab"` in `default-resources` |
+| 3 | Missing `slurm_account` in default-resources | Silent job rejection (no error in Snakemake log) | Always set `slurm_account: "<your-slurm-account>"   # executor.yaml: account` in `default-resources` |
 | 4 | `use-singularity: true` in profile doesn't propagate to child SLURM jobs | Jobs run without container; tools not found or wrong Python | Pass `--use-singularity` on the coordinator CLI explicitly |
 | 5 | Coordinator submitted with `--mem=XG` (sbatch) | Propagates `SLURM_MEM_PER_NODE` to all child jobs via `--export=ALL` | Use `--mem-per-cpu` for coordinator; add `unset SLURM_MEM_PER_NODE` in submit script |
 | 6 | `--singularity-args` in profile (with `--` prefix) | Key not recognized; bind mounts silently missing | Use `singularity-args:` (no `--` prefix) in profile YAML |

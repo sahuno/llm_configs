@@ -11,7 +11,11 @@ from pathlib import Path
 
 def load_database_config():
     """Load the central database configuration."""
-    db_config_path = "/data1/greenbab/users/ahunos/apps/llm_configs/databases_config.yaml"
+    # Resolve from the active site profile (hpc-site plugin). The previous
+    # absolute literal pointed at a path this file has never lived at, so the
+    # config was never actually loaded and the check silently degraded.
+    site = os.environ.get("SITE_CONFIG", "")
+    db_config_path = os.path.join(site, "databases.yaml") if site else ""
     if os.path.exists(db_config_path):
         with open(db_config_path, 'r') as f:
             return yaml.safe_load(f)
