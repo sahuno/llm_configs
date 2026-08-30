@@ -95,6 +95,21 @@ fi
 check log-slurm-submission.sh 0 "malformed payload does not crash" '{"tool_response":"not json"}'
 rm -rf "$LOGD"
 
+echo "=== suggest-project-init (SessionStart: speak only with evidence) ==="
+SPD=$(mktemp -d); ORIG=$PWD
+speaks() { ( cd "$1" && "$HOOKS/suggest-project-init.sh" ) | grep -qc . ; }
+mkdir -p "$SPD/bare" "$SPD/proj" "$SPD/named"
+touch "$SPD/proj/config.yaml"
+touch "$SPD/named/config.yaml" "$SPD/named/CLAUDE.md"
+for case in "bare:silent" "proj:speaks" "named:silent"; do
+  d=${case%%:*}; want=${case##*:}
+  out=$( cd "$SPD/$d" && "$HOOKS/suggest-project-init.sh" 2>&1 )
+  got=$([ -n "$out" ] && echo speaks || echo silent)
+  if [ "$got" = "$want" ]; then PASS=$((PASS+1)); printf '  \033[32mok\033[0m   %-58s (%s)\n' "SessionStart in $d/" "$got"
+  else FAIL=$((FAIL+1)); FAILED_NAMES+=("SessionStart $d"); printf '  \033[31mFAIL\033[0m %-58s want %s got %s\n' "SessionStart in $d/" "$want" "$got"; fi
+done
+cd "$ORIG"; rm -rf "$SPD"
+
 echo "=== warn-only hooks (must never block) ==="
 check warn-absolute-paths.sh    0 "absolute path warns only"      "$(write_file 'src/a.py' 'p = \"/data1/x\"')"
 check block-hardcoded-contigs.sh 0 "hardcoded contigs warn only"  "$(write_file 'src/a.py' 'chroms = [\"chr1\",\"chr2\"]')"

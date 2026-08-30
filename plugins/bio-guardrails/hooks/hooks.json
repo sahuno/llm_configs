@@ -1,5 +1,5 @@
 {
-  "description": "Genomics safety guardrails — blocks raw-data writes, cross-genome mixing, untagged genomic outputs, and dangerous shell commands; warns on hardcoded contigs, invalid YAML, and absolute paths.",
+  "description": "Genomics safety guardrails \u2014 blocks raw-data writes, cross-genome mixing, untagged genomic outputs, and dangerous shell commands; warns on hardcoded contigs, invalid YAML, and absolute paths.",
   "hooks": {
     "PreToolUse": [
       {
@@ -76,6 +76,17 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/log-slurm-submission.sh\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/suggest-project-init.sh\"",
+            "timeout": 5
           }
         ]
       }

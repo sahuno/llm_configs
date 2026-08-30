@@ -42,14 +42,14 @@ claude plugin validate . && for p in bio-skills bio-guardrails hpc-site; do
 
 Suite is 30 cases, green on both JSON backends.
 
-### Task 1.2: Scrub identifiers from the public repo
+### Task 1.2: Scrub identifiers — DONE 2026-08-29
 
 **Problem.** `hpc-site` is published as a worked example. `docs/FAQ.md:394` contains a real LDAP UID (not repeated here — see the line). Internal project names (`triplicates_epigenetics_diyva`, `/data1/collab001`) appear throughout. None are secrets; all are avoidable.
 
 **Files:** `claude/docs/FAQ.md`, `README.md`, `plugins/hpc-site/**`
 
 - [x] **Step 1:** Replace the literal UID with a placeholder (`<your-uid>`) and keep the explanation — the LDAP/SSSD/`getpwuid()` mechanism is the valuable part, not the number.
-- [ ] **Step 2:** Decide per-name whether internal project paths stay. Bind-mount examples in the `sclaude` function need *a* path; a generic one teaches the same thing.
+- [x] **Step 2:** Decide per-name whether internal project paths stay. Bind-mount examples in the `sclaude` function need *a* path; a generic one teaches the same thing.
 
 **Verify:**
 ```bash
@@ -63,36 +63,36 @@ grep -rn "$(sed -n '394p' claude/docs/FAQ.md | grep -oE '[0-9]{9}')" --exclude-d
 
 Every item here is read by the model each session and acted on. All are sub-hour edits. Verification is manual reading, so each has an explicit acceptance question.
 
-### Task 2.1: Figure font contradiction
+### Task 2.1: Figure font contradiction — DONE (#5)
 
 `CLAUDE.md:442` and `:473` demand "20pt at final size" for Nature figures. `plugins/bio-skills/agents/figure-editor.md:10` states Nature's actual guidance: lettering ~2 mm at final size, 5–8 pt. Both cannot be followed; 20 pt on an 89 mm column is enormous.
 
-- [ ] Resolve in favour of the agent for **final** figures. State explicitly that the 20 pt figure applies to on-screen/draft figures before reduction, if that was the intent.
-- [ ] Make `figure-editor` the named authority for manuscript figures in §7.
+- [x] Resolve in favour of the agent for **final** figures. State explicitly that the 20 pt figure applies to on-screen/draft figures before reduction, if that was the intent.
+- [x] Make `figure-editor` the named authority for manuscript figures in §7.
 
 **Accept when:** §7 and `figure-editor.md` can both be followed on the same figure without conflict.
 
-### Task 2.2: Multiple-testing default
+### Task 2.2: Multiple-testing default — DONE (#5)
 
 `CLAUDE.md:484` sets `Multiple testing correction | Bonferroni` as a blanket default, while §3C:288 uses DESeq2's `padj < 0.05` — Benjamini–Hochberg. Bonferroni as a genomics discovery default reports ~0 DMRs/DEGs at realistic n.
 
-- [ ] Change the default to BH/FDR; reserve Bonferroni for confirmatory tests with small m, and say which is which.
-- [ ] This becomes load-bearing once the stats-reviewer role (Task 4.2) exists — it will enforce whatever this table says.
+- [x] Change the default to BH/FDR; reserve Bonferroni for confirmatory tests with small m, and say which is which.
+- [x] This becomes load-bearing once the stats-reviewer role (Task 4.2) exists — it will enforce whatever this table says.
 
 **Accept when:** §8 and §3C agree, and the table names when each correction applies.
 
-### Task 2.3: Broken §1 and its FAQ echo
+### Task 2.3: Broken §1 and its FAQ echo — DONE (#5)
 
-- [ ] `CLAUDE.md` §1 steps run `1., 2., … 6.` — steps 3–5 were deleted. Renumber.
-- [ ] Lines 34–36 wedge three unrelated rules (including a `nexflow` typo) between step 2 and its directory tree. Move to §2/§4.
-- [ ] `docs/FAQ.md:127–133` still documents the deleted 6-step protocol, including "search `~/memories/`" and "read the project file from `~/projects/`". Either restore the resume-from-project-file step in §1 — it is the most valuable of the deleted ones and Task 4.5 depends on it — or correct the FAQ.
+- [x] `CLAUDE.md` §1 steps run `1., 2., … 6.` — steps 3–5 were deleted. Renumber.
+- [x] Lines 34–36 wedge three unrelated rules (including a `nexflow` typo) between step 2 and its directory tree. Move to §2/§4.
+- [x] `docs/FAQ.md:127–133` still documents the deleted 6-step protocol, including "search `~/memories/`" and "read the project file from `~/projects/`". Either restore the resume-from-project-file step in §1 — it is the most valuable of the deleted ones and Task 4.5 depends on it — or correct the FAQ.
 
 **Accept when:** `sed -n '/## 1\./,/^---/p' claude/CLAUDE.md | grep -E '^[0-9]+\.'` is gap-free, and the FAQ describes the steps that exist.
 
-### Task 2.4: Claims about things that do not exist
+### Task 2.4: Claims — DONE (#5)
 
-- [ ] `CLAUDE.md:441` cites a hook `ensure_results_figures.sh` that exists only as a proposal in `claude/inDevelopment/hooks_implementation.md`. The model will assume figure dirs appear automatically and skip creating them. Either implement it (~10 lines, genuinely useful) or delete the claim.
-- [ ] §6 "Compute Awareness" says "use these as starting estimates" and is followed by no table. Fill it or cut the sentence.
+- [x] `CLAUDE.md:441` cites a hook `ensure_results_figures.sh` that exists only as a proposal in `claude/inDevelopment/hooks_implementation.md`. The model will assume figure dirs appear automatically and skip creating them. Either implement it (~10 lines, genuinely useful) or delete the claim.
+- [x] §6 "Compute Awareness" says "use these as starting estimates" and is followed by no table. Fill it or cut the sentence.
 
 **Verify:**
 ```bash
@@ -114,7 +114,7 @@ grep -n 'ensure_results_figures' claude/CLAUDE.md plugins/bio-guardrails/hooks/*
 
 - [x] **Step 1:** Add project-CLAUDE.md generation to `init_project.py`.
 - [x] **Step 2:** Shrink §1 to: if no project CLAUDE.md exists, offer `/init-bio-project`.
-- [ ] **Step 3 (optional):** Wire the SessionStart hook already drafted in `claude/inDevelopment/hooks_suggestions.md` (#1) and never implemented.
+- [x] **Step 3:** SessionStart hook implemented as `suggest-project-init.sh`. The draft fired on every `UserPromptSubmit` and warned whenever markers were absent, which nags in every non-project directory; this fires once per session and only with positive evidence the directory *is* a project lacking a `CLAUDE.md`.
 
 **Verify:**
 ```bash
@@ -189,11 +189,11 @@ tools/audit_site_paths.sh    # exit 0 only when unreviewed = 0 AND executable-un
 
 **Depends on** the path registry design (see note under Task 3.2).
 
-### Task 3.4: Fix the marketplace description
+### Task 3.4: Fix the marketplace description — DONE 2026-08-29
 
 `bio-skills` is described in `.claude-plugin/marketplace.json` as purely genomics and never mentions `journal-club`, `docker-hpc`, `runtime-resource-study`, or `scatter-gather` — so the domain-neutral half is invisible to the audience it would serve.
 
-- [ ] Rewrite the description to lead with what is domain-neutral, then the genomics specialisation.
+- [x] Rewrite the description to lead with what is domain-neutral, then the genomics specialisation.
 
 ---
 

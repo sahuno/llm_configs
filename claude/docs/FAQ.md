@@ -427,7 +427,7 @@ export MAMBA_ROOT_PREFIX="$HOME/miniforge3"  # add to ~/.bashrc
 
 **When it happens**: When any tool that calls `getpwuid()` — including `apptainer` itself — runs **from inside the Claude Code container** (i.e. after `sclaude()` has started). Claude Code's Bash tool triggers this when it runs `apptainer` or other system tools.
 
-**Root cause**: Your UID (`164079095`) is an LDAP user. LDAP users are resolved via SSSD on the host but are NOT stored in the local `/etc/passwd`. Inside the Apptainer container, `nsswitch.conf` is `passwd: files` only (no SSSD). When any Go/C binary calls `getpwuid(164079095)`, NSS finds nothing and returns NULL → fatal error.
+**Root cause**: Your UID (find it with `id -u`) is an LDAP user. LDAP users are resolved via SSSD on the host but are NOT stored in the local `/etc/passwd`. Inside the Apptainer container, `nsswitch.conf` is `passwd: files` only (no SSSD). When any Go/C binary calls `getpwuid($(id -u))`, NSS finds nothing and returns NULL → fatal error.
 
 **Why intermittent**: SSSD caches lookups; cold-start or long-idle sessions may have cache misses even on the host, making the error seem random.
 
