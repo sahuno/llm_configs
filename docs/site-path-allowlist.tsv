@@ -98,3 +98,4 @@ plugins/bio-skills/skills/chimeric-read-validation/examples/htlv1_cohort_validat
 plugins/bio-skills/skills/chimeric-read-validation/scripts/extract_chimeric_reads.py	EVIDENCE	26922689b60ff7589aada44962e42c34	    /data1/greenbab/projects/ont/Project_17424/results/20260503_hg38plusHTLV1EBV_cohort_chimeric_read_evidence/
 plugins/bio-skills/skills/chimeric-read-validation/SKILL.md	EVIDENCE	4169fd09db9d3281bbd7ac881b92f330	- Reference implementation that demonstrated the patterns: `/data1/greenbab/projects/ont/Project_17424/results/20260503_
 plugins/hpc-site/skills/mskcc-hpc/references/mskcc_partitions.md	EVIDENCE	bb0460324a62454e6a67380310e165f2	scontrol show partition cpu | tr ' ' '\n' | grep DenyAccounts | grep -c greenbab
+plugins/bio-skills/scripts/test_init_project.py	EVIDENCE	53a87b417c9711b78981b4f28806c149	check("keeps cluster facts out of the pipeline", "componc" not in body and "greenbab" not in body)

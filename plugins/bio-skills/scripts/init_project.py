@@ -351,6 +351,43 @@ Not started.
 """
 
 
+def _nextflow_config_content(project_name):
+    """Pipeline-level nextflow.config that inherits the site profile.
+
+    Kept deliberately thin: cluster facts (partitions, account, container
+    runtime, retry policy) belong to the site profile so they are fixed in one
+    place when the cluster changes. Only pipeline-specific values live here.
+    """
+    return f"""// {project_name} — pipeline configuration
+//
+// Cluster facts come from the site profile. Set SITE_CONFIG first:
+//     source <hpc-site>/profiles/resolve.sh && profiles_export
+//
+// Run:  nextflow run . -profile slurm -resume
+// Test: nextflow run . -profile test
+
+def siteConfig = System.getenv('SITE_CONFIG')
+if (siteConfig) {{
+    includeConfig "${{siteConfig}}/nextflow.config"
+}} else {{
+    System.err.println "WARNING: SITE_CONFIG unset — no cluster profile loaded. " +
+                       "Partitions, account and container settings will be missing."
+}}
+
+manifest {{
+    name            = '{project_name}'
+    nextflowVersion = '>=23.10.0'
+}}
+
+params {{
+    // Pipeline-specific parameters only. Reference data belongs in the site
+    // profile's databases.yaml, not here.
+    outdir      = 'results'
+    sample_sheet = 'sample_sheet.tsv'
+}}
+"""
+
+
 def create_project(project_name, project_type, genome, engine=None, in_place=False):
     """Create the project directory structure and starter files.
 
@@ -406,6 +443,8 @@ def create_project(project_name, project_type, genome, engine=None, in_place=Fal
         "README.md": _readme_content(project_name, genome, project_type),
         "CLAUDE.md": _project_claude_md(project_name, genome, project_type, engine),
     }
+    if engine == "nextflow":
+        files["nextflow.config"] = _nextflow_config_content(project_name)
 
     for filename, content in files.items():
         (root / filename).write_text(content)

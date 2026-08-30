@@ -33,3 +33,7 @@ __pycache__/
 
 # Local SLURM audit log (the hook writes here when no site profile is set)
 slurm_logs/
+
+# Claude Science app metadata — org identifier and per-sync timestamps
+science-skills/**/.sync-org
+science-skills/**/.catalog_stamp

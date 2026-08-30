@@ -48,6 +48,7 @@ profiles/
 │   │   ├── containers.yaml       # container image registry
 │   │   ├── executor.yaml         # scheduler defaults
 │   │   ├── snakemake/            # Snakemake SLURM profiles
+│   │   ├── nextflow.config       # Nextflow SLURM profile (labels, retry, reporting)
 │   │   └── bashrc_container      # rc file for the Apptainer shell
 │   └── example/                  # fill-in template + what to measure
 └── users/                        # PERSON facts — follow you across institutions

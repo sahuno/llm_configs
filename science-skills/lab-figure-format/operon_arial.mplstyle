@@ -1,0 +1,24 @@
+# operon_arial.mplstyle - house publication style (Arial)
+# Prefer house_style() from kernel.py; this file is for scripts that want
+# plt.style.use(). Hardcodes Arial - edit font.sans-serif and mathtext.* to change.
+font.family:        sans-serif
+font.sans-serif:    Arial, Helvetica, DejaVu Sans
+font.size:          8
+axes.titlesize:     8
+axes.labelsize:     8
+legend.fontsize:    7
+xtick.labelsize:    6
+ytick.labelsize:    6
+axes.spines.top:    False
+axes.spines.right:  False
+axes.titlelocation: left
+axes.titleweight:   normal
+figure.dpi:         110
+savefig.dpi:        300
+mathtext.fontset:   custom
+mathtext.rm:        Arial
+mathtext.it:        Arial:italic
+mathtext.bf:        Arial:bold
+pdf.fonttype:       42
+ps.fonttype:        42
+svg.fonttype:       none

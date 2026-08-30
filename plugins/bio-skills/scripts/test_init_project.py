@@ -38,6 +38,22 @@ with tempfile.TemporaryDirectory() as tmp:
     check("pipeline type records the engine", "snakemake" in body)
     check("pipeline type records its domain", "pipeline" in body.lower())
 
+with tempfile.TemporaryDirectory() as tmp:
+    scaffold(tmp, "--name", "nf", "--type", "pipeline", "--engine", "nextflow", "--genome", "hg38")
+    cfg = pathlib.Path(tmp) / "nf" / "nextflow.config"
+    check("nextflow engine scaffolds nextflow.config", cfg.exists())
+    if cfg.exists():
+        body = cfg.read_text()
+        check("inherits the site profile", "includeConfig" in body and "SITE_CONFIG" in body)
+        check("warns when SITE_CONFIG is unset", "WARNING: SITE_CONFIG unset" in body)
+        check("documents -resume", "-resume" in body)
+        check("keeps cluster facts out of the pipeline", "componc" not in body and "greenbab" not in body)
+
+with tempfile.TemporaryDirectory() as tmp:
+    scaffold(tmp, "--name", "sm", "--type", "pipeline", "--engine", "snakemake", "--genome", "hg38")
+    check("snakemake engine gets no nextflow.config",
+          not (pathlib.Path(tmp) / "sm" / "nextflow.config").exists())
+
 print("─" * 42)
 print(f"passed {PASS}   failed {FAIL}")
 sys.exit(1 if FAIL else 0)
