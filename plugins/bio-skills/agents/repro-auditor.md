@@ -27,9 +27,20 @@ Is `data/raw/` documented — what it is, where it came from, checksums?
 **4. Determinism.** Seeds set for every stochastic step. Any `detectCores()`,
 `Sys.time()`, or unsorted-glob input ordering that would vary between runs?
 
-**5. The numbers.** Pick two or three specific figures from the README, docs, or
-manuscript and try to trace each back to the script and output file that
-produced it. A number you cannot trace is the finding — report it.
+**5. Producers.** Every saved artifact should have a **producer** — a script or
+notebook cell that writes it. One with none is an **orphan**: it exists because
+it was made in a live session that is now gone, and a fresh checkout cannot
+recreate it.
+
+Scan for *write* calls, not read calls, across scripts and notebooks, and match
+them against the artifacts on disk. Sampling two or three figures and tracing
+each back by hand is the fallback; it finds orphans only by luck.
+
+Where an artifact store with lineage records is available, the
+`artifact-provenance-audit` Claude Science skill does this exhaustively and
+mechanically — `scan_producers` and `match_artifacts_to_producers`. Prefer it
+over hand-tracing, and use the same vocabulary either way so the two reports
+describe the same object.
 
 **6. Gaps between doc and code.** Where they disagree, the code is ground truth
 and the doc is a bug.

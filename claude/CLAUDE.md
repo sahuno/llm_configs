@@ -480,7 +480,7 @@ All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/dat
 - **Output 3 formats**: Save every figure as PNG, PDF, and SVG under `results/{date}_{genome}_{description}/figures/{png,pdf,svg}/`. Create these directories in the script; there is no hook that makes them.
 - **Font**: Arial (fall back to Helvetica if Arial unavailable). Headers bold.
   - **Draft / analysis figures** (viewed on screen at full size): minimum 20pt.
-  - **Final manuscript figures** (reduced to journal column width): 5–7pt — see the Nature section below. 20pt at a 90 mm column is roughly 3.5× too large.
+  - **Final manuscript figures** (reduced to journal column width): 5–8pt — see the Nature section below. 20pt at a 90 mm column is roughly 3.5× too large.
 - **Axes**: Must be legible at final print size. Minimum tick label 16pt on draft figures; scale down with the body text for final figures.
 - **Multi-panel figures**: Fix the y-axis range across panels to enable direct visual comparison.
 - **Statistical tests**: Always prompt the user about including statistical annotations (e.g., t-test with p-values for group comparisons).
@@ -514,7 +514,8 @@ The `theme()` element sizes are multiplied from `base_size`:
 
 ### Nature Magazine Specifications (Final Manuscript Figures Only)
 - Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.
-- Font: Arial or Helvetica, **5–7pt at final size** (lettering ≈ 2 mm tall, per Nature's guidance). This is the authoritative figure for manuscript submission; the 20pt default above applies to draft figures only.
+- Font: Arial or Helvetica, **5–8pt at final size** (lettering ≈ 2 mm tall, per Nature's guidance). This is the authoritative range for manuscript submission; the 20pt default above applies to draft figures only.
+- **The lab's choice within that range is 8pt** — single-panel body 8pt, legend 7pt, ticks 6pt, single column 3.50 in (= 88.9 mm). That ladder and its matplotlib style live in the `lab-figure-format` Claude Science skill, mirrored at `science-skills/lab-figure-format/`. Use it rather than picking a size per figure; consistency across panels matters more than the exact point within the range.
 - The `scientific-illustrator` agent (bio-skills plugin) is the authority for final figures — it sizes panels so lettering survives reduction.
 - Apply these only when the user explicitly requests publication-quality or Nature-format figures.
 
