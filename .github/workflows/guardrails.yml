@@ -78,6 +78,14 @@ jobs:
       - name: Every incident record carries version, date, status and a detector
         run: python3 tools/gotcha_audit.py
 
+  figure-manifest:
+    runs-on: ubuntu-latest
+    name: figure manifest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Figures can be traced to the code that produced them
+        run: python3 plugins/bio-skills/scripts/test_figure_manifest.py
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

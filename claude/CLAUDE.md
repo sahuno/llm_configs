@@ -229,6 +229,9 @@ Every analysis script must produce a **timestamped log file** that captures enou
 - Skip logging for "small" filtering steps — every row/column change matters
 - Hardcode log paths — accept `--log_dir` as a command-line argument with default `"logs"`
 
+Close a session with `/wrapup`, which appends the five required fields below to
+`~/projects/<project>.md` and refreshes the project `CLAUDE.md` Status line.
+
 ### Persistent Directories
 | Purpose  | Path                    |
 |----------|-------------------------|
@@ -474,6 +477,9 @@ All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/dat
 - **Multi-panel figures**: Fix the y-axis range across panels to enable direct visual comparison.
 - **Statistical tests**: Always prompt the user about including statistical annotations (e.g., t-test with p-values for group comparisons).
 - **Figure size**: Default to the largest reasonable size for the context.
+
+Record every figure with `/figure-manifest` as it is written — script, commit,
+inputs. `/figure-manifest --check <run>` before assembling a manuscript.
 
 ### Two Figure Locations
 - **`results/{run}/figures/{png,pdf,svg}/`** — individual analysis figures generated per run. This is where scripts save figures during analysis.

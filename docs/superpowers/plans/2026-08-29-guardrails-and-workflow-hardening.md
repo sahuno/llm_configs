@@ -204,11 +204,11 @@ The material for all of these already exists as prose. `prompts/PROMPTS.md` is r
 ### Task 4.1: `/review` — DONE 2026-08-29
 - [x] Port the 7-category "Bioinformatics Code Review" from `claude/prompts/PROMPTS.md` (data integrity, genome safety, pipeline correctness, statistical rigor, ONT, reproducibility, forbidden patterns) into `plugins/bio-skills/commands/review.md`, keeping the severity levels and report table.
 
-### Task 4.2: Adversarial reviewer roles
-- [ ] `reviewer-2` — attack the claim before submission (ammunition: `analysis-gotchas/references/numerical_claims.md`).
-- [ ] `stats-reviewer` — test appropriateness, n, multiple testing (depends on Task 2.2).
-- [ ] `repro-auditor` — could a stranger rerun this from the repo alone.
-- [ ] Consider routing one through the installed Codex plugin for a genuinely independent second model.
+### Task 4.2: Adversarial reviewer roles — DONE 2026-08-29
+- [x] `reviewer-2` — attack the claim before submission (ammunition: `analysis-gotchas/references/numerical_claims.md`).
+- [x] `stats-reviewer` — test appropriateness, n, multiple testing (depends on Task 2.2).
+- [x] `repro-auditor` — could a stranger rerun this from the repo alone.
+- [x] Consider routing one through the installed Codex plugin for a genuinely independent second model.
 
 ### Task 4.3: `/verify-run` — DONE 2026-08-29 (script + 13 tests)
 The single highest-leverage command here, and it has no gstack analogue. Everything it needs is already specified: `analysis-gotchas`' rule (`sacct` state, `grep -c 'oom_kill events'`), the DSS row-count parity check, and CLAUDE.md's logging spec (`=== DONE ===` marker, before/after filter counts).
@@ -222,15 +222,15 @@ The single highest-leverage command here, and it has no gstack analogue. Everyth
 - [x] `/gates` — CLAUDE.md §10's manual pre-completion checklist, run before declaring anything done.
 - [x] `/preflight` — §4's "search nf-core/modules before scaffolding" rule, which already documents what skipping it cost on 2026-05-01.
 
-### Task 4.5: `/wrapup`
+### Task 4.5: `/wrapup` — DONE 2026-08-29
 The README's protected `CLAUDE: DONOT DELETE` block explicitly requests "Logging of tasks completed and pending; logging of daily tasks done". §1's "Project File Content Requirements" already defines the 5-field schema.
 
-- [ ] Append that schema to `~/projects/<slug>.md` at session end (command, or SessionEnd hook).
-- [ ] Depends on Task 2.3 restoring the resume step.
+- [x] Append that schema to `~/projects/<slug>.md` at session end (command, or SessionEnd hook).
+- [x] Depends on Task 2.3 restoring the resume step.
 
-### Task 4.6: `/promote-raw` and the figure manifest
-- [ ] `/promote-raw` — move `data/inbox/` → `data/raw/` with md5sums, a provenance README recording origin, and `chmod -w`. The immutability rule has a blocking hook but no record of what raw *is* or where it came from.
-- [ ] Figure manifest — §9.5 asks for "a figure index per script". Append `figure_path, script, git_commit, inputs, date` to `results/<run>/figure_index.tsv`; makes manuscript assembly mechanical.
+### Task 4.6: `/promote-raw` and the figure manifest — DONE 2026-08-29
+- [x] `/promote-raw` — move `data/inbox/` → `data/raw/` with md5sums, a provenance README recording origin, and `chmod -w`. The immutability rule has a blocking hook but no record of what raw *is* or where it came from.
+- [x] Figure manifest — §9.5 asks for "a figure index per script". Append `figure_path, script, git_commit, inputs, date` to `results/<run>/figure_index.tsv`; makes manuscript assembly mechanical.
 
 ---
 
