@@ -127,11 +127,17 @@ The `profiles/` directory is copied to `~/.claude/profiles/` alongside `CLAUDE.m
 
 ### What happens at the start of every session?
 
-Claude is instructed to:
-1. Ask you to classify the session (domain, objectives)
-2. Read `~/projects/<project>.md` if this continues earlier work, and resume from its "Exact next steps"
-3. Scaffold the project layout for analysis projects (`/init-bio-project`)
-4. Append progress to the project file as work proceeds
+Claude prefers the working directory over asking. A project scaffolded with
+`/init-bio-project` carries its own `CLAUDE.md` naming the domain, genome build,
+aims and progress log, and Claude Code loads it automatically.
+
+1. If the project root has a `CLAUDE.md`, that is the classification — Claude
+   reads the progress log at `~/projects/<project>.md` and resumes from its
+   "Exact next steps"
+2. If it does not, Claude asks for domain and objectives, and offers
+   `/init-bio-project` so the question is not needed again
+3. Scaffolds the project layout for analysis projects
+4. Appends progress to the project file as work proceeds
 
 ---
 

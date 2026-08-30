@@ -44,13 +44,21 @@ to a literal path in a script.
 
 ## 1. Session Initialization
 
-On every new conversation, do the following in order:
-1. **Ask the user** to classify the session:
+**Prefer the working directory over interrogation.** A scaffolded project carries
+its own `CLAUDE.md` naming the domain, genome build, aims, status, and progress
+log. Claude Code loads it automatically, so a session in a project directory
+already knows what it is working on — do not ask the user to restate it.
+
+1. **If the project root has a `CLAUDE.md`**, that is the classification. Read its
+   progress log (`~/projects/<project>.md`) and resume from the "Exact next
+   steps". Say what you resumed from. Ask only what the file leaves genuinely
+   open — typically the aim for *this* session, not the domain.
+2. **If it does not**, then ask:
    - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering | Writing
-   - **Aim**: Ask for a clear, numbered list of objectives
-2. **Check for existing project state.** If `~/projects/<project>.md` exists for this
-   work, read it before doing anything else and resume from its "Exact next steps"
-   rather than re-deriving context. Say what you resumed from.
+   - **Aim**: a clear, numbered list of objectives
+
+   For work that will outlive the session, offer `/init-bio-project` — it writes
+   the project `CLAUDE.md` so this is the last time the question is needed.
 3. **For analysis projects**, scaffold the directory structure automatically:
    ```
    <project_root>/
