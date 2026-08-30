@@ -67,7 +67,10 @@ print("\n== 2. panels: real vector via matplotlib, PNG via PIL ==")
 # (Agg raster overflow on ANY text). The PDF/SVG backends are unaffected, so the
 # vector path is exercised for real; PNGs are synthesized at exact slot size.
 rng = np.random.default_rng(0)
-with plt.rc_context({"font.family":"sans-serif","font.sans-serif":["Arial","Helvetica","DejaVu Sans"],
+# Same chain house_style() builds, so panels and the letters overlay resolve
+# identically -- on a machine without the house font both fall back together.
+with plt.rc_context({"font.family":"sans-serif",
+                     "font.sans-serif":[k.HOUSE_FONT,"Helvetica","DejaVu Sans"],
                      "pdf.fonttype":42,"svg.fonttype":"none","font.size":8,
                      "xtick.labelsize":7,"ytick.labelsize":7,"axes.labelsize":8}):
     for L in "abcd":
@@ -118,12 +121,29 @@ data = open(p2,"rb").read()
 fonts = sorted({m.decode() for m in re.findall(rb"/BaseFont\s*/([A-Za-z0-9+\-]+)", data)})
 check("PDF page is 7.20 in wide", abs(PW/72 - 7.2) < 1e-6, f"{PW/72*25.4:.2f} mm")
 check("PDF page height matches the grid", abs(PH/72*300 - CH) < 1e-6)
-check("fonts embedded as TrueType subsets", data.count(b"/FontFile2") > 0 and any("+Arial" in f for f in fonts), str(fonts))
+# Which face the house font resolves to is an environment fact (CI runners have
+# no Arial). What must hold everywhere is that the face actually resolved is the
+# one that reaches the PDF -- the vendor bug was stamping a face nobody asked for.
+norm = lambda t: re.sub(r"[^a-z0-9]", "", os.path.splitext(os.path.basename(t))[0].lower())
+from matplotlib.font_manager import findfont, FontProperties
+# Panels resolve through the whole chain (that is what rcParams does), and so
+# must the letters -- REG and BOLD agreeing is the property under test.
+REG = norm(findfont(FontProperties(family=k.house_font_chain())))
+_bold_path, HAVE_HOUSE = k._resolve_letter_font(verbose=False)
+BOLD = norm(_bold_path)
+print(f"  (house font {k.HOUSE_FONT!r} "
+      f"{'installed' if HAVE_HOUSE else 'NOT installed — exercising the fallback chain'}; "
+      f"panels {REG!r}, letters {BOLD!r})")
+check("letters resolve to the same family as the panels", REG in BOLD,
+      f"panels {REG!r} vs letters {BOLD!r}")
+check("fonts embedded as TrueType subsets", data.count(b"/FontFile2") > 0 and
+      any(REG in norm(f) for f in fonts), str(fonts))
 check("no rasterized image XObject", b"/Subtype /Image" not in data)
 txt = PdfReader(p2).pages[0].extract_text()
 check("panel text is live in the PDF", "Panel a takeaway" in txt and "Panel d takeaway" in txt)
 check("panel letters A-D stamped as live text", sorted(set(re.findall(r"\b[A-D]\b", txt))) == ["A","B","C","D"], str(re.findall(r"\b[A-D]\b", txt)))
-check("letters are in the house face", any("Arial" in f for f in fonts))
+check("panel letters are stamped in the resolved face, bold",
+      any(BOLD in norm(f) for f in fonts), f"looking for {BOLD!r} in {fonts}")
 
 print("\n== 6. compose_svg (editable) ==")
 p3 = k.compose_svg(outline, paths["svg"], f"{WD}/fig.svg", DPI, G, verbose=False)
@@ -162,7 +182,20 @@ check("skips formats no panel supplied", set(out2) == {"png"}, str(sorted(out2))
 
 print("\n== 8. house defaults ==")
 fp, inst = k._resolve_letter_font(verbose=False)
-check("letter font resolves to a bold house face", inst, os.path.basename(fp or ""))
+check("house font resolution reports honestly",
+      inst == (k.HOUSE_FONT.split()[0].lower() in os.path.basename(fp or "").lower()),
+      f"{k.HOUSE_FONT!r} -> {os.path.basename(fp or '')} (installed={inst})")
+check("an installed font resolves as installed", k._resolve_letter_font("DejaVu Sans", verbose=False)[1])
+check("a missing font is reported, not silently substituted",
+      not k._resolve_letter_font("NoSuchFace000", verbose=False)[1])
+# The vendor hardcodes DejaVuSans-Bold.ttf. Proving the fork does not means
+# showing resolution actually follows the family it is asked for -- which is
+# checkable even on a runner where the house font is absent.
+serif = os.path.basename(k._resolve_letter_font("DejaVu Serif", verbose=False)[0] or "")
+check("the fallback chain is the house chain", k.house_font_chain()[0] == k.HOUSE_FONT and
+      list(k.house_font_chain())[1:] == [f for f in k.HOUSE_FALLBACK if f != k.HOUSE_FONT])
+check("resolution follows the requested family, not a hardcoded path",
+      "serif" in serif.lower(), serif)
 check("default letter case is upper (figure-editor convention)", k.HOUSE_LETTER_CASE == "upper")
 check("house widths match lab-figure-format", (k.house_width_mm("single"), k.house_width_mm("wide")) == (88.9, 182.88))
 check("ladder matches lab-figure-format", k.HOUSE_LADDER == {"title":9,"label":8,"tick":7,"dense":6})
@@ -173,7 +206,7 @@ check("panel_task warns off save_figure's bbox_inches='tight'", "Do NOT call `sa
 check("panel_task asks for vector", "panel_b.pdf" in t and "panel_b.svg" in t)
 check("panel_task states the exact slot", f"{wb}×" in t)
 r = k.composite_review_task("VID", outline, "RULES")
-check("reviewer checks the house typeface", "One typeface" in r and "Arial" in r)
+check("reviewer checks the house typeface", "One typeface" in r and k.HOUSE_FONT in r)
 check("reviewer judges at true print width", "182.9 mm wide" in r or "182.88 mm" in r or "mm wide -- its true print width" in r)
 
 print("\n" + (f"ALL CHECKS PASSED ({WD})" if not fails else f"{len(fails)} FAILED: {fails}"))

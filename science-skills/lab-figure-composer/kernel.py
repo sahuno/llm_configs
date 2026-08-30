@@ -37,6 +37,11 @@ def fc_sdk():
 # ---------------------------------------------------------------- house facts
 
 HOUSE_FONT = "Arial"
+# The chain house_style() installs. Every path that picks a face must walk it,
+# or the outputs disagree: with Arial absent but Helvetica present, panels come
+# out in Helvetica while a single-family lookup drops to matplotlib's DejaVu
+# default, stamping letters in a face that appears nowhere else in the figure.
+HOUSE_FALLBACK = ("Arial", "Helvetica", "DejaVu Sans")
 HOUSE_LETTER_PT = 9
 # FORK: `figure-editor` is the named authority for manuscript figures in
 # CLAUDE.md section 7, and it labels panels A, B, C. The vendor default is
@@ -49,6 +54,12 @@ HOUSE_LETTER_CASE = "upper"
 HOUSE_WIDTH_MM = {"single": 88.9, "wide": 182.88}
 HOUSE_LADDER = {"title": 9, "label": 8, "tick": 7, "dense": 6}
 HOUSE_MIN_PT = 6
+
+
+def house_font_chain(font=None):
+    """The house face followed by its fallbacks, as `house_style()` orders them."""
+    name = font or HOUSE_FONT
+    return [name] + [f for f in HOUSE_FALLBACK if f != name]
 
 
 def house_width_mm(kind="single"):
@@ -303,27 +314,48 @@ def verify_panels(outline, panel_paths, dpi=300, gutter_mm=4, verbose=True):
 
 # ------------------------------------------------------------ panel letters
 
-def _resolve_letter_font(font=None, verbose=True):
-    """(path, installed) for a bold face in the house typeface.
+def _face_matches(family, path):
+    tok = re.sub(r"[^a-z0-9]", "", family.lower())
+    return bool(path) and tok in re.sub(r"[^a-z0-9]", "", os.path.basename(path).lower())
 
-    FORK: the vendor hardcodes "DejaVuSans-Bold.ttf", so panel letters ship in a
-    different face from every other glyph in the figure. Resolving through
-    matplotlib keeps them in the house face, and reports when they are not --
-    matplotlib substitutes a missing font without a word.
+
+def _resolve_letter_font(font=None, verbose=True):
+    """(path, installed) for a bold face, walking the house fallback chain.
+
+    `installed` is True only when the house font itself was found; a fallback
+    still returns its path, because a letter in Helvetica beside panels in
+    Helvetica is right, while a letter in DejaVu beside them is not.
+
+    FORK, twice over. The vendor hardcodes "DejaVuSans-Bold.ttf", so panel
+    letters ship in a face that appears nowhere else in the figure. And the
+    lookup has to walk `house_font_chain()` rather than the house name alone --
+    matplotlib resolves rcParams through the whole chain, so a single-family
+    lookup silently disagrees with the panels on any machine that has a
+    fallback installed but not the house font.
     """
-    name = font or HOUSE_FONT
     try:
         from matplotlib.font_manager import findfont, FontProperties
-        path = findfont(FontProperties(family=[name], weight="bold"))
     except Exception:
-        path = None
-    installed = bool(path) and name.split()[0].lower().replace(" ", "") in \
-        os.path.basename(path).lower().replace(" ", "")
-    if verbose and not installed:
-        print(f"  WARNING: no bold {name!r} found; panel letters fall back to "
-              f"{os.path.basename(path) if path else 'the PIL default'}, which will "
-              f"not match the panels.")
-    return path, installed
+        return None, False
+    chain = house_font_chain(font)
+    fallback = None
+    for i, fam in enumerate(chain):
+        try:
+            path = findfont(FontProperties(family=[fam], weight="bold"))
+        except Exception:
+            continue
+        if _face_matches(fam, path):
+            if verbose and i:
+                print(f"  NOTE: {chain[0]!r} is not installed; panel letters use "
+                      f"{fam!r}, the next face in the house chain — matching what "
+                      f"house_style() gives the panels.")
+            return path, i == 0
+        fallback = fallback or path
+    if verbose:
+        print(f"  WARNING: none of {chain} is installed; panel letters fall back to "
+              f"{os.path.basename(fallback) if fallback else 'the PIL default'}, "
+              f"which will not match the panels.")
+    return fallback, False
 
 
 def _letter_case(letter, case):
@@ -417,7 +449,7 @@ def _letters_overlay_pdf(outline, out_path, dpi=300, gutter_mm=4,
     name = font or HOUSE_FONT
     W, H = figure_px(outline, dpi, gutter_mm)
     with plt.rc_context({"font.family": "sans-serif",
-                         "font.sans-serif": [name, "Helvetica", "DejaVu Sans"],
+                         "font.sans-serif": house_font_chain(name),
                          "pdf.fonttype": 42, "ps.fonttype": 42}):
         fig = plt.figure(figsize=(W / dpi, H / dpi), dpi=dpi)
         fig.patch.set_alpha(0.0)
@@ -569,7 +601,8 @@ def compose_svg(outline, panel_svg_paths, out_path, dpi=300, gutter_mm=4,
         x, y = panel_xy(outline, p["letter"], dpi, gutter_mm)
         t = ET.SubElement(root, f"{{{SVG}}}text", {
             "x": f"{x+dx:.2f}", "y": f"{y+dy+size_px*0.8:.2f}",
-            "font-family": font or HOUSE_FONT, "font-weight": "bold",
+            "font-family": ", ".join(house_font_chain(font)) + ", sans-serif",
+            "font-weight": "bold",
             "font-size": f"{size_px:.2f}px", "fill": "black"})
         t.text = _letter_case(p["letter"], letter_case)
     ET.ElementTree(root).write(out_path, encoding="utf-8", xml_declaration=True)

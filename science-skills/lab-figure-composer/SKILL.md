@@ -195,7 +195,7 @@ than being referenced by name.
 |---|---|---|---|
 | Panel design rules | loads `figure-style` only | loads `figure-style` **and** `lab-figure-format`, `house_style()` pinned last | otherwise panels ship on the vendor font chain and size ladder, not Arial 9/8/7/6 |
 | Mis-sized panel | silently `im.resize(...)` | raises, naming the slot and what arrived | a panel resized 0.8× prints its 8 pt labels at 6.4 pt, under the house floor, with nothing logged |
-| Panel letters | hardcoded `DejaVuSans-Bold.ttf` | house face resolved via `font_manager`, and reported when missing | the vendor stamps letters in a face that appears nowhere else in the figure |
+| Panel letters | hardcoded `DejaVuSans-Bold.ttf` | resolved through `house_font_chain()` (Arial → Helvetica → DejaVu Sans), and reported when the house face is missing | the vendor stamps letters in a face that appears nowhere else in the figure. Walking the *chain* matters as much as resolving at all: matplotlib resolves rcParams through the whole chain, so a single-family lookup puts letters in DejaVu beside panels in Helvetica on any machine that has the fallback but not the house font |
 | Letter case | `"lower"` | `"upper"` (`figure-editor`, `CLAUDE.md` §7) | switchable per venue |
 | Output | PNG only | PNG + vector PDF + editable SVG | a raster composite is not submittable to a venue that requires vector |
 | Panel saves | PNG only | PNG + PDF + SVG at exact slot size | `compose_vector` needs per-panel vector to tile |
@@ -215,6 +215,11 @@ than being referenced by name.
 
 ## Caveats
 
+- When the house font is absent the letters follow `house_font_chain()` down to
+  the same face the panels landed on, and say so. `installed` is False in that
+  case even though the output is internally consistent — it is telling you the
+  figure is not in the house face, which is a different problem from the letters
+  not matching the panels.
 - `compose_vector` needs `pypdf`. Without it you still get the PNG composite and
   the loop still runs — you just have no submission file, and the ImportError
   says so.
