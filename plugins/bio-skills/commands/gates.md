@@ -17,7 +17,8 @@ rest of this list assumes they are.
 
 1. **Outputs exist and are non-empty.** List them with sizes.
 2. **Random seeds set** for every stochastic step. Quote the line.
-3. **Figures in all three formats** under `results/{run}/figures/{png,pdf,svg}/`.
+3. **Figures in all three formats** under `results/{run}/figures/{png,pdf,svg}/`,
+   and every one indexed — `/figure-manifest --check results/{run}` must pass.
 4. **No forbidden variable names** (`conditions`, `counts`, `results`, `sum`,
    `median`, `mean`) — these shadow builtins.
 5. **A timestamped log exists** in `logs/`, capturing data dimensions, before/after
