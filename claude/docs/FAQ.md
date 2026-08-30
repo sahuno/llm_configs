@@ -4,32 +4,17 @@
 
 ### How do I launch Claude Code on the HPC?
 
-Use the `sclaude` function defined in your `~/.bashrc`. It wraps `apptainer exec` with standard bind mounts and API key passthrough:
-
 ```bash
-# Basic — opens Claude shell with standard mounts
-sclaude
-
-# With extra bind mounts for a specific project
-sclaude /data1/greenbab/projects/my_project /data1/collab001/shared_data
+sclaude                                   # standard mounts
+sclaude /data1/greenbab/projects/my_proj  # plus extra bind mounts
 ```
 
-Make sure your conda/mamba environment with Apptainer is active first (e.g., `mamba activate snakemake`).
+Activate the environment providing Apptainer first (e.g. `mamba activate snakemake`).
 
-### Why does `sclaude` use `apptainer exec` instead of `apptainer shell`?
-
-`apptainer shell` does not source `~/.bashrc`, so aliases, API keys, and PATH customizations are lost. `sclaude` uses `apptainer exec /bin/bash --rcfile ~/.bashrc_container -i` to load a clean container-specific rc file that sets up everything correctly.
-
-### What is `~/.bashrc_container` and why do I need it?
-
-It is a lightweight shell rc file sourced inside Apptainer containers. It:
-- **Unsets leaked RHEL functions** (`which`, `module`, `ml`, `_module_raw`) that break inside Debian-based containers
-- **Cleans polluted env vars** (`LD_LIBRARY_PATH`, `CONDA_*`, `PYTHONPATH`, `MODULEPATH`, `LMOD_*`)
-- **Sets container-first PATH** (`/opt/venv/bin`, `/opt/npm-global/bin` before host-mounted tools)
-- **Exports API keys** safely using `${VAR:-}` pattern (no hardcoded secrets)
-- **Sources `~/.bash_aliases`** for personal shortcuts
-
-A copy lives in the repo at `claude/profiles/bash_profiles/bashrc_container`.
+The launcher itself, why it uses `apptainer exec` with an explicit rc file rather
+than `apptainer shell`, what `~/.bashrc_container` does, and how SLURM binaries
+and libraries are bound in, are all in
+[docs/claude-code-on-hpc.md](../../docs/claude-code-on-hpc.md).
 
 ### How do I sync config changes from the repo to my local machine?
 
