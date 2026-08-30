@@ -134,3 +134,18 @@ jobs:
             echo "::error::lowercase skill.md will not load on Linux:"; echo "$bad"; exit 1
           fi
           echo "all SKILL.md correctly cased"
+
+  figure-composer:
+    runs-on: ubuntu-latest
+    name: lab-figure-composer fork
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the plotting stack the kernel tiles output from
+        run: pip install --quiet matplotlib numpy pillow pypdf
+      - name: Every divergence from the vendor figure-composer still holds
+        # This skill is a FORK of a vendor Claude Science skill that is rewritten
+        # by every release. The suite pins each deliberate difference — house call
+        # order in the panel prompt, strict slot sizing, house-face panel letters,
+        # exact column edges, vector export — so drift after an upstream bump is
+        # visible here rather than in a figure.
+        run: python3 science-skills/lab-figure-composer/test_kernel.py

@@ -49,6 +49,15 @@ stripped on pull and gitignored. The app regenerates both.
 | `artifact-provenance-audit` | Establishes that every saved artifact has a runnable producer and that the repo executes from a clean checkout |
 | `pinned-reference-snapshot` | Pins an external reference resource to a vendored, checksummed snapshot so results cannot shift under a database release |
 | `lab-figure-format` | Lab figure formatting, with `operon_arial.mplstyle` |
+| `lab-figure-composer` | Multi-panel figure composition in the house style, with vector export — a fork of the vendor `figure-composer` |
+
+`lab-figure-composer` is the one entry here that is a **fork of a vendor
+skill** rather than something written from scratch. The vendor original ships in
+`runtime/<version>/skills/figure-composer` and is rewritten by every release, so
+it cannot be edited in place — the fork carries its own name, its own
+`test_kernel.py`, and a table of every deliberate divergence in its `SKILL.md`.
+Run that test after an upgrade: it is the signal that the fork and the upstream
+have drifted. Both skills stay loadable; their descriptions distinguish them.
 
 These overlap with work in `plugins/`, `tools/` and `CLAUDE.md`. That overlap is
 audited with citations in [`../docs/skill-overlap-audit.md`](../docs/skill-overlap-audit.md):

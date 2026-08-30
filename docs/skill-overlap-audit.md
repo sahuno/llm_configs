@@ -132,6 +132,17 @@ which is what it is, not a competing claim.
 **To verify:** `claude/CLAUDE.md` §7 and its Nature block; compare against
 `figure-editor.md:10`.
 
+**Follow-up, 2026-08-30.** The three authorities now agree on paper, but nothing
+enforced it at the point where figures are actually made. The vendor
+`figure-composer` fans panels out to sub-agents that load `figure-style` alone —
+so a multi-panel figure could be assembled entirely out of panels that never saw
+the house ladder, and pass its own review. `science-skills/lab-figure-composer/`
+forks it and pins the call order (`apply_figure_style()` then `house_style()`,
+house last) into the panel prompt, adds the ladder and the typeface to the
+adversarial reviewer's checklist, and stamps panel letters in the house face
+instead of DejaVu. The 5–8 pt agreement is now something the pipeline applies,
+not just something three documents assert.
+
 ---
 
 ## Keeping these aligned
@@ -146,6 +157,13 @@ share an author and nothing else. Three options, in increasing cost:
 3. **Extract the shared vocabulary** — *producer*, *orphan artifact*, *pin*,
    *version_observed* — into one glossary both cite. Worth doing only if a
    fourth overlap appears; two data points is not a pattern.
+
+A fourth option turned up while acting on C: **fork the vendor skill and pin the
+agreement inside it**, with a test that fails when the fork and the upstream
+drift (`science-skills/lab-figure-composer/test_kernel.py`). That is the only one
+of these that does not depend on someone remembering. It costs a fork to
+maintain, so it is worth it exactly where a vendor skill would otherwise carry
+house conventions off into a sub-agent no one reviews.
 
 The narrower lesson is the useful one: **the conflict was not between products,
 it was introduced by a fix.** #5 corrected a real error and created a smaller one
