@@ -157,12 +157,18 @@ case-sensitive on Linux — `skill.md` will not load. Keep site-specific paths o
 of `SKILL.md`; read them from `$SITE_CONFIG` instead.
 
 
-#########CLAUDE: DONOT DELETE##########################
-FEATURE REQUEST
-1. Transition to nextflow
- a. ease resume of failed workflow 
- b. detail logging and workflow metadata
- c. intgration with seqera AI
-2. Logging of tasks completed and pending; logging of daily taks done 
-3. use `UV` for python package management
-#######################################################
+## Roadmap
+
+The feature-request block that used to sit here has moved to where it can be
+tracked and closed:
+
+| Item | Status |
+|---|---|
+| Transition to Nextflow — resume, workflow metadata, Seqera AI | [#12](https://github.com/sahuno/llm_configs/issues/12) |
+| Logging of tasks completed and pending | **Done** — `/wrapup` writes the five-field progress schema to `~/projects/<project>.md` |
+| Use `uv` for Python package management | **Done** — `CLAUDE.md` §4 |
+
+Open work is tracked in
+[issues](https://github.com/sahuno/llm_configs/issues); the current
+implementation plan is in
+[`docs/superpowers/plans/`](docs/superpowers/plans/).

@@ -21,15 +21,18 @@ See the [repo README](../README.md) for the marketplace install.
 | Path | What it is |
 |---|---|
 | `CLAUDE.md` | The author's memory file. Personal — identity, lab conventions, domain playbooks. Not portable; read it for ideas, don't copy it wholesale. |
-| `settings.json` | The author's Claude Code settings. Since the hooks moved to `bio-guardrails`, this holds only personal preferences (thinking mode, notification bell). |
+| `settings.json` | Personal Claude Code preferences only. The hooks moved to `bio-guardrails`, so nothing here needs syncing. |
 | `docs/` | FAQ and reference notes |
-| `examples/` | Worked examples (methylation pipeline, RNA-seq) |
-| `prompts/` | Reusable prompt templates |
-| `commands/` | Slash-command stubs for saving responses (superseded by the builtin `/copy`) |
+| `prompts/` | Reusable prompt library — hypothesis generation, figure digest, structured paper analysis, literature review |
 | `mcps/` | MCP server notes |
 | `inDevelopment/` | Drafts and brainstorms, not wired into anything |
 | `tests/` | A test Snakemake workflow used to exercise the SLURM setup |
-| `hooks/hooks.yaml` | **Dead.** A legacy hook format, wired to nothing, referencing a path that no longer exists. Kept only until confirmed removable. |
+
+Removed in the plugin migration: `skills/`, `agents/`, `scripts/`, `hooks/`,
+`profiles/`, `commands/`, `examples/`. See the table above for where each went.
+`hooks/hooks.yaml` was a legacy format wired to nothing and is gone;
+`inDevelopment/CLAUDE.md.dev` was a stale fork of the live file and is gone too —
+both recoverable from history if ever wanted.
 
 ## About CLAUDE.md
 
