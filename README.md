@@ -84,7 +84,7 @@ Add to `~/.bashrc`:
 
 ```bash
 sclaude() {
-    local base_mounts="/data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs,/data1/greenbab/users/ahunos/blog,/data1/greenbab/database,/data1/greenbab/software/images,/data1/greenbab/users/ahunos,/data1/greenbab/users/ahunos/apps/containers,/data1/greenbab/users/ahunos/apptainer_cache,/data1/greenbab/projects/triplicates_epigenetics_diyva,/data1/greenbab,/data1/collab001"
+    local base_mounts="/data1/greenbab/users/ahunos/apps/llm_configs,/home/ahunos/miniforge3/envs,/data1/greenbab/users/ahunos/blog,/data1/greenbab/database,/data1/greenbab/software/images,/data1/greenbab/users/ahunos,/data1/greenbab/users/ahunos/apps/containers,/data1/greenbab/users/ahunos/apptainer_cache,/data1/greenbab/projects/<your-project>,/data1/greenbab,/data1/collab001"
     local container="/data1/greenbab/software/images/claude_gemini_container_latest.sif"
 
     local appt=$(command -v apptainer || true)

@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "bio-skills",
-      "description": "Genomics and computational-biology skills: Snakemake and nf-core pipeline authoring, Singularity/Apptainer container builds, IGV screenshots, publication-figure sizing, cohort overviews, chimeric-read validation, scatter-gather design, runtime/resource studies, journal club prep, and a catalogue of silent-failure gotchas across DSS, parallel R, small-n CV, Clair3 and Severus.",
+      "description": "Skills, commands and review agents for computational research. Domain-neutral: adversarial code and statistics review, run verification (catching jobs that exit 0 having silently dropped work), publication figure sizing and provenance, container builds, runtime/resource studies, scatter-gather design, and journal-club paper analysis. Genomics specialisations on top: Snakemake and nf-core pipeline authoring, IGV screenshots, cohort overviews, chimeric-read validation, and a catalogue of empirically confirmed silent-failure modes across DSS, parallel R, small-n cross-validation, Clair3 and Severus.",
       "author": {
         "name": "Samuel Ahuno"
       },

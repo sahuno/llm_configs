@@ -27,6 +27,7 @@ Installing merges these hooks into your config. It does **not** overwrite your
 | `validate-yaml.sh` | PostToolUse (Write/Edit) | warn | Invalid YAML in config files |
 | `warn-absolute-paths.sh` | PostToolUse (Write/Edit) | warn | Absolute paths baked into scripts |
 | `log-slurm-submission.sh` | PostToolUse (slurm MCP) | log | Appends every submitted job to an audit log |
+| `suggest-project-init.sh` | SessionStart | note | An analysis project with no `CLAUDE.md` — silent everywhere else |
 
 ## Conventions assumed
 
