@@ -41,6 +41,8 @@ chmod +x ~/.claude/hooks/*.sh
 cp -r claude/profiles ~/.claude/profiles
 ```
 
+Do not blindly overwrite `~/.claude/settings.json` on a machine that already has plugins or model settings. Merge the `hooks` object from `claude/settings.json` instead.
+
 ### Where are my API keys stored?
 
 API keys are exported in `~/.bashrc` and passed into the container via `--env` flags in `sclaude()`. They are **never** committed to the repo. The `~/.bashrc_container` file references them with `export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"` — it inherits the value, it does not hardcode it.
@@ -83,7 +85,19 @@ Hooks are safety rails, not walls. If a block is a false positive:
 
 ### Why do hooks need `jq`?
 
-All hooks parse their input as JSON (Claude Code passes tool parameters as JSON on stdin). Without `jq`, every hook silently fails and provides no protection. Make sure `jq` is installed in your container.
+The bash hooks parse their input as JSON (Claude Code passes tool parameters as JSON on stdin). Without `jq`, those hooks silently fail and provide no protection. Make sure `jq` is installed in your container.
+
+### How do I save the last assistant reply to a file?
+
+Use the harness builtin. Every CLI agent ships one now, so there is nothing to
+install and no hook to run on every turn:
+
+- **Claude Code:** `/copy` (or `/copy 2` for the reply before it), then `w` and a
+  filename. `/export file.md` dumps the whole conversation.
+- **Grok:** `/copy docs/llm_responses/last.md`, or `/copy 2 path.md`.
+
+The custom `save-llm-response` CLI that used to live here has been removed — it
+predated the builtins and no longer does anything they don't.
 
 ---
 
@@ -113,11 +127,17 @@ The `profiles/` directory is copied to `~/.claude/profiles/` alongside `CLAUDE.m
 
 ### What happens at the start of every session?
 
-Claude is instructed to:
-1. Ask you to classify the session (domain, objectives)
-2. Read `~/projects/<project>.md` if this continues earlier work, and resume from its "Exact next steps"
-3. Scaffold the project layout for analysis projects (`/init-bio-project`)
-4. Append progress to the project file as work proceeds
+Claude prefers the working directory over asking. A project scaffolded with
+`/init-bio-project` carries its own `CLAUDE.md` naming the domain, genome build,
+aims and progress log, and Claude Code loads it automatically.
+
+1. If the project root has a `CLAUDE.md`, that is the classification — Claude
+   reads the progress log at `~/projects/<project>.md` and resumes from its
+   "Exact next steps"
+2. If it does not, Claude asks for domain and objectives, and offers
+   `/init-bio-project` so the question is not needed again
+3. Scaffolds the project layout for analysis projects
+4. Appends progress to the project file as work proceeds
 
 ---
 

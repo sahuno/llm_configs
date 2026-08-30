@@ -291,6 +291,66 @@ mkdir -p results/$(date +%Y%m%d)_{genome}_<description>/figures/{{png,pdf,svg}}
 # Main logic
 # ---------------------------------------------------------------------------
 
+def _project_claude_md(project_name, genome, project_type, engine=None):
+    """Project-level CLAUDE.md, auto-loaded by Claude Code from the project root.
+
+    This exists so a session does not have to ask what it is working on. The
+    working directory already knows the domain, the genome build, and where the
+    progress log lives; asking the user to restate that every session burns the
+    first turn and is skipped whenever the opening prompt is strong.
+
+    Returns
+    -------
+    str
+        Markdown content for <project_root>/CLAUDE.md.
+
+    Example
+    -------
+    >>> _project_claude_md("dmr_cohort", "hg38", "analysis")[:9]
+    '# dmr_coh'
+    """
+    domain = {
+        "analysis": "Bioinformatics Analysis",
+        "pipeline": "Software Development (pipeline)",
+        "ml": "AI Engineering / ML",
+    }.get(project_type, "Bioinformatics Analysis")
+    engine_line = f"\n- **Workflow engine**: {engine}" if engine else ""
+    return f"""# {project_name}
+
+<!-- Auto-loaded by Claude Code from the project root. Keep it short: it is
+     read every session. Long-form progress belongs in ~/projects/{project_name}.md. -->
+
+## What this is
+
+- **Domain**: {domain}
+- **Genome build**: {genome} — every file under `data/processed/` must carry this
+  tag in its name (`{{sample}}.{genome}.{{description}}.{{ext}}`){engine_line}
+- **Progress log**: `~/projects/{project_name}.md` — read it before starting and
+  resume from its "Exact next steps"; append to it as work proceeds.
+
+## Aims
+
+<!-- Numbered, specific, and updated as they change. A session reads these
+     instead of asking. -->
+
+1. TODO
+2. TODO
+
+## Status
+
+<!-- One or two lines. What is done, what is in flight, what is blocked. -->
+
+Not started.
+
+## Local conventions
+
+<!-- Anything true of THIS project that overrides the global config. Delete the
+     section if there is nothing. Examples: a non-default significance
+     threshold, a sample subset to exclude, a caller version pinned for
+     comparability. -->
+"""
+
+
 def create_project(project_name, project_type, genome, engine=None, in_place=False):
     """Create the project directory structure and starter files.
 
@@ -344,6 +404,7 @@ def create_project(project_name, project_type, genome, engine=None, in_place=Fal
         "sample_sheet.tsv": _sample_sheet_content(),
         "config.yaml": _config_content(project_name, genome, project_type),
         "README.md": _readme_content(project_name, genome, project_type),
+        "CLAUDE.md": _project_claude_md(project_name, genome, project_type, engine),
     }
 
     for filename, content in files.items():
@@ -354,6 +415,8 @@ def create_project(project_name, project_type, genome, engine=None, in_place=Fal
     file_count = sum(1 for _ in root.rglob("*") if _.is_file())
     print(f"Project '{project_name}' initialized: {dir_count} directories, {file_count} files")
     print(f"  Type:   {project_type}")
+    print("  CLAUDE.md written — this project self-identifies to Claude Code;")
+    print("  fill in Aims and Status so a session can start without interrogation.")
     if engine:
         print(f"  Engine: {engine}")
     print(f"  Genome: {genome}")

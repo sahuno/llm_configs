@@ -54,6 +54,14 @@ jobs:
         # design — rewriting those would destroy the record.
         run: ./tools/audit_site_paths.sh
 
+  scaffolder:
+    runs-on: ubuntu-latest
+    name: project scaffolder
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scaffolded projects carry a project-level CLAUDE.md
+        run: python3 plugins/bio-skills/scripts/test_init_project.py
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

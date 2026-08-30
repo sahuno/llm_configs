@@ -104,7 +104,7 @@ grep -n 'ensure_results_figures' claude/CLAUDE.md plugins/bio-guardrails/hooks/*
 
 ## Phase 3 — Structural
 
-### Task 3.1: Move session classification into the project
+### Task 3.1: Move session classification into the project — DONE 2026-08-29
 
 **Problem.** §1's "ask the user to classify every new conversation" burns the first turn, decays under a strong opening prompt, and re-derives what the working directory already knows. It is the weakest pattern in the file.
 
@@ -113,7 +113,7 @@ grep -n 'ensure_results_figures' claude/CLAUDE.md plugins/bio-guardrails/hooks/*
 **Files:** `plugins/bio-skills/scripts/init_project.py`, `claude/CLAUDE.md`, optionally a SessionStart hook
 
 - [x] **Step 1:** Add project-CLAUDE.md generation to `init_project.py`.
-- [ ] **Step 2:** Shrink §1 to: if no project CLAUDE.md exists, offer `/init-bio-project`.
+- [x] **Step 2:** Shrink §1 to: if no project CLAUDE.md exists, offer `/init-bio-project`.
 - [ ] **Step 3 (optional):** Wire the SessionStart hook already drafted in `claude/inDevelopment/hooks_suggestions.md` (#1) and never implemented.
 
 **Verify:**
