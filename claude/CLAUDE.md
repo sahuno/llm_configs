@@ -382,7 +382,9 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 - One config file per run, named to match the results directory.
 - Run naming convention: `{date}_{genome}_{description}` (e.g. `20260305_hg38_differential_methylation`, `20260310_mm10_v1`).
 
-**Nextflow**: no site profile exists yet — `$SITE_CONFIG/nextflow/` has never been created. Write `nextflow.config` per project until one does, and add it to the site profile when a reusable set emerges. (The README's feature-request block tracks the Nextflow transition.)
+**Nextflow**: the site profile is `$SITE_CONFIG/nextflow.config` — SLURM executor, account, partitions by label (`short`, `long`, `gpu`, `benchmark`), apptainer with `--cleanenv`, OOM retry with escalating memory, and `cache = 'lenient'` for the shared filesystem. A pipeline inherits it with `includeConfig`; `/init-bio-project --engine nextflow` scaffolds that. Run with `-profile slurm -resume`, smoke-test with `-profile test`.
+
+Nextflow emits `timeline`, `report`, `trace` and `dag` into `results/pipeline_info/` by default here. The trace carries `peak_rss` and `%cpu`, which is what makes a runtime-resource study a query rather than a project.
 
 ### CLI Tools and Packages
 - Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
