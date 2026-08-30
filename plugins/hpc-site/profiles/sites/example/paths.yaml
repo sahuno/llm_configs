@@ -1,0 +1,41 @@
+# Site template. Copy this directory to sites/<your-site>/ and fill it in,
+# then select it with SITE_PROFILE=<your-site>.
+#
+# A site profile holds CLUSTER facts — things that change when you change
+# institution. Personal preferences (plot defaults, sample-sheet conventions)
+# belong in a user profile instead, so they survive the move.
+#
+# Alongside this file a complete site profile has:
+#   databases.yaml     reference genomes: fasta, gtf, chrom.sizes, CpG islands
+#   containers.yaml    container images, keyed by tool
+#   executor.yaml      scheduler defaults (partitions, account, limits)
+#   snakemake/         Snakemake profiles for your scheduler
+#   bashrc_container   rc file sourced inside the container shell (optional)
+
+site:
+  name: example-cluster
+  institution: ""
+  scheduler: slurm          # slurm | sge | none
+  account: ""
+  os: ""                    # e.g. rhel8 — some gotchas are OS-specific
+  container_runtime: apptainer   # apptainer | singularity | docker | none
+
+roots:
+  data_root: /path/to/shared/data
+  user_root: /path/to/your/working/area
+
+containers:
+  image_dir: /path/to/container/images
+  # APPTAINER_CACHEDIR — must be on shared storage, not $HOME, or every
+  # compute node re-pulls layers.
+  cache_dir: /path/to/apptainer_cache
+  def_dir: /path/to/container/definitions
+
+tools: {}                   # e.g. igver_src: /path/to/igver
+
+logs:
+  slurm_submissions: /path/to/slurm_logs/claude_submissions.md
+
+bind_mounts:
+  default:
+    - /path/to/shared/data

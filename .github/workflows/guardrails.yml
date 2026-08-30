@@ -31,6 +31,18 @@ jobs:
       - name: Run hook test suite
         run: ./plugins/bio-guardrails/tests/test_hooks.sh
 
+  profiles:
+    runs-on: ubuntu-latest
+    name: profile resolution
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pyyaml for paths.yaml key lookup
+        run: pip install --quiet pyyaml
+      - name: Run profile resolver tests
+        # $USER is unset on the runner; the suite exercises the $USER fallback,
+        # so give it a value that matches a real user profile.
+        run: USER=sahuno ./plugins/hpc-site/profiles/test_resolve.sh
+
   manifests:
     runs-on: ubuntu-latest
     name: plugin manifests

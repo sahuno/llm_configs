@@ -52,7 +52,7 @@ Answer in order. Stop at the first "no" or "needs work" and resolve it.
 
 These are the failure modes the lab has hit. Each one has cost real time at least once.
 
-1. **The chromosome list is not a constant.** Hardcoding `chr1..22,X,Y` silently drops alts/decoys and breaks across builds (`chrM` ↔ `MT`). Always derive at runtime from `<ref>.fa.fai` or chrom.sizes (paths in `profiles/databases/databases_config.yaml`). The contig **subset** (autosomes only? +X/Y? +MT? +`_random`/`_alt`/decoys?) is a config decision the user must approve, not a default. The `block-hardcoded-contigs.sh` hook will catch the worst version of this.
+1. **The chromosome list is not a constant.** Hardcoding `chr1..22,X,Y` silently drops alts/decoys and breaks across builds (`chrM` ↔ `MT`). Always derive at runtime from `<ref>.fa.fai` or chrom.sizes (paths in `$SITE_CONFIG/databases.yaml`). The contig **subset** (autosomes only? +X/Y? +MT? +`_random`/`_alt`/decoys?) is a config decision the user must approve, not a default. The `block-hardcoded-contigs.sh` hook will catch the worst version of this.
 
 2. **Load imbalance is the silent killer.** chr1 is ~5× chrY. One-job-per-chromosome looks parallel but is bounded by the longest shard, and identical resource asks waste cluster capacity. Region tiling solves balance; per-shard resource lambdas solve waste. Recipes and formulas in `references/scatter_strategies.md`. When benchmarking scatter speedup, look at the **longest-shard wall time**, not the mean.
 

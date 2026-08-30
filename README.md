@@ -45,26 +45,38 @@ cli_coding_agents_setups/         # non-Claude agent setups (Gemini, Codex)
 docs/superpowers/                 # dated design records
 ```
 
-## Site configuration
+## Site and user profiles
 
-Skills never hardcode genome or container paths. They read them from
-`$SITE_CONFIG`:
+Skills never hardcode genome or container paths. They read them from a
+**profile**, and profiles come in two independent axes:
+
+- **`sites/`** — cluster facts: reference genomes, container images, SLURM
+  partitions, bind mounts. These change when you change institution.
+- **`users/`** — person facts: plot defaults, sample-sheet conventions,
+  `DO_NOT` rules. These follow you across institutions.
 
 ```bash
-export SITE_CONFIG="$HOME/projects/llm_configs/plugins/hpc-site/profiles"
+source plugins/hpc-site/profiles/resolve.sh
+export SITE_PROFILE=mskcc-greenbaum   # or your own
+export USER_PROFILE=$USER
+profiles_export                       # -> $SITE_CONFIG, $USER_CONFIG
 ```
 
-Key files under it:
+Both auto-select when there is exactly one real profile, and fail loudly rather
+than guessing when ambiguous.
 
-| File | Holds |
-|---|---|
-| `databases/databases_config.yaml` | Reference genomes — fasta, gtf, chrom.sizes, CpG islands, RepeatMasker |
-| `software_configs/softwares_containers_config.yaml` | Container images |
-| `workflow_profiles/executor_config.yaml` | SLURM partitions, Snakemake and Nextflow profiles |
-| `setup_preferences.yaml` | Sample-sheet format and analysis preferences |
-| `DO_NOT.md` | Prohibited actions — read before running anything destructive |
+| File | Axis | Holds |
+|---|---|---|
+| `paths.yaml` | site | Roots, container cache, tool checkouts, bind-mount sets |
+| `databases.yaml` | site | Reference genomes — fasta, gtf, chrom.sizes, CpG islands |
+| `containers.yaml` | site | Container images |
+| `executor.yaml` | site | SLURM partitions, scheduler defaults |
+| `setup_preferences.yaml` | user | Sample-sheet format and analysis preferences |
+| `DO_NOT.md` | user | Prohibited actions — read before anything destructive |
+| `matplotlib_defaults`, `.Rprofile` | user | Plot defaults |
 
-`sites/example.yaml` is a blank template of these schemas for a new cluster.
+`profiles/sites/example/` and `profiles/users/example/` are fill-in templates.
+Adding a new cluster means adding a profile, not forking the plugin.
 
 ## Running Claude Code on HPC via Apptainer
 
