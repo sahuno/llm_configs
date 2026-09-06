@@ -220,7 +220,12 @@ def write_plate_manifest(rows, out_path=None):
                 hashes.append("")
         df["panel_sha256"] = [h or s for h, s in zip(hashes, df["panel_sha256"])]
     for col in df.columns:
-        if df[col].dtype == object:
+        # pandas >= 3 infers a 'str' dtype for text columns, so the old
+        # `dtype == object` test is False and this sanitiser silently did
+        # nothing -- letting embedded newlines through into the TSV, where a
+        # reader parses them as extra rows. Ask what the column holds, not how
+        # pandas happens to store it this release.
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             df[col] = df[col].map(
                 lambda v: re.sub(r"[\r\n]+", "; ", v).strip() if isinstance(v, str) else v)
     df.to_csv(out_path, sep="\t", index=False)
@@ -356,7 +361,12 @@ def write_plate_flags(flags, out_path=None):
         raise ValueError("unknown flag status %s; use one of %s" % (bad, list(FLAG_STATUSES)))
     df = df[list(FLAG_COLS) + [c for c in df.columns if c not in FLAG_COLS]]
     for col in df.columns:
-        if df[col].dtype == object:
+        # pandas >= 3 infers a 'str' dtype for text columns, so the old
+        # `dtype == object` test is False and this sanitiser silently did
+        # nothing -- letting embedded newlines through into the TSV, where a
+        # reader parses them as extra rows. Ask what the column holds, not how
+        # pandas happens to store it this release.
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
             df[col] = df[col].map(
                 lambda v: re.sub(r"[\r\n]+", "; ", v).strip() if isinstance(v, str) else v)
     df.to_csv(out_path, index=False)

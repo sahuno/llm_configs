@@ -79,6 +79,60 @@ reconstruction, and a reader comparing plate to analysis figure deserves to know
 out of the raster to keep things moving. Record it as `regen_route=flagged` and
 tell the user which panel is stuck and why.
 
+**Apply the house style, after the recovered code, before the save.** This is
+the point where the house typography is imposed, and it is the only one — the
+composer that made the source figure does not guarantee it, so a panel arrives
+in whatever face and sizes its producing script chose. Re-rendering here is
+what makes the plate the house style's enforcement gate rather than its last
+checkpoint.
+
+```python
+exec(recovered_panel_code)   # the producer sets its own rcParams -- let it
+apply_figure_style()         # figure-style: ticks, spines, legend, layout
+house_style()                # lab-figure-format: Arial chain, mathtext, fonttype 42
+```
+
+**Order matters twice.** `house_style()` goes after `apply_figure_style()`
+because `apply_figure_style(font=...)` overwrites `font.sans-serif` and the
+mathtext roles, and the house face has to win. Both go *after* the recovered
+code, because that code's rcParams outlive it — the gotcha already documented
+below for `savefig.bbox` applies to `font.family` in exactly the same way, and
+styling before the exec means styling nothing.
+
+Check the return value of `house_style()`. `installed=False` means matplotlib
+silently substituted another face, so the panel will not match its neighbours
+on the sheet — that is a flag for Step 6, not something to paper over.
+
+**Point sizes come from the house ladder, never from per-figure taste.** A
+plate is multi-panel by definition, so it is the ladder in `lab-figure-format`
+that applies, not the 8 pt single-panel default its `.mplstyle` sets:
+
+| role | pt |
+|---|---|
+| panel title | 9 |
+| axis label, body text | 8 |
+| tick label, legend, annotation | 7 |
+| dense in-plot label (gene names, cell values) | 6 |
+
+Nothing below 6 pt in the source, nothing that *prints* below ~5 pt — which is
+what `predict_print_size()` checks in Step 5. Authoring a panel at 7 in for a
+3.4 in slot halves every one of these, so author at the placed width where you
+can.
+
+**Bare `house_style()` does not apply that whole ladder.** Its default
+`SIZE_LADDER = (8, 7, 6)` is `(base, annotation, tick)`, which lands axis label
+and *title* at 8 and tick labels at 6 — so a bare call gives you neither the
+9 pt title nor the 7 pt tick the table above asks for. Pass the sizes you mean
+and set the title explicitly:
+
+```python
+house_style(sizes=(8, 7, 7))          # label 8, legend/annotation 7, tick 7
+ax.set_title(..., fontsize=9)         # the ladder's title row
+```
+
+Dense in-plot text at 6 pt is a per-artist choice, not an rcParam; set it where
+you draw it.
+
 **Emit PDF and SVG, plus a PNG proof.** The plate is vector, so the panels must
 be. The PNG exists only so you can look at the panel and at the composed plate;
 it is not what gets placed.

@@ -262,3 +262,61 @@ def test_assert_plate_complete_passes_when_written(tmp_path):
     for path in p["save_files"]:
         open(path, "w").write("x")
     assert assert_plate_complete(p) == p["save_files"]
+
+
+# ---- house-style enforcement gate --------------------------------------------
+#
+# The plate is the single point where the house typography is imposed: the
+# vendor figure-composer fans panels out to sub-agents that load figure-style
+# alone, so a panel arrives in whatever face its producer chose and Step 2's
+# re-render is the only thing standing between that and the sheet. These tests
+# are the drift alarm -- they fail if the pin is edited out of SKILL.md, or if
+# lab-figure-format changes the ladder underneath it.
+
+SKILL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "SKILL.md")).read()
+
+
+def _lab_figure_format_dir():
+    """Sibling skill, in the repo and in the app skills dir alike."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(os.path.dirname(here), "lab-figure-format")
+
+
+def test_step2_pins_the_house_style_call_order():
+    assert "apply_figure_style()" in SKILL and "house_style()" in SKILL
+    # house_style() must come after apply_figure_style(), which overwrites
+    # font.sans-serif and the mathtext roles.
+    assert SKILL.index("apply_figure_style()") < SKILL.index("house_style()")
+
+
+def test_step2_styles_after_the_recovered_code_not_before():
+    # A producing script's rcParams outlive it, so styling before the exec
+    # styles nothing.
+    assert SKILL.index("exec(recovered_panel_code)") < SKILL.index("apply_figure_style()")
+
+
+def test_step2_checks_the_font_actually_resolved():
+    assert "installed=False" in SKILL
+
+
+def test_quoted_size_ladder_matches_lab_figure_format():
+    lff = _lab_figure_format_dir()
+    if not os.path.isdir(lff):
+        pytest.skip("lab-figure-format not alongside this skill")
+    sys.path.insert(0, lff)
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "lff_kernel", os.path.join(lff, "kernel.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    finally:
+        sys.path.remove(lff)
+    # SKILL.md tells the reader what a bare house_style() applies. If the
+    # house changes SIZE_LADDER, that sentence becomes a lie -- fail here
+    # rather than let a plate ship on numbers this file only claims.
+    assert "SIZE_LADDER = %s" % (str(mod.SIZE_LADDER),) in SKILL, (
+        "SKILL.md quotes a SIZE_LADDER that lab-figure-format no longer uses: "
+        "it is now %r" % (mod.SIZE_LADDER,))
+    assert mod.FALLBACK_CHAIN[0] == "Arial"
