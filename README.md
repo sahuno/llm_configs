@@ -17,8 +17,8 @@ Three plugins, install what you want:
 
 | Plugin | Contents | Portable? |
 |---|---|---|
-| **bio-skills** | 13 skills, `/init-bio-project`, figure agent | Yes |
-| **bio-guardrails** | 9 hooks — raw-data protection, genome-build tagging | Yes, if you adopt the layout |
+| **bio-skills** | 11 skills, 10 commands, 3 review agents | Yes |
+| **bio-guardrails** | 10 hooks — raw-data protection, genome-build tagging | Yes, if you adopt the layout |
 | **hpc-site** | Genome + container registries, SLURM profiles, cluster knowledge | No — fork it |
 
 `bio-skills` stands alone. `bio-guardrails` assumes the project layout that
@@ -33,20 +33,31 @@ Installing merges into your Claude Code config. Nothing overwrites your
 
 ```
 .claude-plugin/marketplace.json   # marketplace manifest
-plugins/
+plugins/                          # the part other people install
 ├── bio-skills/                   # skills/, commands/, agents/, scripts/
 ├── bio-guardrails/               # hooks/ + hooks.json
 └── hpc-site/                     # profiles/, skills/, sites/
+science-skills/                   # Claude Science skills, mirrored out of app state
 claude/                           # personal config, not shipped as a plugin
 ├── CLAUDE.md                     # author's memory file
 ├── settings.json                 # author's Claude Code settings
 ├── docs/, examples/, prompts/, mcps/
 cli_coding_agents_setups/         # non-Claude agent setups (Gemini, Codex)
+tools/                            # the audit layer, all three run in CI
+├── audit_site_paths.sh           # no unclassified cluster path ships
+├── gotcha_audit.py               # every failure record carries a version
+└── sync_science_skills.sh        # repo <-> Claude Science app dir, and the drift report
 docs/
 ├── claude-code-on-hpc.md         # running under Apptainer on SLURM
 ├── skill-overlap-audit.md        # overlap with Claude Science skills
 └── superpowers/                  # dated design records and plans
 ```
+
+The organising idea: **anything a tool would otherwise keep only in runtime
+state gets a home here, with history and a test.** `plugins/` is the published
+product, `science-skills/` is a rescue copy of skills the Claude Science app
+rewrites on every release, `claude/` is personal config deployed rather than
+installed, and `tools/` is what stops all of it drifting.
 
 ## Site and user profiles
 
