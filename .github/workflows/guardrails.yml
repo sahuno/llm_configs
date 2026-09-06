@@ -141,7 +141,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install the plotting stack the kernel tiles output from
-        run: pip install --quiet pytest matplotlib numpy pandas pillow pypdf
+        # pypdfium2 is what export_plate_rasters renders the submission TIFFs
+        # with -- the skill deliberately shells out to no external binary, so
+        # Ghostscript/ImageMagick/Inkscape are not substitutes for it here.
+        run: pip install --quiet pytest matplotlib numpy pandas pillow pypdf pypdfium2
       - name: The plate still imposes the house typography
         # The plate is the ONLY point where the house face and ladder are
         # applied: the vendor figure-composer fans panels out to sub-agents
