@@ -1,6 +1,6 @@
 {
   "name": "bio-skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Genomics and computational-biology skills: pipelines, containers, figures, validation, and silent-failure gotchas.",
   "author": {
     "name": "Samuel Ahuno"

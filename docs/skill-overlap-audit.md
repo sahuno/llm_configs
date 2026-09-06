@@ -12,6 +12,12 @@ claim below cites a file and line so it can be checked rather than believed.
 exposes in this repo (now partly fixed), one clean complement needing only a
 pointer.
 
+**Updated 2026-09-06** — section C has two follow-ups. The scope line above is
+what was audited on the day and is why the conflict was undercounted: it looked
+only at `science-skills/`, and two more figure-size authorities were sitting in
+`plugins/bio-skills/`. Read C to the end before trusting anything in its first
+half.
+
 ---
 
 ## A. `artifact-provenance-audit` ↔ the `repro-auditor` agent
@@ -132,6 +138,61 @@ which is what it is, not a competing claim.
 **To verify:** `claude/CLAUDE.md` §7 and its Nature block; compare against
 `figure-editor.md:10`.
 
+**Follow-up, 2026-08-30.** The three authorities now agree on paper, but nothing
+enforced it at the point where figures are actually made. The vendor
+`figure-composer` fans panels out to sub-agents that load `figure-style` alone —
+so a multi-panel figure could be assembled entirely out of panels that never saw
+the house ladder, and pass its own review. `science-skills/lab-figure-composer/`
+forks it and pins the call order (`apply_figure_style()` then `house_style()`,
+house last) into the panel prompt, adds the ladder and the typeface to the
+adversarial reviewer's checklist, and stamps panel letters in the house face
+instead of DejaVu. The 5–8 pt agreement is now something the pipeline applies,
+not just something three documents assert.
+
+**Follow-up, 2026-09-06. Five authorities collapsed to one.** The 2026-08-30
+fix worked but left the count of things asserting a font size unchanged, and
+counting them properly turned up two more than this audit had:
+
+| Authority | Said | Fate |
+|---|---|---|
+| `lab-figure-format` | 8/7/6 single-panel, 9/8/7/6 multi-panel, 3.50 / 7.20 in | **kept — now the only one** |
+| `CLAUDE.md` §7 | 5–8 pt, 90 / 180 mm | kept, repointed to defer |
+| `figure-editor` agent | 5–8 pt at line 10 — *and 8–10 pt* in its own Key Guidelines | **removed** |
+| `heatmap-dimensions` | `fontsize = 10` column names, 180 mm, R/ComplexHeatmap | **removed** |
+| `barplot-long-labels` | `base_size = 20`, 180 mm bar area, R/ggplot2 | **removed** |
+
+The last two never appeared in the original audit because it scoped itself to
+"the three hand-authored skills in `science-skills/`" and both are R-side, so
+`operon_arial.mplstyle` could not reach them either way. `barplot-long-labels`
+was still applying the 20 pt that PR #5 had already established was ~3.5× too
+large on a 90 mm column. And the `figure-editor` agent — cited *in this
+document* as the authority that settled the 5–8 pt question — contradicts
+itself: line 10 says 5–8 pt, its Key Guidelines say 8–10 pt. It was quoted here
+selectively, by me, without reading the rest of the file.
+
+**Action taken.** All three removed (`git log -- plugins/bio-skills`).
+`CLAUDE.md` §7's "authority for final figures" line now names
+`print-plate-assembly`, and `lab-figure-format` is the only place a point size
+or a column width is defined.
+
+**And the composition fork went too.** `lab-figure-composer` was retired in the
+same pass. It existed to carry the house style through the vendor composer's
+panel fan-out; `print-plate-assembly` Step 2 now applies the same call order
+when it re-renders each panel for the sheet, which every figure passes through
+anyway. That moves the guarantee onto a file this repo owns outright, so it
+survives a `claude-science update` without a fork to maintain or a
+test-after-upgrade ritual to remember. What is lost is listed in that commit;
+the material one is that the vendor silently resizes a mis-sized panel where
+the fork raised, so the catch moves from authoring time to
+`predict_print_size()` at plate time.
+
+**The lesson, which is the same one as last time in a new costume.** #5's error
+was tightening a range it had no reason to tighten. This one was *citing a
+source without finishing it* — and then building a fork on top of the citation.
+Section C stood for a week asserting that three authorities now agreed, while
+two more sat uncounted in a sibling plugin and the cited authority disagreed
+with itself two paragraphs below the quoted line.
+
 ---
 
 ## Keeping these aligned
@@ -146,6 +207,13 @@ share an author and nothing else. Three options, in increasing cost:
 3. **Extract the shared vocabulary** — *producer*, *orphan artifact*, *pin*,
    *version_observed* — into one glossary both cite. Worth doing only if a
    fourth overlap appears; two data points is not a pattern.
+
+A fourth option turned up while acting on C: **fork the vendor skill and pin the
+agreement inside it**, with a test that fails when the fork and the upstream
+drift (`science-skills/lab-figure-composer/test_kernel.py`). That is the only one
+of these that does not depend on someone remembering. It costs a fork to
+maintain, so it is worth it exactly where a vendor skill would otherwise carry
+house conventions off into a sub-agent no one reviews.
 
 The narrower lesson is the useful one: **the conflict was not between products,
 it was introduced by a fix.** #5 corrected a real error and created a smaller one

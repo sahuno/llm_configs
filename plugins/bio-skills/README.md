@@ -25,9 +25,7 @@ they were measured on.
 | `runtime-resource-study` | Designing a runtime/memory/cost study across a parameter grid |
 | `analysis-gotchas` | Silent-failure modes: DSS, parallel R, small-n CV, `fread`, Clair3, Severus |
 | `chimeric-read-validation` | Validating SV / viral-integration calls from split reads |
-| `cohort-overview` | Cohort-wide sample × feature overview heatmaps |
-| `heatmap-dimensions` | Publication heatmaps sized to journal specs |
-| `barplot-long-labels` | Barplots whose category labels don't fit |
+| `cohort-overview` | Cohort-wide sample × feature overview heatmaps (analysis figures — the plate re-renders them) |
 | `igv-screenshots` | Batch IGV/igver screenshots, including methylation coloring |
 | `journal-club` | Paper ingest → quiz → critique → slides → write-up |
 
@@ -36,10 +34,15 @@ they were measured on.
 `/init-bio-project` — scaffold a project (config, sample sheet, immutable
 `data/raw/`, genome-tagged `data/processed/`, workflow dirs, logs).
 
-### Agent
+### Agents
 
-`scientific-illustrator` — assembles raw plots into publication-ready
-multipart figures.
+`repro-auditor`, `reviewer-2`, `stats-reviewer` — see `agents/`.
+
+Figure formatting is **not** here. It lives in the `lab-figure-format` and
+`print-plate-assembly` Claude Science skills (mirrored under
+`science-skills/`), which are the single authority for typeface, widths and the
+point ladder. Skills in this plugin that draw figures produce *analysis*
+figures; the plate re-renders them before anything is submitted.
 
 ## Lives elsewhere
 
