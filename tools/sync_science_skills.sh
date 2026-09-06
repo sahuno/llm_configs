@@ -85,8 +85,11 @@ case "$cmd" in
         printf '%-34s \033[31mMISSING FROM APP\033[0m — an upgrade may have removed it; run push\n' "$s"; CHANGED=1
       # .sync-org and .catalog_stamp are stripped on pull, so a raw diff always
       # reports them as differences. Exclude them or every skill reads as drifted
-      # and the signal this tool exists to give becomes noise.
-      elif diff -rq -x '.sync-org' -x '.catalog_stamp' "$REPO_DIR/$s" "$APP_DIR/$s" >/dev/null 2>&1; then
+      # and the signal this tool exists to give becomes noise. __pycache__ and
+      # .pytest_cache do the same thing from the other direction: running a
+      # skill's suite in either tree, or a push copying one across, flags a
+      # DIFFERS that has nothing to do with the skill's content.
+      elif diff -rq -x '.sync-org' -x '.catalog_stamp' -x '__pycache__' -x '.pytest_cache' "$REPO_DIR/$s" "$APP_DIR/$s" >/dev/null 2>&1; then
         printf '%-34s in sync\n' "$s"
       else
         newer=$([ "$APP_DIR/$s" -nt "$REPO_DIR/$s" ] && echo "app is newer — pull" || echo "repo is newer — push")

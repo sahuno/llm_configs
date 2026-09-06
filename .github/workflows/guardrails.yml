@@ -135,17 +135,20 @@ jobs:
           fi
           echo "all SKILL.md correctly cased"
 
-  figure-composer:
+  house-style-gate:
     runs-on: ubuntu-latest
-    name: lab-figure-composer fork
+    name: print-plate-assembly house-style gate
     steps:
       - uses: actions/checkout@v4
       - name: Install the plotting stack the kernel tiles output from
-        run: pip install --quiet matplotlib numpy pillow pypdf
-      - name: Every divergence from the vendor figure-composer still holds
-        # This skill is a FORK of a vendor Claude Science skill that is rewritten
-        # by every release. The suite pins each deliberate difference — house call
-        # order in the panel prompt, strict slot sizing, house-face panel letters,
-        # exact column edges, vector export — so drift after an upstream bump is
-        # visible here rather than in a figure.
-        run: python3 science-skills/lab-figure-composer/test_kernel.py
+        run: pip install --quiet pytest matplotlib numpy pandas pillow pypdf
+      - name: The plate still imposes the house typography
+        # The plate is the ONLY point where the house face and ladder are
+        # applied: the vendor figure-composer fans panels out to sub-agents
+        # that load figure-style alone, so a panel arrives in whatever face its
+        # producer chose and Step 2's re-render is what fixes it. This suite
+        # pins that gate — the call order survives in SKILL.md, it sits after
+        # the recovered code, the installed=False check is still described, and
+        # the ladder quoted there still matches lab-figure-format's constant.
+        # It replaces the lab-figure-composer fork's suite, retired with it.
+        run: python3 -m pytest science-skills/print-plate-assembly/test_kernel.py -q
