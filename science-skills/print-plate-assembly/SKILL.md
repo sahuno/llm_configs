@@ -119,11 +119,11 @@ what `predict_print_size()` checks in Step 5. Authoring a panel at 7 in for a
 3.4 in slot halves every one of these, so author at the placed width where you
 can.
 
-**Bare `house_style()` does not apply that whole ladder.** Its default
-`SIZE_LADDER = (8, 7, 6)` is `(base, annotation, tick)`, which lands axis label
-and *title* at 8 and tick labels at 6 — so a bare call gives you neither the
-9 pt title nor the 7 pt tick the table above asks for. Pass the sizes you mean
-and set the title explicitly:
+**Bare `house_style()` does not apply that ladder, by design.** Its default
+`SIZE_LADDER = (8, 7, 6)` is `(base, annotation, tick)` — the house's
+*single-panel* ladder, which lands axis label and title at 8 and ticks at 6. A
+plate is multi-panel, so it wants the four-row ladder above instead. Pass the
+sizes you mean and set the title explicitly:
 
 ```python
 house_style(sizes=(8, 7, 7))          # label 8, legend/annotation 7, tick 7
