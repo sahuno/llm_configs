@@ -40,7 +40,8 @@ plugins/                          # the part other people install
 science-skills/                   # Claude Science skills, mirrored out of app state
 claude/                           # personal config, not shipped as a plugin
 ├── CLAUDE.md                     # author's memory file
-├── settings.json                 # author's Claude Code settings
+├── settings.json                 # author's Claude Code settings; ~/.claude/settings.json symlinks here
+├── statusline.sh                 # the status line under the prompt; ~/.claude/statusline.sh symlinks here
 ├── docs/, examples/, prompts/, mcps/
 cli_coding_agents_setups/         # non-Claude agent setups (Gemini, Codex)
 tools/                            # the audit layer, all three run in CI

@@ -21,7 +21,8 @@ See the [repo README](../README.md) for the marketplace install.
 | Path | What it is |
 |---|---|
 | `CLAUDE.md` | The author's memory file. Personal — identity, lab conventions, domain playbooks. Not portable; read it for ideas, don't copy it wholesale. |
-| `settings.json` | Personal Claude Code preferences only. The hooks moved to `bio-guardrails`, so nothing here needs syncing. |
+| `settings.json` | The author's live Claude Code settings. `~/.claude/settings.json` is a symlink to this file, so the two cannot drift — edit either path, commit the result. |
+| `statusline.sh` | The status line shown under the prompt (`bash:host:cwd \| model \| ctx:NN% \| role:Nm ago`). `~/.claude/statusline.sh` symlinks here. Referenced by `settings.json`. |
 | `docs/` | FAQ and reference notes |
 | `prompts/` | Reusable prompt library — hypothesis generation, figure digest, structured paper analysis, literature review |
 | `mcps/` | MCP server notes |
