@@ -86,6 +86,15 @@ user is debugging their own file format.
   blank cells = never attempted. This lets you see coverage gaps at a glance.
 - **Left strip:** modal Site across patients for that row — tells you "most
   samples in slot 1 are from the primary tumour site".
+- **Other palettes:** `references/color-palettes.md` carries the colourblind-safe
+  continuous, diverging and categorical R palettes for heatmaps and barplots.
+  Sizing and typography are not defined there or here — the plate applies those.
+
+**This produces an analysis figure, not a submission figure.** Its width and
+fonts are whatever you pass; it does not carry the house style. Run the output
+through `print-plate-assembly` before it goes in a manuscript — that pass
+re-renders each panel through `apply_figure_style()` then `house_style()`, which
+is where the house typeface and point ladder are actually applied.
 
 ## Workflow
 
