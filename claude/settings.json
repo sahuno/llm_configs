@@ -37,7 +37,7 @@
   "enabledPlugins": {
     "codex@openai-codex": true,
     "frontend-design@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
+    "vercel@claude-plugins-official": false,
     "bio-skills@sahuno": true,
     "bio-guardrails@sahuno": true,
     "hpc-site@sahuno": true
