@@ -72,6 +72,9 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
+  "preferredNotifChannel": "auto",
+  "switchModelsOnFlag": true,
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "advisorModel": "fable"
 }
