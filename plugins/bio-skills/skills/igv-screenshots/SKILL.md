@@ -27,6 +27,7 @@ Gather from user before generating:
 
 2. **Regions** (required):
    - BED file (`.bed` — BED3 or BED6), region text file (`.txt`), or inline `chr:start-end`
+   - Region text file format: one region per line, `chr1:start-end<TAB>UID-label` (the label names the snapshot)
 
 3. **Genome** (default: `hg19`):
    - Common: `hg38`, `hg19`, `mm10`, `mm39`

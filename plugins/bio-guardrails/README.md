@@ -22,6 +22,7 @@ Installing merges these hooks into your config. It does **not** overwrite your
 | `block-raw-data-writes.sh` | PreToolUse (Write/Edit) | **block** | Any write under `data/raw/` |
 | `validate-reference-genome.sh` | PreToolUse (Bash, Write/Edit) | **block** | Cross-species mixing, build mixing, `chr`-naming mismatches |
 | `enforce-genome-tag.sh` | PreToolUse (Bash, Write/Edit) | **block** | Genomic outputs with no build tag in the filename |
+| `mosdepth-scope-warning.sh` | PreToolUse (Bash) | warn | `mosdepth --by` a BED with no host contigs, so host coverage QC is silently skipped |
 | `snakemake-dryrun.sh` | PostToolUse (Write/Edit) | warn | Runs `snakemake -n` after a `.smk` edit |
 | `block-hardcoded-contigs.sh` | PostToolUse (Write/Edit) | warn | Hardcoded chromosome lists |
 | `validate-yaml.sh` | PostToolUse (Write/Edit) | warn | Invalid YAML in config files |

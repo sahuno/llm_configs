@@ -110,6 +110,32 @@ for case in "bare:silent" "proj:speaks" "named:silent"; do
 done
 cd "$ORIG"; rm -rf "$SPD"
 
+echo "=== mosdepth-scope-warning (warns, never blocks) ==="
+# The hook always exits 0, so the exit code alone proves nothing: also assert
+# whether it printed the warning.
+MSD=$(mktemp -d)
+printf 'chrHTLV1\t0\t9000\nchrEBV\t0\t171823\n' > "$MSD/viral.bed"
+printf '#chrom\tstart\tend\nchr1\t0\t1000\nchrEBV\t0\t171823\n' > "$MSD/host.bed"
+# mosdepth_case <name> <want: warns|silent> <command>
+mosdepth_case() {
+  local name="$1" want="$2" cmd="$3" out rc got
+  out=$(bash_cmd "$cmd" | "$HOOKS/mosdepth-scope-warning.sh" 2>&1 >/dev/null); rc=$?
+  got=$(printf '%s' "$out" | grep -q '\[mosdepth-scope-warning\]' && echo warns || echo silent)
+  if [ "$rc" -eq 0 ] && [ "$got" = "$want" ]; then
+    PASS=$((PASS+1)); printf '  \033[32mok\033[0m   %-58s (%s)\n' "$name" "$got"
+  else
+    FAIL=$((FAIL+1)); FAILED_NAMES+=("$name")
+    printf '  \033[31mFAIL\033[0m %-58s want %s/exit 0, got %s/exit %d\n' "$name" "$want" "$got" "$rc"
+  fi
+}
+mosdepth_case "viral-only --by BED warns"       warns  "mosdepth --by $MSD/viral.bed out s.bam"
+mosdepth_case "BED with a host contig is silent" silent "mosdepth --by $MSD/host.bed out s.bam"
+mosdepth_case "no --by is silent"                silent "mosdepth out s.bam"
+mosdepth_case "shell-variable BED path skipped"  silent 'mosdepth --by $BED out s.bam'
+mosdepth_case "missing BED file skipped"         silent "mosdepth --by $MSD/absent.bed out s.bam"
+mosdepth_case "non-mosdepth command is silent"   silent "samtools depth $MSD/viral.bed"
+rm -rf "$MSD"
+
 echo "=== warn-only hooks (must never block) ==="
 check warn-absolute-paths.sh    0 "absolute path warns only"      "$(write_file 'src/a.py' 'p = \"/data1/x\"')"
 check block-hardcoded-contigs.sh 0 "hardcoded contigs warn only"  "$(write_file 'src/a.py' 'chroms = [\"chr1\",\"chr2\"]')"

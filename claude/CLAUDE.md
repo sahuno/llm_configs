@@ -1,7 +1,7 @@
 # CLAUDE.md — Samuel Ahuno (ekwame001@gmail.com)
 # Computational Biologist, Greenbaum Lab (greenbab), MSKCC
 # Languages: Python, R, Bash | HPC: SLURM | Organisms: Mouse & Human
-# v0.3.0 — hook-enforced rules condensed, init_project.py integrated
+# v0.4.0 — PROGRESS.md ledger; domain playbooks and long specs moved to the analysis-playbooks skill
 
 ---
 
@@ -50,8 +50,8 @@ log. Claude Code loads it automatically, so a session in a project directory
 already knows what it is working on — do not ask the user to restate it.
 
 1. **If the project root has a `CLAUDE.md`**, that is the classification. Read its
-   progress log (`~/projects/<project>.md`) and resume from the "Exact next
-   steps". Say what you resumed from. Ask only what the file leaves genuinely
+   ledger (`PROGRESS.md`, see "Project ledger" below) and resume from the "Exact
+   next steps". Say what you resumed from. Ask only what the file leaves genuinely
    open — typically the aim for *this* session, not the domain.
 2. **If it does not**, then ask:
    - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering | Writing
@@ -59,24 +59,10 @@ already knows what it is working on — do not ask the user to restate it.
 
    For work that will outlive the session, offer `/init-bio-project` — it writes
    the project `CLAUDE.md` so this is the last time the question is needed.
-3. **For analysis projects**, scaffold the directory structure automatically:
-   ```
-   <project_root>/
-   ├── config.yaml                 # project parameters, genome paths
-   ├── sample_sheet.tsv            # patient/sample/condition/assay/path/genome
-   ├── data/
-   │   ├── inbox/                  # staging area — review before promoting to raw/
-   │   ├── raw/                    # IMMUTABLE — never write here after initial deposit
-   │   └── processed/{genome}/     # all transformed outputs, tagged by genome build
-   ├── src/                        # analysis scripts (numbered: 01_, 02_, ...)
-   ├── results/
-   │   └── {date}_{genome}_{description}/  # one dir per run
-   │       └── figures/{png,pdf,svg}/
-   ├── workflows/wf_snakemake/     # configs, profiles/slurm, rules, scripts
-   ├── softwares/containers/       # .def files and container images
-   ├── logs/                       # timestamped script logs
-   └── docs/
-   ```
+3. **For analysis projects**, scaffold the standard layout with `/init-bio-project`: `config.yaml`,
+   `sample_sheet.tsv`, `data/{inbox,raw,processed/{genome}}` (`inbox/` is staging, reviewed before promoting to
+   `raw/`; `raw/` is **immutable** after the initial deposit), `src/` (numbered scripts), `results/{date}_{genome}_{description}/figures/{png,pdf,svg}/`
+   (one dir per run), `workflows/`, `softwares/containers/`, `logs/`, `docs/`.
    Use the `/init-bio-project` command (bio-skills plugin) to scaffold projects:
    ```bash
    # Scaffold in current directory (default — uses cwd name as project name):
@@ -87,10 +73,10 @@ already knows what it is working on — do not ask the user to restate it.
    ```
    Project types: `analysis` (default workflow dirs), `pipeline` (engine-specific layout, requires `--engine snakemake|nextflow`), `ml` (adds notebooks, model dirs).
    A top-level `README.md` is generated with project metadata, directory tree, and aims. Additional READMEs only when the user requests them.
-4. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
+4. **Record progress in the project ledger** (`PROGRESS.md`, see "Project ledger" at the end) as work proceeds — decisions, parameters, and paths, so a future session can resume without re-discovery.
 
-### Project File Content Requirements (minimum for resumption)
-Every project file update must include:
+### Ledger entry content (minimum for resumption)
+Every ledger entry must include:
 1. **What was done** — completed steps with specifics, not just "worked on X"
 2. **Key file paths** — absolute paths to files created or modified
 3. **Commands that worked** — copy-paste ready for the next session
@@ -161,76 +147,18 @@ Every project file update must include:
 
 ### Logging and Audit Trail (Mandatory for all analysis scripts)
 
-Every analysis script must produce a **timestamped log file** that captures enough detail to reproduce or debug the run without re-executing it. Log files go in a `logs/` directory relative to the script's output location.
-
-**Log infrastructure setup** (do this at the top of every script, after argument parsing):
-- **R**: Use `sink(log_con, type = "output", split = TRUE)` + `globalCallingHandlers(message = ...)` to capture both `cat()`/`print()` output and `message()` to a single log file while still printing to console. Always close with `on.exit({ sink(type = "output"); close(log_con) }, add = TRUE)`.
-- **Python**: Use `logging` module with a `FileHandler` (to log file) + `StreamHandler` (to console). Set format: `"[%(asctime)s] %(levelname)s: %(message)s"`. Never use bare `print()` for status updates — use `logger.info()`.
-- **Bash**: Redirect with `exec > >(tee -a "$LOG_FILE") 2>&1` at script start. Define a `log_msg()` function: `log_msg() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }`.
-
-**Log file naming**: `logs/{script_name}_{YYYYMMDD_HHMMSS}.log`
-
-**What to log** — every script must emit these categories:
-
-1. **Session header** (first lines of log):
-   - Timestamp, language version, working directory, log file path
-   - Script name and all command-line arguments / parameter values used
-   - Key library versions (e.g., DESeq2, Seurat, pandas version)
-
-2. **Data loading and dimensions**:
-   - After every `read`/`fread`/`pd.read_*`: log file path, rows, columns
-   - Example: `"Loaded counts matrix: 32,415 genes x 12 samples from data/counts.tsv"`
-
-3. **Filtering and data drops** (the most critical category):
-   - **Before and after counts** for every filter operation
-   - What was filtered and why (threshold, criterion)
-   - Example: `"Filtering low-count genes (min 50 reads in ≥3 samples): 32,415 → 18,203 genes (14,212 removed)"`
-   - Example: `"Dropping samples: R.S.2, R.C.3 | Remaining: 10 samples"`
-   - For QC filters: log the distribution of the metric before filtering (min, median, max)
-
-4. **Merges and joins**:
-   - Log both input dimensions and result dimensions
-   - Log any rows lost (anti-join) or gained (many-to-many)
-   - Example: `"Inner join metadata × counts: 12 × 12 → 10 matched (2 metadata-only, 0 counts-only)"`
-
-5. **Sanity checks and validation**:
-   - Alignment of sample order between matrices (critical for DESeq2, Seurat)
-   - Cross-checks (e.g., "All count matrix columns match metadata rows: TRUE")
-   - Expected vs actual value ranges (e.g., log2FC range, p-value distribution)
-
-6. **Analysis milestones** (use section markers: `=== Section Name ===`):
-   - Major steps: `"=== Running DESeq2 for CKi vs DMSO contrast ==="`
-   - Result dimensions: `"CKi vs DMSO results: 18,203 x 7"`
-   - Key summary stats: number of DEGs at threshold, GSEA term counts, cluster counts
-
-7. **Output file confirmation**:
-   - After every file write: log path, dimensions, and file size if practical
-   - Example: `"Saved: data/processed/deseq2_results.tsv (18,203 genes x 7 columns)"`
-   - For figures: `"Saved: results/20260302_v1/figures/pdf/volcano_CKi_vs_DMSO.pdf (+ png, svg)"`
-
-8. **Warnings and errors**:
-   - Catch and log warnings (don't suppress them): `tryCatch(..., warning = function(w) message("WARNING: ", w$message))`
-   - On error, log the full error message before stopping
-
-9. **Session footer** (last lines of log):
-   - Total runtime: `"Completed in 4m 32s"`
-   - `sessionInfo()` (R) or `uv pip freeze` / the `uv.lock` file (Python) for full reproducibility
-
-10. **End-of-script marker** (mandatory — the very last line of every script):
-    - Every script must end with an explicit completion message so it is unambiguous whether the script ran to the end or died silently mid-execution.
-    - **R**: `message("[", Sys.time(), "] === DONE: {script_name} completed successfully ===")`
-    - **Python**: `logger.info("=== DONE: {script_name} completed successfully ===")`
-    - **Bash**: `log_msg "=== DONE: $(basename "$0") completed successfully ==="`
-    - If this line is absent from the log file, the run did not finish.
-
-**Anti-patterns — do NOT**:
-- Use bare `print()` or `cat()` without routing to the log file
-- Log only to console (everything must also reach the log file)
-- Skip logging for "small" filtering steps — every row/column change matters
-- Hardcode log paths — accept `--log_dir` as a command-line argument with default `"logs"`
+Every analysis script writes a **timestamped log** to `logs/{script_name}_{YYYYMMDD_HHMMSS}.log`
+(accept `--log_dir`, default `logs`) that captures console output too: R `sink(split = TRUE)` +
+`globalCallingHandlers`; Python `logging` with a FileHandler and a StreamHandler, never bare `print()`;
+Bash `exec > >(tee -a "$LOG_FILE") 2>&1`. The log records: a session header (versions, arguments),
+dimensions after every load, **before/after counts for every filter** and every merge, sanity checks,
+`=== Section ===` milestones, every output written, warnings and errors, a footer with runtime and
+`sessionInfo()` / `pip freeze`, and last, `=== DONE: {script_name} completed successfully ===`. If
+that line is missing, the run did not finish. Full specification with examples: `analysis-playbooks`
+skill → `references/logging_audit.md`.
 
 Close a session with `/wrapup`, which appends the five required fields below to
-`~/projects/<project>.md` and refreshes the project `CLAUDE.md` Status line.
+the project's `PROGRESS.md` ledger and updates its header.
 
 ### Persistent Directories
 | Purpose  | Path                    |
@@ -252,7 +180,7 @@ tool is in play:
 
 | Skill | Plugin | Covers |
 |---|---|---|
-| `analysis-gotchas` | bio-skills | DSS, parallel R / mclapply OOM, small-n CV, `fread` on BED, Clair3/ClairS, Severus, reporting aggregated statistics |
+| `analysis-gotchas` | bio-skills | DSS, parallel R / mclapply OOM, small-n CV, `fread` on BED, Clair3/ClairS, Severus, deeptools, liftOver chains, reporting aggregated statistics, declaring work done |
 | `snakemake` → `references/gotchas.md` | bio-skills | Snakemake 9 + SLURM executor pitfalls |
 | `igv-screenshots` → `references/gotchas.md` | bio-skills | IGV / igver on large ONT BAMs, bigwig autoscale, chrom.sizes mismatch |
 | `singularity-build` → `references/env_leak.md` | bio-skills | Host SSL/CA env vars leaking into apptainer SIFs |
@@ -271,78 +199,15 @@ row to that skill's SKILL.md table. No edit here is needed.
 
 ## 3. Domain Playbook: Bioinformatics Analysis
 
-### 3A. ONT Methylation Pipeline (pod5 to DMRs)
+Standard chains, QC checkpoints and "done" criteria live in the `analysis-playbooks` skill
+(bio-skills), one reference per domain: ONT methylation (pod5 → dorado → modkit → DMRs), variant
+calling (Clair3, Sniffles2, GATK), bulk RNA-seq DGE, scRNA-seq. IGV screenshots: the
+`igv-screenshots` skill. A failed QC checkpoint is a stop: report the metric and ask.
 
-**Standard chain**: pod5 -> dorado basecall -> dorado align (or minimap2) -> samtools sort/index -> modkit pileup -> modkit dmr
-
-**Tool references**: Load containers from `$SITE_CONFIG/containers.yaml`.
-
-**QC checkpoints** (stop and report if any fail):
-1. After basecalling: Check read N50, total bases, pass/fail ratio from dorado summary.
-2. After alignment: Confirm mapping rate >80%, check flagstat for unexpected supplementary/secondary rates.
-3. After modkit pileup: Verify bedMethyl has expected chromosomes, spot-check coverage distribution.
-4. After DMR calling: Sanity-check DMR count; fewer than 10 or more than 100k warrants review.
-
-**Common pitfalls**:
-- Dorado models must match the chemistry/flowcell. Always confirm with the user.
-- modkit pileup `--ref` must match the alignment reference exactly.
-- For mouse samples, CpG islands from `$SITE_CONFIG/databases.yaml` are essential context for DMR interpretation.
-
-**"Done" looks like**: bedMethyl files per sample, DMR bed file with statistics, summary plots of methylation distributions, and a manifest CSV linking sample metadata to output paths.
-
-**ONT Processing Infrastructure**:
-- **Chemistry detection**: ONT runs may have mixed chemistries (4kHz and 5kHz). Always check and process separately. Dorado model must match chemistry exactly — mismatches produce silent garbage.
-- **Apptainer cache**: Set `APPTAINER_CACHEDIR=/data1/greenbab/users/ahunos/apptainer_cache` to avoid home directory quota issues on compute nodes.
-- **Primary containers**: `onttools_v2.0.sif` (dorado + samtools), `sahuno/onttools:v3.0` (adds bedtools). Always load from `$SITE_CONFIG/containers.yaml`.
-- **Methylation context**: Standard ONT methylation call string is `5mCG_5hmCG@latest,6mA@latest`.
-- **Multi-run samples**: Some patients have multiple sequencing runs. These must be basecalled independently, then merged after alignment — never concatenate raw pod5 files across runs.
-
-### 3B. Variant Calling
-
-| Type | Tool | Notes |
-|------|------|-------|
-| SNV/Indel (ONT) | Clair3 | Requires model matched to chemistry; use `--platform=ont` |
-| SV (ONT) | Sniffles2 | Use `--tandem-repeats` BED when available |
-| SNV/Indel (short-read) | GATK HaplotypeCaller | Follow GATK best practices; BQSR then HC then GenotypeGVCFs |
-
-**QC checkpoints**: Check Ti/Tv ratio for SNVs (~2.0-2.1 for WGS, ~2.8 for exome). Check SV size distribution. Filter by QUAL and read support.
-
-**Common pitfalls**: Clair3 model mismatch causes silent garbage. Always verify model version. GATK requires read groups; fail early if missing.
-
-### 3C. RNA-seq / DGE
-
-**Standard chain**: fastp QC -> STAR align (or salmon quant) -> featureCounts -> DESeq2 (R) or pyDESeq2 (Python)
-
-**QC checkpoints**: Verify >70% uniquely mapped (STAR), check PCA for batch effects before DGE, confirm replicate correlation >0.9.
-
-**Defaults**: padj < 0.05, log2FC threshold = 1.0. Always generate MA plot, volcano plot, and PCA. Prompt user about which contrasts to test.
-
-**Common pitfalls**: GTF and genome version mismatch. Salmon index must match the transcriptome version. Always declare the design formula explicitly.
-
-### 3D. scRNA-seq
-
-**Seurat (R)** or **Scanpy (Python)** — ask user which framework unless context is clear.
-
-**Standard chain**: CellRanger (or STARsolo) -> Load counts -> QC filtering (mito%, nFeature, nCount) -> Normalize -> HVG -> PCA -> Harmony/integration if multi-sample -> UMAP -> Clustering -> Marker genes -> Annotation
-
-**QC checkpoints**: Report cells before/after filtering. Show violin plots of QC metrics. Check doublet rate with scrublet or DoubletFinder.
-
-**Common pitfalls**: Over-filtering kills rare populations. Under-filtering adds noise. Always show QC distributions before applying thresholds and get user confirmation. Resolution parameter for clustering should be explored at multiple values.
-
-### 3E. IGV Visualization
-
-Use the igver tool for non-interactive screenshots:
-```bash
-singularity exec --bind /data1/greenbab \
-  /data1/greenbab/software/images/igver_latest.sif igver \
-  --input <bams_or_txt_file> \
-  -r regions.txt \
-  -o "results_IGV_plots" \
-  --dpi 600 -d expand -p 1000 \
-  --genome '<mm10|hg38|etc>' --no-singularity \
-  && touch results_IGV_plots/done.txt
-```
-Regions file format: `chr1:start-end\tUID-label` (tab-separated, one region per line).
+- **Dorado models must match the chemistry/flowcell** (4 kHz vs 5 kHz runs are processed
+  separately). Always confirm with the user; a mismatch produces silent garbage.
+- **Multi-run samples**: basecall each run independently, merge after alignment — never
+  concatenate raw pod5 files across runs.
 
 ---
 
@@ -368,23 +233,11 @@ The cost of skipping this check is concrete: when I (Claude) scaffolded `pipelin
 
 ### Pipeline Development (Snakemake / Nextflow)
 
-**Snakemake rules**:
-- There is no `--reason` argument for snakemake. Do not use it.
-- If a rule sets the `singularity:` directive, do NOT add `singularity exec -B ...` inside the shell block. The directive handles container binding.
-- Load SLURM profiles from `$SITE_CONFIG/snakemake/slurmConfig/config.yaml` or `slurmMinimal/config.yaml`.
-- Load executor settings from `$SITE_CONFIG/executor.yaml`.
-- Sample sheet format: TSV with columns `patient, sample, condition, assay, path, genome` (defined in `$USER_CONFIG/setup_preferences.yaml`).
-
-**Snakemake run organization**:
-- Pipeline code (Snakefile, rules, profiles) is versioned and reusable. Never write outputs into the pipeline directory.
-- **One run = one directory.** All outputs from a run — rule outputs, figures, and logs — live under one named `results/<run>/` directory. This makes runs independently archivable (`tar -czf`) and deletable (`rm -rf`) with zero ambiguity about which run produced which file.
-- `output_dir` is the only path key in config. Derive `FIGDIR` and `LOGDIR` from it in the Snakefile: `FIGDIR = f"{OUTDIR}/figures"`. Never add separate `figures_dir` or `log_dir` config keys — separate keys allow paths to diverge and recreate the ambiguity problem.
-- One config file per run, named to match the results directory.
-- Run naming convention: `{date}_{genome}_{description}` (e.g. `20260305_hg38_differential_methylation`, `20260310_mm10_v1`).
-
-**Nextflow**: the site profile is `$SITE_CONFIG/nextflow.config` — SLURM executor, account, partitions by label (`short`, `long`, `gpu`, `benchmark`), apptainer with `--cleanenv`, OOM retry with escalating memory, and `cache = 'lenient'` for the shared filesystem. A pipeline inherits it with `includeConfig`; `/init-bio-project --engine nextflow` scaffolds that. Run with `-profile slurm -resume`, smoke-test with `-profile test`.
-
-Nextflow emits `timeline`, `report`, `trace` and `dag` into `results/pipeline_info/` by default here. The trace carries `peak_rss` and `%cpu`, which is what makes a runtime-resource study a query rather than a project.
+Rules, site profiles (`$SITE_CONFIG/snakemake/`, `$SITE_CONFIG/nextflow.config`) and run
+organization: `analysis-playbooks` skill → `references/pipeline_development.md`; SLURM-executor
+pitfalls: the `snakemake` skill. The two conventions that apply everywhere: **one run = one
+directory** (`results/<run>/` holds rule outputs, figures and logs; `output_dir` is the only path key,
+`FIGDIR`/`LOGDIR` derive from it), and never write outputs into the pipeline directory.
 
 ### CLI Tools and Packages
 - Use `argparse` (Python) or `optparse` (R) with clear help text for every argument.
@@ -410,17 +263,9 @@ See §2A Tool gotchas → `snakemake` skill → `references/gotchas.md`.
 
 ## 5. Domain Playbook: AI Engineering
 
-### LLM Applications
-- **Frameworks**: Claude API, OpenAI API, LangChain, LlamaIndex — ask user which unless context is clear.
-- **Prompt versioning**: Store prompts as separate text/yaml files, never inline long prompts as string literals.
-- **Evaluation**: Define at least one quantitative metric before building. Log all LLM calls with input/output/latency/cost.
-- **Experiment tracking**: Use MLflow, Weights & Biases, or a structured JSON log. Never rely on terminal output alone.
-
-### ML for Genomics / Classical ML
-- **Train/val/test split**: Always hold out a test set that is never touched until final evaluation. For genomic data, split by chromosome or patient to avoid data leakage.
-- **Hyperparameter search**: Use Optuna or sklearn GridSearchCV. Log all trials.
-- **Deployment**: Containerize models. Provide a predict script with clear input/output schema.
-- **Reproducibility**: Pin all library versions. Export conda environment or requirements.txt at experiment completion.
+LLM applications (framework choice, prompt versioning, evaluation, call logging) and ML on genomic
+data (split by chromosome or patient, never touch the test set until the end): `analysis-playbooks`
+skill → `references/ai_engineering.md`.
 
 ---
 
@@ -428,9 +273,8 @@ See §2A Tool gotchas → `snakemake` skill → `references/gotchas.md`.
 
 ### Compute Awareness (SLURM)
 - Route long-running jobs to a compute node via slurm-mcp (default partition: `componc_cpu`; prefer `cpushort` for work under 2 h — see the `mskcc-hpc` skill). Use Nextflow or Snakemake for pipelines rather than raw sbatch chains.
-###TODO: create a database of memory requirements for common workflows or create slurm templates, implement tags like `highCompute_highTime`, `lowTime_lowCompute`. slurm-mcp has snapshot of resource limitations like componc_onc <= 7days
 
-When writing SLURM job headers or snakemake resource directives, scale memory with data size and allow a 2× safety margin for unknown inputs. (No per-workflow estimate table exists yet — see the TODO above. Query `slurm-mcp` for live partition limits rather than guessing.)
+When writing SLURM job headers or snakemake resource directives, scale memory with data size and allow a 2× safety margin for unknown inputs. (No per-workflow estimate table exists yet; it is an open item in the llm_configs ledger. Query `slurm-mcp` for live partition limits rather than guessing.)
 
 ### SLURM GPU Jobs
 - GPU jobs (`--gres=gpu:N`) can conflict with explicit `--mem` requests on some partitions. If GPU jobs fail silently, try removing the `mem_mb` resource or use `--mem=0` (all available memory on the node).
@@ -447,27 +291,12 @@ All container paths are in `$SITE_CONFIG/containers.yaml`. Always load paths fro
 
 #### Container Build Rules (Apptainer / Singularity `%post`)
 
-- **Never `rm -rf /tmp/*` or `rm -rf /var/tmp/*` in `%post`.**
-  Under `--fakeroot` / root-mapped namespace, the container's `/tmp` is a bind mount of
-  the **host's `/tmp`**. This deletes other users' sockets/files and aborts the build.
-  Only remove files you explicitly created by name (`rm -f /tmp/myinstaller.sh`).
-  Use tool-specific cache cleaners instead: `mamba clean --all --yes`, `apt-get clean`,
-  `pip cache purge`.
-
-- **`condaforge/miniforge3` base requires `--ignore-fakeroot-command` on MSKCC HPC (RHEL 8).**
-  The miniforge3 image ships a `fakeroot` binary compiled against GLIBC ≥ 2.33. The RHEL 8
-  login node has GLIBC 2.28 — the `faked` daemon crashes immediately at `%post` start.
-  Always add `--ignore-fakeroot-command` when building from a miniforge3/conda base image:
-  `apptainer build --fakeroot --ignore-fakeroot-command output.sif input.def`
-
-- **Never `apt-get` in `--fakeroot` builds on MSKCC HPC.**
-  apt drops to the `_apt` user internally via `setgroups()` — this syscall is blocked in
-  root-mapped namespace. Use a conda-ready base image (`condaforge/miniforge3`) and install
-  everything via `mamba` to avoid this entirely.
-
+The full rules and their reasons are in the `singularity-build` skill. The prohibitions:
+- **Never `rm -rf /tmp/*` or `rm -rf /var/tmp/*` in `%post`** — under `--fakeroot` the container's
+  `/tmp` is the host's `/tmp`; it deletes other users' files. Remove only files you created, by name.
+- **Never `apt-get` in `--fakeroot` builds on MSKCC HPC** — use a `condaforge/miniforge3` base and
+  `mamba`; that base needs `apptainer build --fakeroot --ignore-fakeroot-command` on RHEL 8.
 - **Always `unset APPTAINER_BIND SINGULARITY_BIND` before building.**
-  These env vars are applied during `%post`. If a bind source path doesn't exist inside the
-  base image yet, the build fails with a fatal mount error.
 
 ### Reference Genomes
 All genome paths (fasta, gtf, chrom.sizes, CpG islands) are in `$SITE_CONFIG/databases.yaml`. Supported builds: mm10, mm39, hg38, T2T-CHM13, GRCh37. Each has both local disk and S3 paths.
@@ -490,8 +319,10 @@ Record every figure with `/figure-manifest` as it is written — script, commit,
 inputs. `/figure-manifest --check <run>` before assembling a manuscript.
 
 ### Two Figure Locations
-- **`results/{run}/figures/{png,pdf,svg}/`** — individual analysis figures generated per run. This is where scripts save figures during analysis.
-- **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). Draft the composite with the `figure-composer` Claude Science skill, then run it through `print-plate-assembly` — that pass re-renders each panel in the house style, lays it out on the sheet, and emits the manifest and legend. Point it here with `plate_paths(slug, letters, root="docs/manuscript/figures")`; its default root is a bare `plates/`. Illustrator remains the manual fallback. Nothing else writes here — analysis figures go to the per-run location above.
+- **`results/{run}/figures/{png,pdf,svg}/`** — individual analysis figures, written by scripts during analysis.
+- **`docs/manuscript/figures/`** — final multi-panel figures only, assembled through `print-plate-assembly`
+  (the authority for final figures). Workflow, Nature sizes, the lab's 8 pt ladder and ggplot2 `base_size`
+  scaling: `analysis-playbooks` skill → `references/figures.md`.
 
 ### Matplotlib Defaults
 Load from `$USER_CONFIG/matplotlib_defaults`.
@@ -499,25 +330,7 @@ Load from `$USER_CONFIG/matplotlib_defaults`.
 ### R / ggplot2
 Load theme and font settings from `$USER_CONFIG/.Rprofile`.
 
-### ggplot2 Font Size Scaling Reference
-The `theme()` element sizes are multiplied from `base_size`:
-
-| Element | Multiplier | Draft (20pt target) | Nature final (6pt target) |
-|---------|-----------|---------------------|---------------------------|
-| `axis.text` | base_size × 0.8 | base_size = 25 | base_size = 7.5 |
-| `axis.title` | base_size × 1.0 | base_size = 20 | base_size = 6 |
-| `plot.title` | base_size × 1.2 | base_size = 17 | base_size = 5 |
-| `legend.text` | base_size × 0.8 | base_size = 25 | base_size = 7.5 |
-
-- **Key insight**: the multiplier, not the target, is the thing to remember — `axis.text` is `base_size × 0.8`, so solve for the size you actually want. Pick the target from where the figure will be *viewed*: a slide or a screen review wants 20pt; a 90 mm journal column wants ~6pt.
 - **Default colorblind-safe palette**: Okabe-Ito — `#0072B2` (blue), `#E69F00` (orange), `#D55E00` (vermillion), `#999999` (grey).
-
-### Nature Magazine Specifications (Final Manuscript Figures Only)
-- Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.
-- Font: Arial or Helvetica, **5–8pt at final size** (lettering ≈ 2 mm tall, per Nature's guidance). This is the authoritative range for manuscript submission; the 20pt default above applies to draft figures only.
-- **The lab's choice within that range is 8pt** — single-panel body 8pt, legend 7pt, ticks 6pt, single column 3.50 in (= 88.9 mm). That ladder and its matplotlib style live in the `lab-figure-format` Claude Science skill, mirrored at `science-skills/lab-figure-format/`. Use it rather than picking a size per figure; consistency across panels matters more than the exact point within the range.
-- **`print-plate-assembly` is the authority for final figures**, and the only place the house style is actually applied — its Step 2 re-renders every panel through `apply_figure_style()` then `house_style()` before placing it, and `predict_print_size()` reports what each panel's smallest text measures once scaled into its slot. A composer's output is a draft until it has been through that pass.
-- Apply these only when the user explicitly requests publication-quality or Nature-format figures.
 
 ---
 
@@ -530,7 +343,7 @@ The `theme()` element sizes are multiplied from `base_size`:
 | Multiple testing correction | Benjamini–Hochberg (FDR) |
 | Effect size reporting | Always report alongside p-values |
 
-**Choosing a correction.** Default to Benjamini–Hochberg for discovery work — DMR/DEG calling, genome-wide scans, any analysis with thousands of tests. This matches what §3C already does in practice (DESeq2's `padj` is BH). Bonferroni is correct only for a small, pre-specified confirmatory set; applied genome-wide it returns ~0 hits at realistic n and silently converts a discovery analysis into a null result.
+**Choosing a correction.** Default to Benjamini–Hochberg for discovery work — DMR/DEG calling, genome-wide scans, any analysis with thousands of tests. This matches what the RNA-seq playbook already does in practice (DESeq2's `padj` is BH). Bonferroni is correct only for a small, pre-specified confirmatory set; applied genome-wide it returns ~0 hits at realistic n and silently converts a discovery analysis into a null result.
 
 Override any default when the user specifies different thresholds.
 
@@ -551,16 +364,6 @@ Override any default when the user specifies different thresholds.
 ### Analysis Errors
 - If a statistical test fails (convergence, singular matrix): Report the error, suggest an alternative test, and ask the user before proceeding.
 - If QC fails a checkpoint: Stop, report metrics, and ask the user for guidance. Do not silently continue.
-
----
-
-### Philosophy of research publication with figures (stream of thought)
-- Generate 3 figure formats (.png, .pdf, .svg) per figure. rasterize the .pdf  with `RASTERISE_DPI` of 50dpi and  png_dpi=70 (local machine)
-- keep a figure index per script. Helps track down where each figure came from per script (Host and local machine)
-- download figures onto OneDrive research/institutional folder (local machine)
-- place figures (.pdf) on illustrator artboard and save accordingly as Figure 1, 2, .... # or Supplementary Figure 1, 2,...,n (local machine)
-- write script to autodownload figures with higher dpi when ready (local machine)
-- adobe illustrator should can be resaved with high dpi figures and exported as .pdf (local machine)
 
 ---
 
@@ -586,5 +389,27 @@ before trusting any long parallel job — a completion marker is not success.
 - [ ] Variable names do not use forbidden names
 - [ ] Script produces a timestamped log file in `logs/` with data dimensions, filter counts, and output confirmations
 - [ ] Log captures both stdout and stderr (R: `sink` + `globalCallingHandlers`; Python: `logging` with dual handlers)
-- [ ] Project file at `~/projects/` is updated with what was done
+- [ ] The project's `PROGRESS.md` ledger has an entry for this session (`/wrapup`)
 - [ ] For analysis: QC checkpoints passed and were reported to user
+
+---
+
+## Project ledger (PROGRESS.md)
+
+Every project has a `PROGRESS.md` at its root; the ledger hook prints its head
+at session start. Two obligations, no exceptions:
+
+1. **Read it first.** Resume from "Exact next steps". Do not ask the user to
+   restate what the ledger already says. If the session-start digest says it
+   was truncated, read the rest of the file before acting on it.
+2. **Write it last.** If you changed any file, add an entry before you finish
+   (`/wrapup`, or `ledger-append` directly): dated, with the five fields — what
+   was done, key file paths, commands that worked, known issues or blockers,
+   exact next steps. Update `updated` and `next_action` in the header. A
+   question only the user can answer goes in `## Open unknowns` with a
+   decide-by date, not in chat alone.
+
+If the project has no `PROGRESS.md` and you changed files, create one with
+`ledger-append --create --project <name>`, which copies the template. If the
+header says `shared_copy: /data1/greenbab/ledger/...`, push the file there
+afterwards with `iris push PROGRESS.md <that path>`.

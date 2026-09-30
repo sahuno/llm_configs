@@ -19,6 +19,11 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-genome-tag.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/mosdepth-scope-warning.sh\"",
+            "timeout": 10
           }
         ]
       },

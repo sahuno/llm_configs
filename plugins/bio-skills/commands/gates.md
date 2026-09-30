@@ -25,8 +25,8 @@ rest of this list assumes they are.
    filter counts, and output confirmations, with both stdout and stderr.
 6. **The run was verified, not just completed.** Run `/verify-run` against the
    job and log. A completion marker is not success.
-7. **Progress file updated** at `~/projects/<project>.md` with what was done, key
-   paths, working commands, blockers, and exact next steps.
+7. **Ledger updated**: a dated entry in the project's `PROGRESS.md` (`/wrapup`)
+   with what was done, key paths, working commands, blockers, and exact next steps.
 8. **QC checkpoints reported** to the user, not merely passed silently.
 
 Finish with a one-line verdict: ready, or the specific list of what is not.
