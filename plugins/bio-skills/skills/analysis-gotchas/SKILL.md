@@ -7,9 +7,11 @@ description: |
   methylation, parallel R (mclapply, cv.glmnet, BSseq, Seurat per-sample
   loops) on SLURM, regularized cross-validation at small n (n < 50),
   data.table::fread on BED files, Clair3 / ClairS variant calling, Severus
-  SV or viral-integration calling, or reporting any aggregated summary
-  statistic in a doc, caption, or manuscript. Also consult before trusting
-  the output of any long parallel R job that "completed successfully".
+  SV or viral-integration calling, deeptools (computeMatrix, plotHeatmap,
+  bamCoverage), liftOver / chainSwap coordinate conversion, or reporting any
+  aggregated summary statistic in a doc, caption, or manuscript. Also consult
+  before trusting the output of any long parallel R job that "completed
+  successfully", and before declaring any analysis, fix or benchmark done.
   Each reference records the symptom, the confirmed root cause, the fix, and
   a verification step.
 version: 1.0.0
@@ -34,6 +36,9 @@ Read the reference file that matches the tool in play before trusting results.
 | Clair3 / ClairS | `references/clair3.md` | argparse treats `False` as truthy so phasing can't be disabled by flag; ClairS SIF ships an empty `/opt/models`. |
 | Severus (SV / viral integration) | `references/severus.md` | `--min-reference-flank` default silently zeroes out every contig < 20 kb; integrations emit as `INS`, not `BND`, so CHROM/ALT filters miss all of them. |
 | Reporting any mean / median / rate | `references/numerical_claims.md` | Aggregation method changes the value 5–20 %; an unstated method is not reproducible. |
+| deeptools `computeMatrix` / `plotHeatmap` | `references/deeptools.md` | A `#` line in a BED is a group separator, not a comment; `--kmeans` has no seed; `--skipZeros` drops rows so "all N regions" joins break; `--region` is `chr:start:end`. |
+| liftOver, `chainSwap` | `references/liftover_chains.md` | A swapped chain is not re-netted, so repeat families under-lift silently; a 0-byte chain lifts nothing and exits 0. |
+| Declaring an analysis, fix or benchmark done | `references/verification_discipline.md` | A slice, pilot or simulation reported as the finish; numbers cited without a committed script; no independent re-derivation. |
 
 ## Adding to this collection
 

@@ -94,3 +94,8 @@ plugins/bio-skills/skills/chimeric-read-validation/scripts/extract_chimeric_read
 plugins/bio-skills/skills/chimeric-read-validation/SKILL.md	EVIDENCE	4169fd09db9d3281bbd7ac881b92f330	- Reference implementation that demonstrated the patterns: `/data1/greenbab/projects/ont/Project_17424/results/20260503_
 plugins/hpc-site/skills/mskcc-hpc/references/mskcc_partitions.md	EVIDENCE	bb0460324a62454e6a67380310e165f2	scontrol show partition cpu | tr ' ' '\n' | grep DenyAccounts | grep -c greenbab
 plugins/bio-skills/scripts/test_init_project.py	EVIDENCE	53a87b417c9711b78981b4f28806c149	check("keeps cluster facts out of the pipeline", "componc" not in body and "greenbab" not in body)
+plugins/bio-skills/skills/analysis-gotchas/references/verification_discipline.md	EVIDENCE	187b3c438b0a74f4f7f7073c038d6ccb	Learned the hard way in the RetroEM sessions of 2026-09-23 → 09-25 (project lessons log: `/data1/greenbab/users/ahunos
+plugins/hpc-site/skills/mskcc-hpc/references/mskcc_partitions.md	EVIDENCE	0bf6fd038d8328039082cdc1badfd49e	- isca018 and isca021 (componc_cpu) cannot see `/home/ahunos/miniforge3` (`ls: cannot access '/home/ahunos/miniforge3/en
+plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	eeb44da9c8c7a1051a21333c32c169d3	  `/data1/greenbab/software/models/README_glm53_flash.md` §8f.
+plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	14aa380ee74f71acb8f789b1ac4bc782	`glm53-flash` tag). Full write-up: `/data1/greenbab/software/models/README_glm53_flash.md` section 8c.
+plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	5d8b784eaebe5d733e5b39dcb98adcb5	- `/data1/greenbab/software/models/README_glm53_flash.md` — the full GLM-5.3-Flash bring-up: TP=4 (not TP=8), max_num_
