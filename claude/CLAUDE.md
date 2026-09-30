@@ -50,8 +50,8 @@ log. Claude Code loads it automatically, so a session in a project directory
 already knows what it is working on — do not ask the user to restate it.
 
 1. **If the project root has a `CLAUDE.md`**, that is the classification. Read its
-   progress log (`~/projects/<project>.md`) and resume from the "Exact next
-   steps". Say what you resumed from. Ask only what the file leaves genuinely
+   ledger (`PROGRESS.md`, see "Project ledger" below) and resume from the "Exact
+   next steps". Say what you resumed from. Ask only what the file leaves genuinely
    open — typically the aim for *this* session, not the domain.
 2. **If it does not**, then ask:
    - **Domain**: Bioinformatics Analysis | Software Development | AI Engineering | Writing
@@ -87,10 +87,10 @@ already knows what it is working on — do not ask the user to restate it.
    ```
    Project types: `analysis` (default workflow dirs), `pipeline` (engine-specific layout, requires `--engine snakemake|nextflow`), `ml` (adds notebooks, model dirs).
    A top-level `README.md` is generated with project metadata, directory tree, and aims. Additional READMEs only when the user requests them.
-4. **Append progress** to the project file at `~/projects/` as work proceeds — record decisions, parameters, and paths so a future session can resume without re-discovery.
+4. **Record progress in the project ledger** (`PROGRESS.md`, see "Project ledger" at the end) as work proceeds — decisions, parameters, and paths, so a future session can resume without re-discovery.
 
-### Project File Content Requirements (minimum for resumption)
-Every project file update must include:
+### Ledger entry content (minimum for resumption)
+Every ledger entry must include:
 1. **What was done** — completed steps with specifics, not just "worked on X"
 2. **Key file paths** — absolute paths to files created or modified
 3. **Commands that worked** — copy-paste ready for the next session
@@ -230,7 +230,7 @@ Every analysis script must produce a **timestamped log file** that captures enou
 - Hardcode log paths — accept `--log_dir` as a command-line argument with default `"logs"`
 
 Close a session with `/wrapup`, which appends the five required fields below to
-`~/projects/<project>.md` and refreshes the project `CLAUDE.md` Status line.
+the project's `PROGRESS.md` ledger and updates its header.
 
 ### Persistent Directories
 | Purpose  | Path                    |
@@ -252,7 +252,7 @@ tool is in play:
 
 | Skill | Plugin | Covers |
 |---|---|---|
-| `analysis-gotchas` | bio-skills | DSS, parallel R / mclapply OOM, small-n CV, `fread` on BED, Clair3/ClairS, Severus, reporting aggregated statistics |
+| `analysis-gotchas` | bio-skills | DSS, parallel R / mclapply OOM, small-n CV, `fread` on BED, Clair3/ClairS, Severus, deeptools, liftOver chains, reporting aggregated statistics, declaring work done |
 | `snakemake` → `references/gotchas.md` | bio-skills | Snakemake 9 + SLURM executor pitfalls |
 | `igv-screenshots` → `references/gotchas.md` | bio-skills | IGV / igver on large ONT BAMs, bigwig autoscale, chrom.sizes mismatch |
 | `singularity-build` → `references/env_leak.md` | bio-skills | Host SSL/CA env vars leaking into apptainer SIFs |
@@ -428,7 +428,6 @@ See §2A Tool gotchas → `snakemake` skill → `references/gotchas.md`.
 
 ### Compute Awareness (SLURM)
 - Route long-running jobs to a compute node via slurm-mcp (default partition: `componc_cpu`; prefer `cpushort` for work under 2 h — see the `mskcc-hpc` skill). Use Nextflow or Snakemake for pipelines rather than raw sbatch chains.
-###TODO: create a database of memory requirements for common workflows or create slurm templates, implement tags like `highCompute_highTime`, `lowTime_lowCompute`. slurm-mcp has snapshot of resource limitations like componc_onc <= 7days
 
 When writing SLURM job headers or snakemake resource directives, scale memory with data size and allow a 2× safety margin for unknown inputs. (No per-workflow estimate table exists yet — see the TODO above. Query `slurm-mcp` for live partition limits rather than guessing.)
 
@@ -586,5 +585,27 @@ before trusting any long parallel job — a completion marker is not success.
 - [ ] Variable names do not use forbidden names
 - [ ] Script produces a timestamped log file in `logs/` with data dimensions, filter counts, and output confirmations
 - [ ] Log captures both stdout and stderr (R: `sink` + `globalCallingHandlers`; Python: `logging` with dual handlers)
-- [ ] Project file at `~/projects/` is updated with what was done
+- [ ] The project's `PROGRESS.md` ledger has an entry for this session (`/wrapup`)
 - [ ] For analysis: QC checkpoints passed and were reported to user
+
+---
+
+## Project ledger (PROGRESS.md)
+
+Every project has a `PROGRESS.md` at its root; the ledger hook prints its head
+at session start. Two obligations, no exceptions:
+
+1. **Read it first.** Resume from "Exact next steps". Do not ask the user to
+   restate what the ledger already says. If the session-start digest says it
+   was truncated, read the rest of the file before acting on it.
+2. **Write it last.** If you changed any file, add an entry before you finish
+   (`/wrapup`, or `ledger-append` directly): dated, with the five fields — what
+   was done, key file paths, commands that worked, known issues or blockers,
+   exact next steps. Update `updated` and `next_action` in the header. A
+   question only the user can answer goes in `## Open unknowns` with a
+   decide-by date, not in chat alone.
+
+If the project has no `PROGRESS.md` and you changed files, create one with
+`ledger-append --create --project <name>`, which copies the template. If the
+header says `shared_copy: /data1/greenbab/ledger/...`, push the file there
+afterwards with `iris push PROGRESS.md <that path>`.
