@@ -3,9 +3,9 @@ project: llm_configs
 status: active
 owner: Samuel Ahuno
 team: Samuel only
-next_action: Confirm symlink survives a /config write; classify the cloud_sync_destination.md site path before committing it
+next_action: Review and merge the hpc-plugin-migration PR, then update the Mac
 blockers: none
-updated: 2026-09-21
+updated: 2026-09-30
 shared_copy: none
 ---
 
@@ -31,6 +31,13 @@ This ledger was seeded on 2026-09-18 from `/Users/sahuno/projects/personal/secon
 - 2026-09-03 · `cleanupPeriodDays` set to 36500 · because Claude Code transcripts were silently expiring after 30 days on the built-in default · by Samuel
 
 ## Log
+
+### 2026-09-30 17:34 · Claude (Opus 5.5), HPC session · HPC migrated to the sahuno plugins; HPC-only content ported; CLAUDE.md 39.7k -> 25.5k; /wrapup writes the ledger
+- **Done:** Merged PR #20 (225bbee). Saved HPC uncommitted work on local branch hpc-local-snapshot-20260930 (4c3506b, not pushed: public repo). On branch hpc-plugin-migration: ported deeptools, liftover_chains, verification_discipline into analysis-gotchas; 3-way merged HPC edits to clair3, igv, mskcc_partitions, snakemake, vllm_iris and containers.yaml; added mosdepth-scope-warning to bio-guardrails with 6 tests (42/42 pass, jq and python3-only); /wrapup, /gates and README now name the PROGRESS.md ledger; CLAUDE.md carries the ledger section and moves the domain playbooks, pipeline conventions, AI engineering, manuscript figures and the full logging spec into a new analysis-playbooks skill (verbatim); plugins bumped to 1.2.0. HPC cutover: ~/projects/llm_configs -> /data1 checkout; sahuno directory marketplace + 3 plugins installed; settings.json keeps only the bell and ledger hooks (ledger-hook on PATH); old skill/command/profile links and ~/.claude/hooks removed; ~/.claude/CLAUDE.md -> repo; SITE_CONFIG resolved in ~/.bashrc.local.
+- **Key paths:** claude/CLAUDE.md; plugins/bio-skills/skills/analysis-playbooks/; plugins/bio-skills/skills/analysis-gotchas/; plugins/bio-guardrails/hooks/mosdepth-scope-warning.sh; plugins/bio-guardrails/tests/test_hooks.sh; plugins/bio-skills/commands/wrapup.md; docs/site-path-allowlist.tsv; HPC backups and UNDO: ~/.claude/backups/20260930_llmconfigs_migration/
+- **Commands that worked:** claude plugin marketplace add /home/ahunos/projects/llm_configs; claude plugin install bio-skills@sahuno --scope user (same for bio-guardrails, hpc-site); ./plugins/bio-guardrails/tests/test_hooks.sh; ./tools/audit_site_paths.sh; python3 tools/gotcha_audit.py
+- **Known issues / blockers:** skillOverrides does not apply to plugin skills in Claude Code 2.1.285 (bare, bio-skills:, @sahuno:, plugin: keys all tried), so cohort-overview, docker-hpc, journal-club, scatter-gather and runtime-resource-study are on again on HPC. house-style test_letter_overlay_does_not_embed_ambient_face fails on HPC only (no Liberation Sans/Helvetica fonts); passes in CI. Mac not reached from the compute node (tunnel on a login node; no key auth to islogin01).
+- **Exact next steps:** 1. Review and merge the hpc-plugin-migration PR. 2. On the Mac: git pull main, then claude plugin marketplace update sahuno and update the three plugins. 3. Apply ledger-hook.digest.patch in the singularity repo and reinstall on both hosts. 4. Decide how to hide unused bio-skills skills per host (disable-model-invocation, a separate plugin, or accept). 5. Open item moved from CLAUDE.md: create a database of memory requirements for common workflows or create slurm templates, implement tags like `highCompute_highTime`, `lowTime_lowCompute`. slurm-mcp has snapshot of resource limitations like componc_onc <= 7days
 
 ### 2026-09-21 09:55 · Claude (Opus 5) · Pushed 32c340a; ledger itself now tracked
 - **Done:** Pushed the settings-tracking commit to origin/figure-style-consolidation (4b6e1a2..32c340a). Committed PROGRESS.md into the repo at the users request. Could not settle whether Claude Codes own settings writes preserve the symlink: there is no "claude config set" subcommand in 2.1.278 -- "claude config" is parsed as a prompt and spawned a nested session instead -- and /config is interactive only, so the test needs a human. Ran tools/audit_site_paths.sh: it exits 1 on one unreviewed line in the untracked plugins/hpc-site/skills/mskcc-hpc/references/cloud_sync_destination.md. That file is not committed, so the pushed branch is unaffected, but it will fail CI when committed.
