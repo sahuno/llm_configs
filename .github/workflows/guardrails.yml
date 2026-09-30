@@ -134,3 +134,24 @@ jobs:
             echo "::error::lowercase skill.md will not load on Linux:"; echo "$bad"; exit 1
           fi
           echo "all SKILL.md correctly cased"
+
+  house-style-gate:
+    runs-on: ubuntu-latest
+    name: print-plate-assembly house-style gate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the plotting stack the kernel tiles output from
+        # pypdfium2 is what export_plate_rasters renders the submission TIFFs
+        # with -- the skill deliberately shells out to no external binary, so
+        # Ghostscript/ImageMagick/Inkscape are not substitutes for it here.
+        run: pip install --quiet pytest matplotlib numpy pandas pillow pypdf pypdfium2
+      - name: The plate still imposes the house typography
+        # The plate is the ONLY point where the house face and ladder are
+        # applied: the vendor figure-composer fans panels out to sub-agents
+        # that load figure-style alone, so a panel arrives in whatever face its
+        # producer chose and Step 2's re-render is what fixes it. This suite
+        # pins that gate — the call order survives in SKILL.md, it sits after
+        # the recovered code, the installed=False check is still described, and
+        # the ladder quoted there still matches lab-figure-format's constant.
+        # It replaces the lab-figure-composer fork's suite, retired with it.
+        run: python3 -m pytest science-skills/print-plate-assembly/test_kernel.py -q

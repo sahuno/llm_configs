@@ -491,7 +491,7 @@ inputs. `/figure-manifest --check <run>` before assembling a manuscript.
 
 ### Two Figure Locations
 - **`results/{run}/figures/{png,pdf,svg}/`** — individual analysis figures generated per run. This is where scripts save figures during analysis.
-- **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). These are composited in Illustrator from the per-run figures above.
+- **`docs/manuscript/figures/`** — final multi-panel publication figures assembled from individual figures (created when preparing a manuscript, not during analysis). Draft the composite with the `figure-composer` Claude Science skill, then run it through `print-plate-assembly` — that pass re-renders each panel in the house style, lays it out on the sheet, and emits the manifest and legend. Point it here with `plate_paths(slug, letters, root="docs/manuscript/figures")`; its default root is a bare `plates/`. Illustrator remains the manual fallback. Nothing else writes here — analysis figures go to the per-run location above.
 
 ### Matplotlib Defaults
 Load from `$USER_CONFIG/matplotlib_defaults`.
@@ -516,7 +516,7 @@ The `theme()` element sizes are multiplied from `base_size`:
 - Single column: 90 mm wide. Double column: 180 mm wide. Full page depth: 170 mm.
 - Font: Arial or Helvetica, **5–8pt at final size** (lettering ≈ 2 mm tall, per Nature's guidance). This is the authoritative range for manuscript submission; the 20pt default above applies to draft figures only.
 - **The lab's choice within that range is 8pt** — single-panel body 8pt, legend 7pt, ticks 6pt, single column 3.50 in (= 88.9 mm). That ladder and its matplotlib style live in the `lab-figure-format` Claude Science skill, mirrored at `science-skills/lab-figure-format/`. Use it rather than picking a size per figure; consistency across panels matters more than the exact point within the range.
-- The `scientific-illustrator` agent (bio-skills plugin) is the authority for final figures — it sizes panels so lettering survives reduction.
+- **`print-plate-assembly` is the authority for final figures**, and the only place the house style is actually applied — its Step 2 re-renders every panel through `apply_figure_style()` then `house_style()` before placing it, and `predict_print_size()` reports what each panel's smallest text measures once scaled into its slot. A composer's output is a draft until it has been through that pass.
 - Apply these only when the user explicitly requests publication-quality or Nature-format figures.
 
 ---
