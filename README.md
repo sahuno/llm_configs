@@ -117,7 +117,7 @@ tracked and closed:
 | Item | Status |
 |---|---|
 | Transition to Nextflow — resume, workflow metadata, Seqera AI | [#12](https://github.com/sahuno/llm_configs/issues/12) |
-| Logging of tasks completed and pending | **Done** — `/wrapup` writes the five-field progress schema to `~/projects/<project>.md` |
+| Logging of tasks completed and pending | **Done** — `/wrapup` writes the five-field progress schema to the project's `PROGRESS.md` ledger |
 | Use `uv` for Python package management | **Done** — `CLAUDE.md` §4 |
 
 Open work is tracked in
