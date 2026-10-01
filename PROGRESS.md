@@ -3,7 +3,7 @@ project: llm_configs
 status: active
 owner: Samuel Ahuno
 team: Samuel only
-next_action: Merge the plugins-off-and-cloud-sync PR, then update the three plugins on the Mac
+next_action: Merge PR #22, then update the three plugins on the Mac
 blockers: none
 updated: 2026-09-30
 shared_copy: none
@@ -31,6 +31,13 @@ This ledger was seeded on 2026-09-18 from `/Users/sahuno/projects/personal/secon
 - 2026-09-03 · `cleanupPeriodDays` set to 36500 · because Claude Code transcripts were silently expiring after 30 days on the built-in default · by Samuel
 
 ## Log
+
+### 2026-09-30 20:35 · Claude Opus 5.5 · Rebased local work onto the new main and opened PR #22
+- **Done:** Committed the plugins-off settings (dea1d67), the cloud-sync transfer note with its SKILL.md row (a63c374) and the ledger (48cedff). The new note's one cluster path is classified EVIDENCE in docs/site-path-allowlist.tsv. Moved all 5 unpushed commits onto a new branch, plugins-off-and-cloud-sync, rebased onto origin/main and resolved 2 conflicts: the allowlist (kept both sides' rows) and PROGRESS.md (both sides' entries kept, newest first). Pushed and opened https://github.com/sahuno/llm_configs/pull/22. The old branch figure-style-consolidation is left as it was; it was already merged in #20.
+- **Key paths:** claude/settings.json; plugins/hpc-site/skills/mskcc-hpc/SKILL.md; plugins/hpc-site/skills/mskcc-hpc/references/cloud_sync_destination.md; docs/site-path-allowlist.tsv; PROGRESS.md
+- **Commands that worked:** git rebase origin/main; bash tools/audit_site_paths.sh (unreviewed 0); ./plugins/bio-guardrails/tests/test_hooks.sh (42 passed, 0 failed); python3 tools/gotcha_audit.py (all records complete)
+- **Known issues / blockers:** CI on PR #22 was not checked at the time of writing. Biology projects on this Mac still need the three plugins turned back on per project.
+- **Exact next steps:** 1. Check CI on PR #22 and merge it. 2. On the Mac: git switch main && git pull, then claude plugin marketplace update sahuno and update the three plugins to 1.2.0. 3. Add enabledPlugins true for the three sahuno plugins to .claude/settings.json in each biology project. 4. Optionally delete the merged local branch figure-style-consolidation.
 
 ### 2026-09-30 20:28 · Claude Opus 5.5 · Checked GitHub for updates: main is 22 commits ahead, PRs #20 and #21 merged
 - **Done:** Ran git fetch only. origin/main gained 22 commits, including PR #20 (this branch) and PR #21 (hpc-plugin-migration: analysis-playbooks skill, HPC-only gotchas ported into plugins, mosdepth-scope-warning hook, plugins bumped to 1.2.0). figure-style-consolidation is 2 commits ahead of its upstream (aeb57e9, 702867a, not pushed) and 9 behind origin/main. The agent edited no files. claude/settings.json was rewritten at 15:28 today by Claude Code itself (added model: opus, moved advisorModel), on top of the 2026-09-27 uncommitted change that turned off the three sahuno plugins.
