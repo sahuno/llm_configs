@@ -5,10 +5,12 @@ description: |
   account `greenbab`). Use when submitting or debugging SLURM jobs on this
   cluster, choosing a partition, benchmarking with GNU time, deciding between
   an apptainer SIF and a conda env, or serving a local LLM on the iris GPU
-  nodes. Covers partition-access rules, slurm-mcp submit_batch quirks, and
-  node-level hardware anomalies. NOT portable — every fact here was measured on
-  MSKCC hardware and will be wrong on another cluster. On a different site,
-  read this only as a template for what to measure.
+  nodes. Covers partition-access rules, slurm-mcp submit_batch quirks,
+  node-level hardware anomalies, and moving large result sets off the cluster
+  onto a laptop — including destinations that are cloud-synced folders. NOT
+  portable — every fact here was measured on MSKCC hardware and will be wrong
+  on another cluster. On a different site, read this only as a template for
+  what to measure.
 version: 1.0.0
 ---
 
@@ -27,6 +29,7 @@ about its own finding.
 | Benchmarking runtime / memory | `references/gnu_time.md` | `/usr/bin/time` does not exist on this cluster. Install GNU time via conda and resolve it dynamically. |
 | Wrapping samtools/bcftools/htslib in a pipeline | `references/apptainer_vs_conda.md` | The NFS-backed conda env pays a 1–2 M page-fault cold-start tax per fresh node. Prefer the SIF for short high-fan-out rules. |
 | Serving a local LLM on iris | `references/vllm_iris.md` | `componc_gpu` is not a valid partition name; L40S 48 GB cannot hold a 30B BF16 model — force `--gres=gpu:a100:1`. |
+| Pulling results off iris to a laptop, especially into OneDrive/Dropbox; a bulk transfer that keeps dying | `references/cloud_sync_destination.md` | rsync exit **11** (`Operation timed out (60)`) is a *local* cloud-sync stall, not the VPN — that's **255**. Let `bulk-pull.sh` retry; never diagnose from `ps`. |
 
 ## Adapting this to another cluster
 
