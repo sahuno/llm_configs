@@ -99,3 +99,4 @@ plugins/hpc-site/skills/mskcc-hpc/references/mskcc_partitions.md	EVIDENCE	0bf6fd
 plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	eeb44da9c8c7a1051a21333c32c169d3	  `/data1/greenbab/software/models/README_glm53_flash.md` §8f.
 plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	14aa380ee74f71acb8f789b1ac4bc782	`glm53-flash` tag). Full write-up: `/data1/greenbab/software/models/README_glm53_flash.md` section 8c.
 plugins/hpc-site/skills/mskcc-hpc/references/vllm_iris.md	EVIDENCE	5d8b784eaebe5d733e5b39dcb98adcb5	- `/data1/greenbab/software/models/README_glm53_flash.md` — the full GLM-5.3-Flash bring-up: TP=4 (not TP=8), max_num_
+plugins/hpc-site/skills/mskcc-hpc/references/cloud_sync_destination.md	EVIDENCE	b36c400aef2a8a7ba3d6cc09891b69ef	- **A long rsync into `~/Library/CloudStorage/OneDrive-*` dies mid-file with a *local* write error, not a network one.**

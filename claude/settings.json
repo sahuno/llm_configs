@@ -3,6 +3,7 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "model": "opus",
   "hooks": {
     "SessionStart": [
       {
@@ -37,10 +38,10 @@
   "enabledPlugins": {
     "codex@openai-codex": true,
     "frontend-design@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
-    "bio-skills@sahuno": true,
-    "bio-guardrails@sahuno": true,
-    "hpc-site@sahuno": true
+    "vercel@claude-plugins-official": false,
+    "bio-skills@sahuno": false,
+    "bio-guardrails@sahuno": false,
+    "hpc-site@sahuno": false
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -65,6 +66,7 @@
       "effortLevel": "high"
     }
   },
+  "advisorModel": "fable",
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
@@ -72,6 +74,8 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
+  "preferredNotifChannel": "auto",
+  "switchModelsOnFlag": true,
   "agentPushNotifEnabled": true,
   "voiceEnabled": true
 }
