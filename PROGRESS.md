@@ -3,9 +3,9 @@ project: llm_configs
 status: active
 owner: Samuel Ahuno
 team: Samuel only
-next_action: Merge PR #22, then update the three plugins on the Mac
+next_action: Merge the add-ste-skill PR, then update bio-skills to 1.3.0 on the Mac and on iris   #22, then update the three plugins on the Mac
 blockers: none
-updated: 2026-09-30
+updated: 2026-10-03
 shared_copy: none
 ---
 
@@ -31,6 +31,27 @@ This ledger was seeded on 2026-09-18 from `/Users/sahuno/projects/personal/secon
 - 2026-09-03 · `cleanupPeriodDays` set to 36500 · because Claude Code transcripts were silently expiring after 30 days on the built-in default · by Samuel
 
 ## Log
+
+### 2026-10-03 21:22 · Claude Opus 5.5 · Moved simplified-technical-english into the bio-skills plugin (1.3.0); PR opened
+- **Done:** Copied the skill to plugins/bio-skills/skills/simplified-technical-english (diff -r identical to the personal copy). Bumped bio-skills 1.2.0 -> 1.3.0 so the update is offered. Added a row to the bio-skills README table (heading says 13; 13 skill folders now exist). Replaced the personal copy in ~/.claude/skills with a symlink to the repo folder, so the skill keeps working while the plugins stay disabled at user scope. Local copies of the CI manifest-JSON and SKILL.md-casing checks pass. Commit 456d630 on branch add-ste-skill.
+- **Key paths:** plugins/bio-skills/skills/simplified-technical-english/; plugins/bio-skills/.claude-plugin/plugin.json; plugins/bio-skills/README.md; ~/.claude/skills/simplified-technical-english (symlink)
+- **Commands that worked:** git switch -c add-ste-skill; ln -s ~/projects/llm_configs/plugins/bio-skills/skills/simplified-technical-english ~/.claude/skills/
+- **Known issues / blockers:** The symlink points into this working tree, so the skill disappears from ~/.claude/skills if main is checked out before the PR merges. The bio-skills README table still omits analysis-playbooks (pre-existing).
+- **Exact next steps:** 1. Wait for CI, then merge the PR. 2. git switch main && git pull --ff-only. 3. claude plugin marketplace update sahuno; claude plugin update bio-skills@sahuno --scope user (and --scope local in singularity). 4. On iris, pull the repo or update the plugin so the HPC gets the skill.
+
+### 2026-10-03 21:21 · Claude Opus 5.5 · Installed the simplified-technical-english skill (v3) as a personal skill
+- **Done:** Copied skills/simplified-technical-english from ~/Downloads/Simplified technical english-v3 into ~/.claude/skills/ (copy, not symlink, because Downloads is not a durable home). Checked the script first: Python standard library only, no network or shell calls. Smoke test ran. The skill shows in the session skill list.
+- **Key paths:** ~/.claude/skills/simplified-technical-english/ (SKILL.md, AGENTS.md, README.md, references/rules.md, references/substitutions.md, scripts/ste_check.py)
+- **Commands that worked:** python3 ~/.claude/skills/simplified-technical-english/scripts/ste_check.py --text '...'
+- **Known issues / blockers:** The skill lives only on this Mac and is not in the llm_configs repo or the sahuno plugins. The checker missed the perfect tense in 'has been started' in the smoke test (it flagged only the passive).
+- **Exact next steps:** 1. Optionally move the skill into a sahuno plugin or the repo so the HPC and other machines get it. 2. Earlier next steps (restart; enable plugins per biology project) still stand.
+
+### 2026-09-30 20:39 · Claude Opus 5.5 · Merged PR #22; updated the three sahuno plugins on the Mac to 1.2.0
+- **Done:** Merged PR #22 (merge commit 64c7179) after all 12 CI checks passed. Switched to main and pulled (fast-forward). Refreshed the sahuno marketplace, then updated bio-skills, bio-guardrails and hpc-site from 1.1.0 to 1.2.0 at both scopes where they are installed: user, and local for ~/projects/personal/singularity. claude plugin list confirms 1.2.0 for all six. All six show disabled: the user scope by design since 2026-09-27, and the local installs in singularity are disabled too.
+- **Key paths:** PROGRESS.md (this entry, not committed: main is the default branch)
+- **Commands that worked:** gh pr merge 22 --merge; git switch main && git pull --ff-only; claude plugin marketplace update sahuno; claude plugin update <plugin>@sahuno --scope user|local
+- **Known issues / blockers:** Changes apply only after Claude Code restarts. No biology project on this Mac has the plugins enabled yet, so the bio-guardrails hooks are not running anywhere here. This ledger entry is uncommitted on main.
+- **Exact next steps:** 1. Restart Claude Code. 2. In each biology project, set bio-skills@sahuno, bio-guardrails@sahuno and hpc-site@sahuno to true in .claude/settings.json (or run claude plugin enable <name>@sahuno --scope project). 3. Commit this ledger entry on a branch with the next change. 4. Optionally delete the merged local branches figure-style-consolidation and plugins-off-and-cloud-sync.
 
 ### 2026-09-30 20:35 · Claude Opus 5.5 · Rebased local work onto the new main and opened PR #22
 - **Done:** Committed the plugins-off settings (dea1d67), the cloud-sync transfer note with its SKILL.md row (a63c374) and the ledger (48cedff). The new note's one cluster path is classified EVIDENCE in docs/site-path-allowlist.tsv. Moved all 5 unpushed commits onto a new branch, plugins-off-and-cloud-sync, rebased onto origin/main and resolved 2 conflicts: the allowlist (kept both sides' rows) and PROGRESS.md (both sides' entries kept, newest first). Pushed and opened https://github.com/sahuno/llm_configs/pull/22. The old branch figure-style-consolidation is left as it was; it was already merged in #20.
