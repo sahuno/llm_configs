@@ -28,6 +28,7 @@ they were measured on.
 | `cohort-overview` | Cohort-wide sample × feature overview heatmaps (analysis figures — the plate re-renders them) |
 | `igv-screenshots` | Batch IGV/igver screenshots, including methylation coloring |
 | `journal-club` | Paper ingest → quiz → critique → slides → write-up |
+| `simplified-technical-english` | Rewriting SOPs, protocols and READMEs into ASD-STE100 controlled English for readers whose first language is not English; includes a compliance checker |
 
 ### Command
 
