@@ -10,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/sahuno/.local/bin/ledger-hook start",
+            "command": "~/.local/bin/ledger-hook start",
             "timeout": 10,
             "statusMessage": "ledger: start"
           }
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/sahuno/.local/bin/ledger-hook stop",
+            "command": "~/.local/bin/ledger-hook stop",
             "timeout": 15,
             "statusMessage": "ledger: stop"
           }
@@ -41,7 +41,8 @@
     "vercel@claude-plugins-official": false,
     "bio-skills@sahuno": false,
     "bio-guardrails@sahuno": false,
-    "hpc-site@sahuno": false
+    "hpc-site@sahuno": false,
+    "auto-handoff@auto-handoff": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -55,6 +56,12 @@
         "source": "directory",
         "path": "/Users/sahuno/projects/llm_configs"
       }
+    },
+    "auto-handoff": {
+      "source": {
+        "source": "github",
+        "repo": "obie/auto-handoff"
+      }
     }
   },
   "effortLevel": "high",
@@ -64,6 +71,9 @@
     },
     "claude-fable-5-1": {
       "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
     }
   },
   "advisorModel": "fable",
