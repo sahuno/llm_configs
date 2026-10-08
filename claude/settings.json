@@ -87,5 +87,12 @@
   "preferredNotifChannel": "auto",
   "switchModelsOnFlag": true,
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "pluginConfigs": {
+    "auto-handoff@auto-handoff": {
+      "options": {
+        "command": "checkpoint"
+      }
+    }
+  }
 }
