@@ -1,5 +1,5 @@
 ---
-description: Record or check which script, commit and inputs produced each figure in a run
+description: Record or check which script, commit and inputs produced each figure in a run. Use when the user asks which figures are final or ready to report, which script made a figure, or wants figures traced to their code before a paper, talk or revision.
 argument-hint: --figure PATH --script PATH --inputs ... | --check RUN_DIR
 ---
 
