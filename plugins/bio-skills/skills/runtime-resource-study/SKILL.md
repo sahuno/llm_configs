@@ -1,18 +1,6 @@
 ---
 name: runtime-resource-study
-description: |
-  Run a stage-gated runtime/resource optimization study for any bioinformatics tool
-  or command-line program on a SLURM HPC cluster. Walks through preflight, OFAT factor
-  scan, 2^k confirmation factorial, build-mode + alternative-implementation comparison,
-  input-size scan, out-of-sample validation, and produces a fitted predictive resource
-  model (wall_s and peak_rss as functions of input size), a machine-readable model.yaml
-  with caveats, a full REPORT.md, and a one-page exec summary PDF. Trigger PROACTIVELY
-  whenever the user asks to "benchmark", "optimize", "tune", "characterize runtime/memory",
-  "find best config", "build a resource model", "how does X scale", or "what should I
-  put in my Snakemake resources directive for tool Y" — for any compute-bound bioinformatics
-  step (sort, dedup, alignment, variant calling, methylation calling, basecalling, indexing,
-  pileup, liftover). Also triggers on /runtime-resource-study or /benchmark-tool. Skip
-  only for one-off quick timing where a single number suffices and no model is needed.
+description: "Stage-gated runtime and memory study for a command-line tool on SLURM: preflight, one-factor scans, a 2^k factorial, implementation comparison, input-size scan and validation, ending in a fitted resource model (wall time and peak RSS vs input size), model.yaml, REPORT.md and a one-page PDF. Use when asked to benchmark, tune or characterise runtime/memory of a bioinformatics step, find the best config, ask how a tool scales, or what to put in Snakemake resources. Skip for a single quick timing."
 ---
 
 # runtime-resource-study

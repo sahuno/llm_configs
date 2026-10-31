@@ -12,6 +12,17 @@ case "$cwd" in
     "$HOME"/*) cwd="~${cwd#"$HOME"}" ;;
     "$HOME") cwd="~" ;;
 esac
+# Abbreviate like Grok/fish: every folder but the last two -> first letter
+# ~/Library/CloudStorage/OneDrive-X/Documents/Proj/a/b -> ~/L/C/O/D/P/a/b
+cwd=$(printf '%s' "$cwd" | awk -F/ '{
+    out = ""
+    for (i = 1; i <= NF; i++) {
+        p = $i
+        if (i < NF - 1 && i > 1 && length(p) > 1) p = substr(p, 1, 1)
+        out = (i == 1) ? p : out "/" p
+    }
+    print out
+}')
 model=$(echo "$input" | jq -r '.model.display_name // empty')
 used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 transcript=$(echo "$input" | jq -r '.transcript_path // empty')

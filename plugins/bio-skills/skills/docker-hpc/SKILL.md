@@ -1,19 +1,6 @@
 ---
 name: docker-hpc
-description: |
-  Use this skill when the user wants to build, create, or set up a Docker image
-  for any scientific or bioinformatics tool — especially for HPC environments
-  where Apptainer/Singularity will pull the result. Trigger for requests like:
-  "dockerize X", "build a Docker image for Y", "containerize this tool",
-  "I need a container for Z", "add this to my containers repo", or "push a
-  Docker image to Docker Hub via GitHub Actions". This skill handles writing
-  Dockerfiles, generating GitHub Actions CI workflows to build and push images
-  without a local Docker daemon, and managing monorepo-style containers repos.
-  Covers bioinformatics tools (samtools, STAR, CellRanger, dorado, modkit),
-  R/Bioconductor packages (DESeq2, edgeR), conda/pip packages, and GPU/CUDA
-  tools. Do NOT trigger for: writing Apptainer/Singularity .def files (use
-  singularity-build skill), pulling existing images, or running containers
-  interactively.
+description: "Write Dockerfiles for scientific and bioinformatics tools (R/Bioconductor, conda/pip, CUDA) that Apptainer will pull on HPC, plus GitHub Actions that build and push to Docker Hub with no local Docker daemon, in a monorepo of containers. Use for 'dockerize X', 'build a Docker image for Y', 'containerize this tool', 'add this to my containers repo'. Not for Apptainer .def files (use singularity-build) or for running containers."
 version: 1.0.0
 author: Samuel Ahuno (ekwame001@gmail.com)
 ---

@@ -1,22 +1,6 @@
 ---
 name: singularity-build
-description: |
-  Expert Singularity/Apptainer container builder for bioinformatics tools on
-  MSKCC HPC (RHEL 8, no sudo). Builds containers using --fakeroot with
-  root-mapped namespace, conda-based package management (never apt-get), and
-  SLURM-safe build scripts. Use this skill proactively whenever the user asks to:
-  create/build a Singularity or Apptainer container, write a .def definition file,
-  containerize a bioinformatics tool or software package, build a SIF image,
-  troubleshoot a failed container build (exit status 1/15/141/255), fix a
-  "command gcc failed" or "cannot find libc" or "CUDA_INCLUDE_DIRS" error in a
-  container build, or package any software into a reproducible container image.
-  Also trigger when the user mentions: .def file, .sif file, apptainer build,
-  singularity build, fakeroot build, container for dorado/samtools/modkit or
-  any bioinformatics tool, or asks to install software that requires root.
-  Once triggered, the skill triages pull-vs-build (Step 0): it tries to acquire
-  and verify a pre-built image before building from scratch.
-  Do NOT trigger for: running an existing container (apptainer exec/run) or
-  Docker/Podman build workflows (use the docker-hpc skill for those).
+description: "Build Singularity/Apptainer containers (.def files, .sif images) for bioinformatics tools on MSKCC HPC without sudo: --fakeroot, conda not apt-get, SLURM-safe build scripts; first tries to pull and verify a pre-built image. Use when asked to containerize a tool for Apptainer, write a .def file, fix a failed build (exit 1/15/141/255, 'gcc failed', 'cannot find libc', CUDA_INCLUDE_DIRS), or install software that needs root. Not for running an existing container or for Docker builds (use docker-hpc)."
 version: 1.1.0
 author: Samuel Ahuno (ekwame001@gmail.com)
 ---

@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Every incident record carries version, date, status and a detector
-        run: python3 tools/gotcha_audit.py
+        run: python3 plugins/bio-skills/scripts/gotcha_audit.py --root .
 
   figure-manifest:
     runs-on: ubuntu-latest
@@ -113,13 +113,18 @@ jobs:
     name: plugin manifests
     steps:
       - uses: actions/checkout@v4
-      - name: Validate marketplace and plugin manifests as JSON
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the Claude Code CLI (pinned; validate needs no sign-in)
+        run: npm install -g @anthropic-ai/claude-code@2.1.316
+      - name: Validate marketplace and each plugin with Anthropic's own checker
+        # Replaces a JSON-parse loop whose `cmd && echo` form could never fail
+        # the job. `claude plugin validate` also checks manifest fields, skill
+        # frontmatter and hook config, and exits 1 on any error.
         run: |
-          for f in .claude-plugin/marketplace.json \
-                   plugins/*/.claude-plugin/plugin.json \
-                   plugins/bio-guardrails/hooks/hooks.json; do
-            python3 -c "import json,sys; json.load(open('$f'))" && echo "ok   $f"
-          done
+          claude plugin validate .
+          for d in plugins/*/; do claude plugin validate "$d"; done
 
   skill-filenames:
     runs-on: ubuntu-latest

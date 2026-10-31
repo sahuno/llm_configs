@@ -70,5 +70,5 @@ not need a record; the error message is the record.
 
 ## After writing
 
-Run `python3 "${CLAUDE_PLUGIN_ROOT}/../../tools/gotcha_audit.py"` to confirm the
+Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gotcha_audit.py"` to confirm the
 frontmatter is complete, and report the new record's path.

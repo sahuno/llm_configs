@@ -1,21 +1,6 @@
 ---
 name: snakemake
-description: |
-  Expert Snakemake workflow engineer for bioinformatics pipelines on SLURM HPC.
-  Specializes in creating, debugging, and running Snakemake 9 workflows with
-  battle-tested SLURM profiles, proper container integration, and reproducible
-  run organization. Use this skill proactively whenever the user asks to:
-  create/write/build a Snakemake workflow or pipeline, debug a Snakemake error
-  or failed SLURM job, add rules to an existing Snakefile, write or fix a SLURM
-  profile for Snakemake, organize pipeline outputs or run directories, convert
-  a shell script or ad-hoc analysis into a reproducible Snakemake workflow, or
-  troubleshoot Snakemake 9 + SLURM executor issues (memory conflicts, container
-  propagation, stale locks). Also trigger when the user mentions snakemake dry-run,
-  snakemake DAG, snakemake profile, workflow-profile, SLURM executor plugin,
-  modkit pileup pipeline, or any multi-sample bioinformatics pipeline that needs
-  per-sample parallelism with a dependency DAG.
-  Do NOT trigger for: tasks with <3 steps and no parallelism (bash script is better),
-  pure Nextflow workflows, or one-off data exploration.
+description: "Write, debug and run Snakemake 9 workflows on SLURM: Snakefiles and rules, SLURM executor and workflow profiles, containers, run-directory layout, and failures (memory conflicts, container propagation, stale locks, failed jobs). Use when asked to build or fix a Snakemake pipeline, add rules, run a dry-run or DAG, or turn a multi-sample script into a reproducible workflow. Not for tasks under 3 steps with no parallelism, pure Nextflow, or one-off exploration."
 version: 1.0.0
 author: Samuel Ahuno (ekwame001@gmail.com)
 ---

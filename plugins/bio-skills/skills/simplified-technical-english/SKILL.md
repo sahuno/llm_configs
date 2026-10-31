@@ -1,6 +1,6 @@
 ---
 name: "simplified-technical-english"
-description: "Rewrite text into ASD-STE100 Simplified Technical English (the aerospace controlled-language standard) so that non-native English speakers and safety-critical readers can understand it without ambiguity. Use this skill whenever the user asks for STE, Simplified Technical English, ASD-STE100, \"controlled language\", \"controlled English\", \"plain technical English\", or asks you to simplify, clarify, or de-jargon a procedure, SOP, protocol, work instruction, manual, safety notice, or README for an international or ESL audience. Also use it when the user asks you to check or score existing text for STE compliance, or says something like \"make this readable for people whose first language isn't English\", or \"simplify this for the lab handbook\". Supports a strictness dial — strict, standard (\"80% STE\"), light, or custom rule picks. Prefer this skill over generic \"make it simpler\" rewriting whenever the target is technical instructions rather than marketing or narrative prose."
+description: "Rewrite or score text in ASD-STE100 Simplified Technical English, with a strictness dial (strict, standard ~80%, light, custom). Use when asked for STE, ASD-STE100 or controlled English, or to simplify a procedure, SOP, protocol, manual, safety notice or README for non-native English readers. Prefer it over generic simplifying when the text is technical instructions, not narrative prose."
 ---
 
 # Simplified Technical English (ASD-STE100)

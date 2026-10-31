@@ -20,6 +20,10 @@ Two rules enforced here:
 Usage:
     gotcha_audit.py            # report; exit 1 if anything is missing
     gotcha_audit.py --stale N  # also flag records older than N days
+    gotcha_audit.py --root .   # audit every plugin in a checkout (CI does this)
+
+The script lives inside bio-skills so an installed copy of the plugin can run
+it; by default it audits only the plugin it sits in.
 """
 from __future__ import annotations
 
@@ -31,13 +35,16 @@ import sys
 
 REQUIRED = ["tool", "version_observed", "date", "status", "detect_cmd"]
 VALID_STATUS = {"active", "fixed-upstream", "superseded"}
+# Default: the bio-skills plugin this file ships in (scripts/ -> plugin root).
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def records() -> list[pathlib.Path]:
     """Every reference file that is a gotcha record."""
     out = []
-    for skill in ROOT.glob("plugins/*/skills/*/references/*.md"):
+    found = [*ROOT.glob("skills/*/references/*.md"),
+             *ROOT.glob("plugins/*/skills/*/references/*.md")]
+    for skill in found:
         text = skill.read_text(errors="replace")
         # A record is one that carries (or should carry) the frontmatter.
         if text.startswith("---\n") and "version_observed" in text[:400]:
@@ -70,7 +77,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Audit gotcha records.")
     ap.add_argument("--stale", type=int, metavar="DAYS",
                     help="flag records whose observation date is older than DAYS")
+    ap.add_argument("--root", type=pathlib.Path,
+                    help="a plugin folder, or a repo with plugins/ (default: this plugin)")
     args = ap.parse_args()
+    global ROOT
+    if args.root:
+        ROOT = args.root.resolve()
 
     problems, rows = [], []
     for p in records():
