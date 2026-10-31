@@ -3,9 +3,9 @@ project: llm_configs
 status: active
 owner: Samuel Ahuno
 team: Samuel only
-next_action: PR the auto-handoff setting, then update denkyem (dotfiles first); iris move after 2026-10-09 16:36   #22, then update the three plugins on the Mac
+next_action: Push official-plugins-gaps and open the PR; then update bio-skills to 1.4.0 on the Mac and iris
 blockers: none
-updated: 2026-10-08
+updated: 2026-10-31
 shared_copy: none
 ---
 
@@ -26,13 +26,55 @@ This ledger was seeded on 2026-09-18 from `/Users/sahuno/projects/personal/secon
 | # | Question | Owner | Decide by | Status |
 |---|---|---|---|---|
 | 1 | bio-skills is off at user scope to save ~3,200 tokens per session, and on in only 9 projects (not Epigen_MEKi verificationOfAgentsRun). Turn it on in more biology folders, or move the few skills actually used to personal scope? See the 2026-10-08 entry. | Samuel | 2026-10-15 | decided 2026-10-08: keep it off at user scope; turn it on only in the Epigen verificationOfAgentsRun folder (bio-skills + hpc-site, no guardrails). Biology compute runs on iris, where all three are on. |
-| 2 | Reword the gates, review and wrapup descriptions? In clean trigger tests they loaded in 0 of 2 runs, gates included (the 1 of 2 hit on "are we done? double check" was verify-run). "harshly critique" now routes to code-review and, in biology folders, bio-skills:review. | Samuel | 2026-10-15 | open |
+| 2 | Reword the gates, review and wrapup descriptions? In clean trigger tests they loaded in 0 of 2 runs, gates included (the 1 of 2 hit on "are we done? double check" was verify-run). "harshly critique" now routes to code-review and, in biology folders, bio-skills:review. | Samuel | 2026-10-29 | open (decide-by moved from 2026-10-15 on 2026-10-22; no new trigger-test data yet) |
 
 ## Decisions
 
 - 2026-09-03 · `cleanupPeriodDays` set to 36500 · because Claude Code transcripts were silently expiring after 30 days on the built-in default · by Samuel
 
 ## Log
+
+### 2026-10-31 19:46 · Claude Opus 5.5 · Did items 1-5 from the official-plugins comparison; installed hookify, security-guidance, pyright-lsp
+- **Done:** On branch official-plugins-gaps: (1) bio-guardrails on at user scope (0 tokens; hooks only fire on genomic files, data/raw, Snakefiles, genome names). (2) Shortened the 8 longest bio-skills descriptions (941-1,272 -> 390-521 chars); always-on cost ~5,522 -> ~3,848 tokens (claude --plugin-dir ./plugins/bio-skills plugin details bio-skills). Added 8 trigger evals in plugins/bio-skills/evals/; all 8 loaded the right skill (1 run each, $2.25); a wrong-name control scored 0. bio-skills 1.4.0. (3) MIT LICENSE, license field in all three plugin.json, README section. (4) gotcha_audit.py moved into plugins/bio-skills/scripts/ with --root; commands call ${CLAUDE_PLUGIN_ROOT}/scripts/; tested plugin-only (13 records), repo (--root ., 19), and a cache-layout copy. (5) CI manifests job now runs claude plugin validate (CLI pinned 2.1.316; works signed out; exits 1 on a broken manifest). Installed hookify, security-guidance, pyright-lsp (user scope) and pyright 1.1.414 via npm; env ENABLE_CODE_SECURITY_REVIEW=0 keeps only the free pattern warnings. Commit also carries the older uncommitted settings.json diff (diagram-design, effort levels) and the statusline commit.
+- **Key paths:** LICENSE; .github/workflows/guardrails.yml; .gitignore; README.md; claude/settings.json; plugins/*/.claude-plugin/plugin.json; plugins/bio-skills/scripts/gotcha_audit.py; plugins/bio-skills/commands/{gotcha-audit,add-gotcha}.md; plugins/bio-skills/skills/*/SKILL.md (8); plugins/bio-skills/evals/
+- **Commands that worked:** claude plugin eval plugins/bio-skills --ablation none --runs 1 -j 4 --max-cost-usd 5 --no-publish; claude plugin validate plugins/bio-skills; python3 plugins/bio-skills/scripts/gotcha_audit.py --root .; claude plugin install hookify@claude-plugins-official --scope user; npm install -g pyright
+- **Known issues / blockers:** Correction to the earlier entry today: handoff 2026-10-08-1729 said the old gotcha path worked from a checkout, but installed_plugins.json shows installPath in ~/.claude/plugins/cache, so it was broken; the move fixes both. Trigger evals ran once per case, so one pass is weak evidence. settings.json is shared with denkyem, which now lists hookify/security-guidance/pyright-lsp as enabled but does not have them installed. hookify adds ~294 always-on tokens.
+- **Exact next steps:** 1. Push official-plugins-gaps and open the PR; check the CI 'plugin manifests' job passes on GitHub. 2. After merge: claude plugin update bio-skills@sahuno on the Mac and iris. 3. On denkyem: install hookify, security-guidance, pyright-lsp and pyright. 4. Add trigger evals for gates, review, wrapup (Open unknown 2).
+
+### 2026-10-31 19:25 · Claude Opus 5.5 · Compared anthropics/claude-plugins-official with llm_configs and singularity; recommendations only, no code changed
+- **Done:** Read the official marketplace (Anthropic-built plugins under plugins/). Measured own plugins with 'claude plugin details': bio-skills always-on ~5,522 tokens (23 skills+3 agents; was ~3,200 on 2026-09-27), hpc-site ~267, bio-guardrails ~0 (hooks only). 'claude plugin validate' passes for the marketplace and all three plugins but notes no LICENSE at repo root; gh repo view shows the repo is PUBLIC with licenseInfo null. Re-confirmed the gotcha path is still broken (commands call ${CLAUDE_PLUGIN_ROOT}/../../tools/gotcha_audit.py; plugin cache holds only the three plugin dirs).
+- **Key paths:** plugins/bio-skills/commands/gotcha-audit.md:7; plugins/bio-skills/commands/add-gotcha.md:73; claude/settings.json (enabledPlugins); .github/workflows/guardrails.yml (manifests job)
+- **Commands that worked:** claude plugin details bio-skills@sahuno; claude plugin validate .; claude plugin validate plugins/bio-skills/; gh repo view sahuno/llm_configs --json visibility,licenseInfo
+- **Known issues / blockers:** bio-guardrails is off at user scope although it costs ~0 tokens, so on the Mac nothing blocks rm -rf on data/raw outside the 9-10 project folders that turn it on. No LICENSE in a public repo. Gotcha path still broken.
+- **Exact next steps:** 1. Samuel: decide whether to turn bio-guardrails back on at user scope (0 tokens). 2. Pick a license (Open unknown). 3. Move tools/gotcha_audit.py into plugins/bio-skills/scripts/ and fix the two command paths. 4. Replace CI manifests job with 'claude plugin validate'. 5. Shorten the 8 longest bio-skills descriptions; test triggering with 'claude plugin eval' instead of by hand.
+
+### 2026-10-22 12:05 · Claude Fable 5.1 · No files changed this session (chat answer only); settings.json diff is older uncommitted work
+- **Done:** Answered a conceptual question (why password managers suggest passwords but not usernames). No edits made this session. The stop hook flagged claude/settings.json, but that diff predates this session: model=opus line removed, diagram-design plugin enabled and added to extraKnownMarketplaces, opus-5-5 effort xhigh to high, pluginConfigs block moved. Still uncommitted together with claude/statusline.sh.
+- **Key paths:** claude/settings.json (pre-existing, uncommitted); docs/handoffs/ and claude/docs/initialClaudeRepsonseCompareMyAIAgentsGapswithGstack.md (untracked)
+- **Commands that worked:** git diff claude/settings.json; python3 ~/projects/personal/singularity/ledger/ledger-lint PROGRESS.md
+- **Known issues / blockers:** ledger-lint is not on PATH (only ledger-append and ledger-hook are symlinked in ~/.local/bin); run it by full path. Lint reported 1 warning before this entry.
+- **Exact next steps:** 1. Commit claude/statusline.sh, claude/settings.json and PROGRESS.md on branch statusline-abbreviate-path and open the PR. 2. Decide whether the two untracked docs belong in the repo. 3. Symlink ledger-lint into ~/.local/bin.
+
+### 2026-10-10 22:44 · Claude Sonnet 5.5 · Checkpoint: status line path abbreviation
+- **Done:** Status line now abbreviates long directories; handoff note written.
+- **Key paths:** docs/handoffs/2026-10-10-2244-statusline-abbreviate-path.md; claude/statusline.sh
+- **Commands that worked:** echo JSON | sh claude/statusline.sh
+- **Known issues / blockers:** none encountered
+- **Exact next steps:** 1. Commit claude/statusline.sh and pending files. 2. Move iris llm_configs to main. 3. Weekly skill-candidate pass.
+
+### 2026-10-10 21:54 · Claude Sonnet 5.5 · Status line abbreviates long directory paths like Grok (~/L/C/O/D/G/E/.../last-two)
+- **Done:** Added an awk step to claude/statusline.sh: every folder except the last two becomes its first letter; ~ and short paths are untouched. Tested on the 8-deep OneDrive path: bash:lski5593:~/L/C/O/D/G/E/bulk_shortRead_RNA/verificationOfAgentsRun; ~/projects/llm_configs, ~ and /tmp unchanged. ~/.claude/statusline.sh is a symlink to this file, so it is live now.
+- **Key paths:** claude/statusline.sh (lines 15-25)
+- **Commands that worked:** echo '{"workspace":{"current_dir":"'$HOME'/projects/llm_configs"},"model":{"display_name":"X"}}' | sh claude/statusline.sh
+- **Known issues / blockers:** Not committed yet. Only the status line changed; the Claude Code header and the 'Do you trust' prompt are not controlled by this script. Folder names starting with a dot would show as a single '.', not tested.
+- **Exact next steps:** 1. Commit claude/statusline.sh with the other pending changes (PROGRESS.md, settings.json, docs/handoffs). 2. Then the earlier next steps: after 2026-10-09 16:36 move iris llm_configs to main; weekly skill-candidate pass.
+
+### 2026-10-08 19:45 · Claude Opus 5.5 · PR #27 merged (auto-handoff runs /checkpoint; ledger); denkyem has the checkpoint skill and the new setting
+- **Done:** Merged PR #27 as f16e227 after 12/12 checks. Before committing, removed the full OneDrive folder paths from PROGRESS.md (now "the Epigen RNA-seq verification folder"). The secrets grep hits were false positives ("tokens" twice, "nothing secret" once). On denkyem: chezmoi status showed only "A .claude/skills/checkpoint"; ran chezmoi apply on that target; the link exists; git pull --ff-only to f16e227; settings.json auto-handoff command = checkpoint; the Skill routing block is present in ~/.claude/CLAUDE.md; ledger-append is installed there.
+- **Key paths:** claude/settings.json; PROGRESS.md; denkyem:~/.claude/skills/checkpoint
+- **Commands that worked:** dk sh bash -s <<EOF ... EOF   # one SSH call per batch; chezmoi status before chezmoi apply <target>
+- **Known issues / blockers:** Lesson: a check must finish before the commit it guards. This session chained a secrets grep with git commit and push in one command; the hits were false positives. Restart Claude Code on the Mac to load the auto-handoff setting.
+- **Exact next steps:** 1. After 2026-10-09 16:36, once job 16180018 has ended: iris sh 'cd ~/projects/llm_configs && git switch main && git pull --ff-only', then check claude plugin list shows bio-skills 1.3.2. 2. Step 3: the weekly skill-candidate pass (add skills_used to secondBrain distill_sessions.py). 3. Open unknowns #2.
 
 ### 2026-10-08 19:16 · Claude Opus 5.5 · Step 2 done: checkpoint skill built, tested and pushed (dotfiles 6ee9198); auto-handoff idle timer now runs /checkpoint
 - **Done:** Wrote ~/.local/share/chezmoi/claude/skills/checkpoint/SKILL.md (98 lines) and dot_claude/skills/symlink_checkpoint.tmpl. Ran chezmoi apply ~/.claude/skills/checkpoint (link made on the Mac). Committed and pushed as 6ee9198. Save mode: one command, Write the note docs/handoffs/<ts>-<slug>.md, then ledger-append LAST. Every claim is tagged [ran: cmd -> result], [read: path], [user said] or [assumed]; an unchecked belief of Samuel counts as [assumed]. Resume mode: newest note plus the ledger; flags a stale note; re-checks [assumed] items read-only (no pipelines, SLURM or BAM/FASTQ). A bare /checkpoint uses save mode. Tests in throwaway repos: save gave the right tags in 3 tool calls, note 18:21:25 then ledger 18:21:30; a bare /checkpoint resumed into a live session (the idle-timer path, default permissions) did the same with no questions or errors; resume caught a later commit, checked the assumed item and changed no files (git status empty). Trigger tests (plan mode, one prompt per run): save and resume phrases loaded checkpoint first in 6 of 6, including 2 of 2 in a bio-skills folder where /wrapup competes; a control prompt loaded no skill. Then ran: echo {"command": "checkpoint"} | claude plugin configure auto-handoff@auto-handoff --values-stdin. It wrote pluginConfigs into claude/settings.json (this public repo, shared with denkyem). Correction to the 15:34 entry: the text that vanished there was ${CLAUDE_PLUGIN_ROOT}.

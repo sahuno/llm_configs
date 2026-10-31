@@ -4,7 +4,7 @@ argument-hint: [--stale DAYS]
 ---
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../../tools/gotcha_audit.py" $ARGUMENTS
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/gotcha_audit.py" $ARGUMENTS
 ```
 
 Report what it finds, then act on it:

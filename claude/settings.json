@@ -40,9 +40,14 @@
     "frontend-design@claude-plugins-official": true,
     "vercel@claude-plugins-official": false,
     "bio-skills@sahuno": false,
-    "bio-guardrails@sahuno": false,
+    "bio-guardrails@sahuno": true,
     "hpc-site@sahuno": false,
-    "auto-handoff@auto-handoff": true
+    "auto-handoff@auto-handoff": true,
+    "diagram-design@diagram-design": true,
+    "claude-md-management@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -62,6 +67,12 @@
         "source": "github",
         "repo": "obie/auto-handoff"
       }
+    },
+    "diagram-design": {
+      "source": {
+        "source": "github",
+        "repo": "cathrynlavery/diagram-design"
+      }
     }
   },
   "effortLevel": "high",
@@ -70,13 +81,20 @@
       "effortLevel": "xhigh"
     },
     "claude-fable-5-1": {
-      "effortLevel": "high"
+      "effortLevel": "xhigh"
     },
     "claude-opus-5-5": {
-      "effortLevel": "xhigh"
+      "effortLevel": "high"
     }
   },
   "advisorModel": "fable",
+  "pluginConfigs": {
+    "auto-handoff@auto-handoff": {
+      "options": {
+        "command": "checkpoint"
+      }
+    }
+  },
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
@@ -88,11 +106,7 @@
   "switchModelsOnFlag": true,
   "agentPushNotifEnabled": true,
   "voiceEnabled": true,
-  "pluginConfigs": {
-    "auto-handoff@auto-handoff": {
-      "options": {
-        "command": "checkpoint"
-      }
-    }
+  "env": {
+    "ENABLE_CODE_SECURITY_REVIEW": "0"
   }
 }

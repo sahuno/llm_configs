@@ -44,9 +44,8 @@ claude/                           # personal config, not shipped as a plugin
 ├── statusline.sh                 # the status line under the prompt; ~/.claude/statusline.sh symlinks here
 ├── docs/, examples/, prompts/, mcps/
 cli_coding_agents_setups/         # non-Claude agent setups (Gemini, Codex)
-tools/                            # the audit layer, all three run in CI
+tools/                            # the audit layer, run in CI
 ├── audit_site_paths.sh           # no unclassified cluster path ships
-├── gotcha_audit.py               # every failure record carries a version
 └── sync_science_skills.sh        # repo <-> Claude Science app dir, and the drift report
 docs/
 ├── claude-code-on-hpc.md         # running under Apptainer on SLURM
@@ -124,3 +123,8 @@ Open work is tracked in
 [issues](https://github.com/sahuno/llm_configs/issues); the current
 implementation plan is in
 [`docs/superpowers/plans/`](docs/superpowers/plans/).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). You may reuse, change and share any of this,
+including inside your own lab's plugins, as long as the copyright notice stays.

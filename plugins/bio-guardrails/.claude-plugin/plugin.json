@@ -4,5 +4,6 @@
   "description": "Safety hooks for genomics work: immutable raw data, genome-build tagging, and destructive-command blocking.",
   "author": {
     "name": "Samuel Ahuno"
-  }
+  },
+  "license": "MIT"
 }
