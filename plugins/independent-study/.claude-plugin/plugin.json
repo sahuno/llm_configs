@@ -1,0 +1,9 @@
+{
+  "name": "independent-study",
+  "version": "0.1.2",
+  "description": "Self-directed study: an interactive mountain of any company's funding rounds from startup to IPO, researched fresh from the web.",
+  "author": {
+    "name": "Samuel Ahuno"
+  },
+  "license": "MIT"
+}

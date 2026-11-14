@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__PAGE_TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky-top: #BFD3E6; --sky-bot: #F3EBDD;
+  --far: #A9BBCF; --mid: #8199B4; --rock: #4E6787; --rock-dark: #3B5170;
+  --snow: #FBFCFE; --ink: #17233A; --muted: #55637A; --surface: #FFFFFF;
+  --rope: #E2A422; --grid: rgba(23,35,58,.28); --on-rock: #E4ECF5; --sel: #E2A422;
+  color-scheme: light; box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sky-top: #0F1A2B; --sky-bot: #2B3550; --far: #26344C; --mid: #31425E; --rock: #3E5374; --rock-dark: #2F4160;
+    --snow: #DCE5F0; --ink: #E8EEF6; --muted: #9DABC0; --surface: #1A2436; --rope: #F0B93A;
+    --grid: rgba(232,238,246,.25); --on-rock: #C9D5E4; --sel: #F0B93A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --sky-top: #0F1A2B; --sky-bot: #2B3550; --far: #26344C; --mid: #31425E; --rock: #3E5374; --rock-dark: #2F4160;
+  --snow: #DCE5F0; --ink: #E8EEF6; --muted: #9DABC0; --surface: #1A2436; --rope: #F0B93A;
+  --grid: rgba(232,238,246,.25); --on-rock: #C9D5E4; --sel: #F0B93A; color-scheme: dark;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--sky-bot); color: var(--ink);
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+header { max-width: 1100px; margin: 0 auto; padding: 2.2rem 1.25rem 0.6rem; }
+h1 { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; font-weight: 400;
+  font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 0.95; margin: 0 0 0.7rem; letter-spacing: -0.01em; }
+.lede { max-width: 62ch; margin: 0; color: var(--muted); }
+.stage-wrap { max-width: 1100px; margin: 0 auto; padding: 0 0.6rem; }
+#mountain { display: block; width: 100%; height: auto; border-radius: 14px; touch-action: manipulation; }
+.camp { cursor: pointer; outline: none; }
+.camp .ring { fill: none; stroke: var(--ink); stroke-width: 2; opacity: 0; }
+.camp:focus-visible .ring { opacity: 1; }
+.camp .hit { fill: transparent; }
+.camp .pin { fill: var(--snow); stroke: var(--ink); stroke-width: 2; }
+.camp .pole { stroke: var(--ink); stroke-width: 2; }
+.camp .flag { fill: var(--snow); stroke: var(--ink); stroke-width: 1.5; }
+.camp .lbl { fill: var(--ink); font-weight: 800; font-family: "Manrope", system-ui, sans-serif; }
+.camp.selected .pin, .camp.selected .flag { fill: var(--sel); }
+.camp:hover .flag { fill: var(--sel); }
+.grid-line { stroke: var(--grid); stroke-dasharray: 3 5; }
+.grid-txt { fill: var(--ink); opacity: .7; font-family: "Manrope", system-ui, sans-serif; font-weight: 600; }
+.year-txt { fill: var(--on-rock); font-family: "Manrope", system-ui, sans-serif; font-weight: 600; opacity: .85; }
+.rope { fill: none; stroke: var(--rope); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.rope-ahead { fill: none; stroke: var(--rope); stroke-width: 2.5; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .8; }
+.cloud { fill: var(--snow); opacity: .85; }
+.cloud-txt { fill: #17233A; font-family: "Instrument Serif", Georgia, serif; font-style: italic; }
+.here-txt { fill: var(--ink); font-family: "Instrument Serif", Georgia, serif; font-style: italic; }
+@media (prefers-reduced-motion: no-preference) {
+  .rope.draw { animation: draw 2.6s cubic-bezier(.6,.05,.3,1) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+}
+.panel { max-width: 1100px; margin: 1rem auto 0; padding: 0 1.25rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; }
+.card { background: var(--surface); border-radius: 14px; padding: 1.2rem 1.3rem 1.3rem; }
+.when { color: var(--muted); font-size: 0.92rem; margin: 0; }
+.card h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 2.3rem; line-height: 1; margin: 0.15rem 0 0.25rem; }
+.sub { margin: 0 0 1rem; font-weight: 600; color: var(--muted); }
+.figs { display: flex; flex-wrap: wrap; gap: 0.8rem 2rem; margin-bottom: 1rem; }
+.fig { min-width: 7rem; }
+.fig .k { font-size: 0.82rem; color: var(--muted); }
+.fig .v { font-size: 1.45rem; font-weight: 800; line-height: 1.15; }
+.story { margin: 0; }
+.playbook h3 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 1.6rem; margin: 0 0 0.5rem; }
+.playbook p { margin: 0 0 1rem; }
+.lead { color: var(--muted); font-size: .92rem; }
+.nav { display: flex; gap: 0.6rem; }
+.nav button { font: inherit; font-weight: 600; flex: 1; padding: 0.65rem 0.8rem; border-radius: 999px;
+  border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.nav button:hover { background: var(--ink); color: var(--surface); }
+.nav button:focus-visible { outline: 3px solid var(--rope); outline-offset: 2px; }
+.nav button:disabled { opacity: .35; cursor: default; background: transparent; color: var(--ink); }
+footer { max-width: 1100px; margin: 0 auto; padding: 1.4rem 1.25rem 2.5rem; color: var(--muted); font-size: 0.88rem; }
+footer p { margin: 0 0 0.35rem; max-width: 80ch; }
+@media (max-width: 720px) { .panel { grid-template-columns: 1fr; } .card h2 { font-size: 2rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="h-title"></h1>
+  <p class="lede" id="h-lede"></p>
+</header>
+
+<div class="stage-wrap"><svg id="mountain" role="img" aria-labelledby="mtitle"><title id="mtitle"></title></svg></div>
+
+<section class="panel" aria-live="polite">
+  <div class="card">
+    <p class="when" id="p-when"></p>
+    <h2 id="p-name"></h2>
+    <p class="sub" id="p-sub"></p>
+    <div class="figs">
+      <div class="fig"><div class="k">Raised</div><div class="v" id="p-raised"></div></div>
+      <div class="fig"><div class="k">Valued at</div><div class="v" id="p-val"></div></div>
+      <div class="fig"><div class="k">Growth since last round</div><div class="v" id="p-mult"></div></div>
+    </div>
+    <p class="story" id="p-story"></p>
+  </div>
+  <div class="card playbook">
+    <h3>In the general playbook</h3>
+    <p id="p-play"></p>
+    <p class="lead" id="p-lead"></p>
+    <div class="nav"><button id="prev" type="button">Previous camp</button><button id="next" type="button">Next camp</button></div>
+  </div>
+</section>
+
+<footer id="notes"></footer>
+
+<script>
+const DATA = /*__DATA__*/;
+
+const toT = d => { const [y, m = 6, day = 15] = String(d).split("-").map(Number); return y + (m - 1) / 12 + (day - 1) / 365; };
+const camps = DATA.camps.map(c => ({ ...c, t: toT(c.date) })).sort((a, b) => a.t - b.t);
+const ongoing = !["public", "acquired", "ipo-scheduled", "closed"].includes(DATA.status);
+
+// placement value: known valuation, else log-interpolated from neighbours (shown as "not disclosed")
+const known = camps.filter(c => !c.side && c.kind !== "strategic" && typeof c.valuation === "number" && c.valuation > 0);
+function interp(t) {
+  if (!known.length) return 1;
+  if (t <= known[0].t) return known[0].valuation;
+  if (t >= known[known.length - 1].t) return known[known.length - 1].valuation;
+  for (let i = 1; i < known.length; i++) if (t <= known[i].t) {
+    const a = known[i - 1], b = known[i], f = (t - a.t) / (b.t - a.t);
+    return Math.pow(10, Math.log10(a.valuation) + f * (Math.log10(b.valuation) - Math.log10(a.valuation)));
+  }
+}
+camps.forEach(c => { c.side = c.side || c.kind === "strategic"; c.pv = (!c.side && c.valuation > 0) ? c.valuation : interp(c.t); });
+
+document.title = DATA.title + ": " + DATA.company;
+document.getElementById("h-title").textContent = DATA.title;
+document.getElementById("h-lede").textContent = DATA.lede;
+document.getElementById("mtitle").textContent = `${DATA.company}’s valuation over time, drawn as a mountain climb`;
+const notes = document.getElementById("notes");
+(DATA.notes || []).concat([`Information as of ${DATA.asOf}.`]).forEach(n => { const p = document.createElement("p"); p.textContent = n; notes.appendChild(p); });
+
+const svg = document.getElementById("mountain");
+const NS = "http://www.w3.org/2000/svg";
+let sel = Math.max(0, camps.findIndex(c => c.id === (DATA.here && DATA.here.camp)));
+if (!DATA.here) sel = camps.length - 1;
+let drawn = false;
+
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function rnd(seed) { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); }
+function money(b) { if (b >= 1000) return b === 1000 ? "$1 trillion" : "$" + +(b / 1000).toFixed(2) + "T"; if (b >= 1) return "$" + +b.toFixed(1) + "B"; return "$" + Math.round(b * 1000) + "M"; }
+
+function render() {
+  const cw = svg.parentElement.clientWidth || 900;
+  const W = Math.max(340, Math.min(1100, cw));
+  const small = W < 600;
+  const H = Math.round(small ? W * 1.05 : W * 0.56);
+  const fs = small ? 11 : 13;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  while (svg.lastChild && svg.lastChild.tagName !== "title") svg.removeChild(svg.lastChild);
+
+  const priced = camps.filter(c => !c.side);
+  const vals = camps.map(c => c.pv);
+  const vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const lo = Math.log10(vmin) - 0.45, hi = Math.log10(vmax) + (ongoing ? 0.7 : 0.4);
+  const t0 = camps[0].t - 0.8, t1 = camps[camps.length - 1].t + (ongoing ? 0.9 : 0.25);
+  const padL = small ? 8 : 16, padR = small ? 34 : 70, padT = small ? 70 : 74, base = H - (small ? 34 : 40);
+  const x = t => padL + (t - t0) / (t1 - t0) * (W - padL - padR);
+  const y = v => padT + (hi - Math.log10(v)) / (hi - lo) * (base - padT);
+
+  const defs = el("defs", {}, svg);
+  const g = el("linearGradient", { id: "sky", x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+  el("stop", { offset: "0", style: "stop-color:var(--sky-top)" }, g);
+  el("stop", { offset: "1", style: "stop-color:var(--sky-bot)" }, g);
+  el("rect", { x: 0, y: 0, width: W, height: H, fill: "url(#sky)" }, svg);
+
+  [["--far", 0.42, 11, 9], ["--mid", 0.62, 7, 23]].forEach(([c, h, n, s]) => {
+    let d = `M0 ${H}`;
+    for (let i = 0; i <= n; i++) {
+      const px = i / n * W, py = H - (H * h) * (0.45 + 0.55 * rnd(i + s)) * (0.5 + 0.5 * i / n);
+      d += ` L${px.toFixed(1)} ${py.toFixed(1)}`;
+      if (i < n) d += ` L${((i + 0.5) / n * W).toFixed(1)} ${(py + 30 + 40 * rnd(i + s + 3)).toFixed(1)}`;
+    }
+    el("path", { d: d + ` L${W} ${H} Z`, style: `fill:var(${c})` }, svg);
+  });
+
+  const pts = priced.map(c => ({ x: x(c.t), y: y(c.pv) }));
+  const start = { x: x(t0 + 0.15), y: base - 4 };
+  let ridge = `M${padL - 20} ${H} L${start.x} ${start.y}`;
+  let prev = start;
+  pts.forEach((p, k) => {
+    const mx = (prev.x + p.x) / 2, my = Math.min(prev.y, p.y) + 5 + 8 * rnd(k + 5);
+    const dx = (prev.x + mx) / 2, dy = Math.max(prev.y, my) + 10 + 10 * rnd(k + 9);
+    ridge += ` L${dx.toFixed(1)} ${Math.min(dy, base).toFixed(1)} L${mx.toFixed(1)} ${my.toFixed(1)} L${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+    prev = p;
+  });
+  const top = pts[pts.length - 1];
+  const rx = top.x + (W - top.x) * (ongoing ? 0.5 : 0.45), ry = top.y + (base - top.y) * (ongoing ? 0.18 : 0.45);
+  const ex = base - (base - top.y) * (ongoing ? 0.7 : 0.15);
+  ridge += ` L${rx} ${ry} L${W} ${ex} L${W} ${H} Z`;
+  el("path", { d: ridge, style: "fill:var(--rock)" }, svg);
+  el("path", { d: `M${top.x} ${top.y} L${rx} ${ry} L${W} ${ex} L${W} ${H} L${top.x - 40} ${H} Z`, style: "fill:var(--rock-dark)" }, svg);
+  if (!ongoing && pts.length > 1) {
+    const pH = pts[pts.length - 2], f = 0.28, lx = top.x + (pH.x - top.x) * 0.45, ly = top.y + (pH.y - top.y) * 0.45;
+    el("path", { d: `M${top.x} ${top.y} L${top.x + (rx - top.x) * f} ${top.y + (ry - top.y) * f} L${top.x + 6} ${top.y + 22} L${top.x - 6} ${top.y + 14} L${(lx + top.x) / 2} ${ly + 16} L${lx} ${ly} Z`, style: "fill:var(--snow)" }, svg);
+  }
+
+  for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) {
+    const v = Math.pow(10, k), yy = y(v);
+    if (yy < padT - 30) continue;
+    el("line", { x1: padL, x2: W - 4, y1: yy, y2: yy, class: "grid-line" }, svg);
+    const t = el("text", { x: padL + 4, y: yy - 6, class: "grid-txt", "font-size": fs }, svg);
+    t.textContent = money(v) + (v === 1 && !small ? " unicorn" : "");
+  }
+  const yrs = []; for (let yr = Math.ceil(t0); yr <= Math.floor(t1); yr++) yrs.push(yr);
+  const step = Math.ceil(yrs.length / (small ? 6 : 10));
+  yrs.forEach((yr, i) => {
+    if (i % step) return;
+    el("line", { x1: x(yr), x2: x(yr), y1: H - (small ? 30 : 36), y2: H - (small ? 24 : 29), style: "stroke:var(--on-rock);opacity:.6" }, svg);
+    const t = el("text", { x: x(yr) + 4, y: H - (small ? 12 : 15), class: "year-txt", "font-size": fs }, svg);
+    t.textContent = small ? "’" + String(yr).slice(2) : yr;
+  });
+
+  let rope = ""; pts.forEach((p, k) => rope += (k ? " L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1));
+  const rp = el("path", { d: rope, class: "rope" }, svg);
+  if (!drawn && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const len = rp.getTotalLength(); rp.style.strokeDasharray = len; rp.style.strokeDashoffset = len; rp.classList.add("draw"); drawn = true;
+  }
+  if (ongoing) {
+    const cx = W - (small ? 40 : padR - 18), cy = padT - (small ? 20 : 24);
+    el("path", { d: `M${top.x} ${top.y} Q${(top.x + cx) / 2} ${top.y} ${cx - 20} ${cy + 16}`, class: "rope-ahead" }, svg);
+    [[0, 0, 22], [-20, 6, 15], [20, 6, 16]].forEach(([dx, dy, r]) => el("circle", { cx: cx + dx, cy: cy + dy, r: small ? r * 0.8 : r, class: "cloud" }, svg));
+    const ct = el("text", { x: cx, y: cy + 6, class: "cloud-txt", "font-size": fs + 3, "text-anchor": "middle" }, svg);
+    ct.textContent = DATA.aheadLabel || "Next?";
+  }
+
+  camps.forEach((c, i) => {
+    const cx = x(c.t), cy = c.side ? y(c.pv) - (small ? 60 : 80) : y(c.pv);
+    const grp = el("g", { class: "camp" + (i === sel ? " selected" : ""), tabindex: 0, role: "button", "aria-label": `${c.name}, ${c.when}`, "aria-pressed": i === sel }, svg);
+    el("circle", { cx, cy: c.side ? cy : cy - 14, r: 26, class: "hit" }, grp);
+    el("circle", { cx, cy: c.side ? cy : cy - 14, r: 22, class: "ring" }, grp);
+    if (c.side) {
+      const r = small ? 13 : 16;
+      el("path", { d: `M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy} Z`, class: "flag" }, grp);
+      el("path", { d: `M${cx - r} ${cy} L${cx - 4} ${cy + r + 4} M${cx + r} ${cy} L${cx + 4} ${cy + r + 4} M${cx} ${cy} L${cx} ${cy + r + 4}`, class: "pole", style: "stroke-width:1.5" }, grp);
+      el("rect", { x: cx - 6, y: cy + r + 4, width: 12, height: 10, rx: 1.5, class: "pin" }, grp);
+      const t = el("text", { x: cx, y: cy - r - 6, class: "lbl", "font-size": fs, "text-anchor": "middle" }, grp);
+      t.textContent = c.label || c.name;
+    } else {
+      const isTop = c === priced[priced.length - 1] && !ongoing;
+      const ph = isTop ? 40 : 28;
+      el("line", { x1: cx, y1: cy, x2: cx, y2: cy - ph, class: "pole" }, grp);
+      el("path", { d: `M${cx} ${cy - ph} L${cx + (isTop ? 24 : 17)} ${cy - ph + (isTop ? 7 : 5)} L${cx} ${cy - ph + (isTop ? 14 : 10)} Z`, class: "flag" }, grp);
+      el("circle", { cx, cy, r: i === sel ? 7 : 5, class: "pin" }, grp);
+      const t = el("text", { x: cx, y: cy - ph - 7, class: "lbl", "font-size": isTop ? fs + 3 : fs + 1, "text-anchor": "middle" }, grp);
+      t.textContent = c.label || c.id;
+    }
+    if (DATA.here && DATA.here.camp === c.id) {
+      const ht = el("text", { x: cx + 6, y: cy + (c.side ? 46 : (small ? 24 : 28)), class: "here-txt", "font-size": fs + 5, "text-anchor": "middle" }, svg);
+      ht.textContent = DATA.here.label;
+    }
+    grp.addEventListener("click", () => select(i));
+    grp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
+  });
+}
+
+function prevPriced(i) { for (let k = i - 1; k >= 0; k--) if (!camps[k].side) return camps[k]; return null; }
+function fill() {
+  const c = camps[sel];
+  const set = (id, v) => document.getElementById(id).textContent = v || "";
+  set("p-when", c.when); set("p-name", c.name); set("p-sub", c.sub);
+  set("p-raised", c.raised || "Not disclosed");
+  set("p-val", c.val || (c.side ? "Not a priced round" : (c.valuation > 0 ? money(c.valuation) : "Not disclosed")));
+  let m = "First round";
+  if (c.side) m = "Not applicable";
+  else { const p = prevPriced(sel);
+    if (p) { if (!(c.valuation > 0) || !(p.valuation > 0)) m = "Not disclosed";
+      else { const r = c.valuation / p.valuation; m = (r < 1 ? r.toFixed(2) : r < 1.1 ? "≈1" : r < 10 ? r.toFixed(1) : Math.round(r)) + "×"; } } }
+  set("p-mult", m); set("p-story", c.story); set("p-play", c.play);
+  set("p-lead", c.lead ? "Led by: " + c.lead : "");
+  document.getElementById("prev").disabled = sel === 0;
+  document.getElementById("next").disabled = sel === camps.length - 1;
+}
+function select(i) {
+  sel = i; fill();
+  svg.querySelectorAll(".camp").forEach((g, k) => { g.classList.toggle("selected", k === sel); g.setAttribute("aria-pressed", k === sel); });
+  svg.querySelectorAll(".camp .pin").forEach((p, k) => { if (p.tagName === "circle") p.setAttribute("r", k === sel ? 7 : 5); });
+}
+document.getElementById("prev").onclick = () => select(Math.max(0, sel - 1));
+document.getElementById("next").onclick = () => select(Math.min(camps.length - 1, sel + 1));
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 120); });
+render(); fill();
+</script>
+</body>
+</html>
