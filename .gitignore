@@ -40,3 +40,9 @@ science-skills/**/.catalog_stamp
 
 # claude plugin eval output (reports, transcripts, cost) stays local
 plugins/*/evals/results/
+
+# independent-study: learn-samuel is Samuel's personal learning protocol (names his
+# projects). It stays on his Mac only; the plugin installs from this folder on disk,
+# so it still loads there. Its dd/sw/mm commands go with it.
+plugins/independent-study/skills/learn-samuel/
+plugins/independent-study/commands/

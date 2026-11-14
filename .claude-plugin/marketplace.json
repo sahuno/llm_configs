@@ -32,6 +32,15 @@
       },
       "category": "science",
       "source": "./plugins/hpc-site"
+    },
+    {
+      "name": "independent-study",
+      "description": "Self-directed study. Draws any company's funding history as an interactive mountain: height is valuation on a log scale, each round is a flag, strategic investments are parachutes, and the IPO or acquisition is the summit. Every round is researched fresh from the web; undisclosed valuations are never invented.",
+      "author": {
+        "name": "Samuel Ahuno"
+      },
+      "category": "learning",
+      "source": "./plugins/independent-study"
     }
   ]
 }
