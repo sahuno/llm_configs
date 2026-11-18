@@ -25,6 +25,33 @@
             "command": "~/.local/bin/ledger-hook stop",
             "timeout": 15,
             "statusMessage": "ledger: stop"
+          },
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-speak stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-speak prompt",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/claude-speak notify",
+            "timeout": 5
           }
         ]
       }
